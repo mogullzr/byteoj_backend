@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.backend.mapper.LanguageCommandMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.backend.models.domain.algorithm.LanguageCommand">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="language_id" column="language_id" jdbcType="INTEGER"/>
+            <result property="command" column="command" jdbcType="VARCHAR"/>
+            <result property="sequence" column="sequence" jdbcType="INTEGER"/>
+            <result property="create_by_id" column="create_by_id" jdbcType="BIGINT"/>
+            <result property="create_by_name" column="create_by_name" jdbcType="VARCHAR"/>
+            <result property="create_time" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="update_by_id" column="update_by_id" jdbcType="BIGINT"/>
+            <result property="update_by_name" column="update_by_name" jdbcType="VARCHAR"/>
+            <result property="update_time" column="update_time" jdbcType="TIMESTAMP"/>
+            <result property="status" column="status" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,language_id,command,
+        sequence,create_by_id,create_by_name,
+        create_time,update_by_id,update_by_name,
+        update_time,status
+    </sql>
+</mapper>

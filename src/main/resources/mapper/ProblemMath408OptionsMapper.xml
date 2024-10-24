@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.backend.mapper.ProblemMath408OptionsMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.backend.models.domain.math408.ProblemMath408Options">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="problem_id" column="problem_id" jdbcType="BIGINT"/>
+            <result property="option_text" column="option_text" jdbcType="VARCHAR"/>
+            <result property="option_index" column="option_index" jdbcType="VARCHAR"/>
+            <result property="is_delete" column="is_delete" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,problem_id,option_text,
+        option_index,is_delete
+    </sql>
+</mapper>

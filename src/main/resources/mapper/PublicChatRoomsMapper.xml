@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.backend.mapper.PublicChatRoomsMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.backend.models.domain.webchat.PublicChatRooms">
+            <id property="room_id" column="room_id" jdbcType="BIGINT"/>
+            <result property="room_name" column="room_name" jdbcType="VARCHAR"/>
+            <result property="description" column="description" jdbcType="VARCHAR"/>
+            <result property="online_num" column="online_num" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        room_id,room_name,
+        description,online_num
+    </sql>
+</mapper>

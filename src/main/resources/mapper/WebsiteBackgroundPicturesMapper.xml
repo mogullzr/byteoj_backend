@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.backend.mapper.WebsiteBackgroundPicturesMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.backend.models.domain.picture.WebsiteBackgroundPictures">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="picture_address" column="picture_address" jdbcType="VARCHAR"/>
+            <result property="create_time" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="uuid" column="uuid" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,picture_address,create_time,
+        uuid
+    </sql>
+</mapper>

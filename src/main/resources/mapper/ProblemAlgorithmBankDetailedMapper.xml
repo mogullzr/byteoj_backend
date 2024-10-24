@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.backend.mapper.ProblemAlgorithmBankDetailedMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.backend.models.domain.algorithm.probleminfo.ProblemAlgorithmBankDetailed">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="problem_id" column="problem_id" jdbcType="BIGINT"/>
+            <result property="md_cn" column="md_cn" jdbcType="VARCHAR"/>
+            <result property="md_en" column="md_en" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,problem_id,md_cn,
+        md_en
+    </sql>
+</mapper>

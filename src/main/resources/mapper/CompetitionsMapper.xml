@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.backend.mapper.CompetitionsMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.backend.models.domain.competiton.Competitions">
+            <id property="competition_id" column="competition_id" jdbcType="BIGINT"/>
+            <result property="competition_name" column="competition_name" jdbcType="VARCHAR"/>
+            <result property="start_time" column="start_time" jdbcType="TIMESTAMP"/>
+            <result property="end_time" column="end_time" jdbcType="TIMESTAMP"/>
+            <result property="avatar" column="avatar" jdbcType="VARCHAR"/>
+            <result property="description" column="description" jdbcType="VARCHAR"/>
+            <result property="password" column="password" jdbcType="VARCHAR"/>
+            <result property="created_by" column="created_by" jdbcType="BIGINT"/>
+            <result property="pattern" column="pattern" jdbcType="TINYINT"/>
+            <result property="status" column="status" jdbcType="TINYINT"/>
+            <result property="is_delete" column="is_delete" jdbcType="TINYINT"/>
+            <result property="joins" column="joins" jdbcType="BIGINT"/>
+            <result property="type" column="type" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        competition_id,competition_name,start_time,
+        end_time,avatar,description,
+        password,created_by,pattern,
+        status,is_delete,joins,
+        type,test_num,ac_num
+    </sql>
+</mapper>
