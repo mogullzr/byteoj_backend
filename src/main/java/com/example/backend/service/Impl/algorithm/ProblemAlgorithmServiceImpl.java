@@ -1146,7 +1146,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         long time_used = problemAlgorithmLimit.getCpu_limit() * 1000000000L;
         long memory_used = problemAlgorithmLimit.getMemory_limit() * 1024L * 1024L;
         AtomicLong total_memory_used = new AtomicLong(0L);
-        AtomicLong total_time_used = new AtomicLong(0L);
+        long total_time_used = 0L;
 
         QueryWrapper<AlgorithmTestCase> algorithmTestCaseQueryWrapper = new QueryWrapper<>();
         algorithmTestCaseQueryWrapper.eq("problem_id", problemAlgorithmBank.getProblem_id());
@@ -1227,13 +1227,13 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 
             // 处理各个报错信息以及总时间计算
             if (judge.getTime() != null) {
-                total_time_used.updateAndGet(v -> Math.toIntExact(v + judge.getTime()));
+                total_time_used += judge.getTime();
                 time_used_list.add(Math.toIntExact(judge.getTime() / 1000000));
             } else if (Objects.equals(judge.getStatus(), "Nonzero Exit Status")){
-                total_time_used.addAndGet(0);
+                total_time_used += 0;
                 time_used_list.add(0);
             } else {
-                total_time_used.addAndGet(time_used / 1000000);
+                total_time_used += time_used / 1000000;
                 time_used_list.add((int) (time_used / 1000000));
             }
 
@@ -1259,10 +1259,13 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
                 if (input.length() > 600) {
                     input = input.substring(0, 600) + "...";
                 }
-                if (output.length() > 600) {
+                if (currentOutput.length() > 600) {
                     currentOutput = currentOutput.substring(0, 600) + "...";
                 }
 
+                if (output.length() > 600) {
+                    output = output.substring(0, 600) + "...";
+                }
                 lastJudge.setInput(input);
                 lastJudge.setOutput(currentOutput);
                 lastJudge.setCorrectOutput(output);
@@ -1482,7 +1485,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         // 插入细节信息
         submissionAlgorithmDetails.setSubmission_id(submission_id);
         submissionAlgorithmDetails.setMemory_used(total_memory_used.get() / (1024 * 1024));
-        submissionAlgorithmDetails.setTime_used((int) (total_time_used.get() / 1000000));
+        submissionAlgorithmDetails.setTime_used((int) (total_time_used / 1000000));
 
         submissionAlgorithmDetailsMapper.insert(submissionAlgorithmDetails);
         // 将所有的小记录全部插入到 records 表中

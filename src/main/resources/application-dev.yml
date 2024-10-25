@@ -58,17 +58,17 @@ spring:
         max-active: 20
 
   # RabbitMQ 配置，尚未使用，后面使用会启用
-#  rabbitmq:
-#    host: localhost
-#    port: 15672
-#    username: guest
-#    password: guest
-#    virtual-host: /
-#    # 开启消息发送确认
-#    publisher-returns: true
-#    listener:
-#      simple:
-#        acknowledge-mode: manual
+  #  rabbitmq:
+  #    host: localhost
+  #    port: 15672
+  #    username: guest
+  #    password: guest
+  #    virtual-host: /
+  #    # 开启消息发送确认
+  #    publisher-returns: true
+  #    listener:
+  #      simple:
+  #        acknowledge-mode: manual
   servlet:
     multipart:
       max-file-size: 10MB
@@ -104,7 +104,7 @@ logging:
       max-file-size: 1MB
 aliyun:
   oss:
-    endpoint: oss-cn-beijing.aliyuncs.com # 阿里云OSS地址，这里看你自己的OSS选择
+    endpoint: # 阿里云OSS地址，这里看你自己的OSS选择
     accessKeyId: # 阿里云OSS账号
     accessKeySecret:  # 阿里云OSS密钥
     #        bucket可以由控制台创建，也可以使用java代码创建
