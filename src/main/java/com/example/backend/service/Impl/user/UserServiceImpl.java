@@ -420,11 +420,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户名小于4位");
         }
 
-        if (phone.length() != 11) {
+        if (phone != null && phone.length() != 11) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "手机号必须为11位");
         }
 
-        if (profile.length() > 100) {
+        if (profile != null && profile.length() > 100) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "个人简介字数不可超过100字！！");
         }
 
@@ -438,7 +438,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         user.setAccount(account);
         user.setUsername(username);
         user.setAvatar(avatar);
-        user.setTags(String.valueOf(tags));
+        user.setTags(Objects.equals(String.valueOf(tags), "null") ? "" : String.valueOf(tags));
         user.setHobby(hobby);
         user.setEmail(email);
         user.setPhone(phone);

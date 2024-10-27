@@ -66,4 +66,9 @@ public class CompetitionInfoVo implements Serializable {
      * 总页数
      */
     private Long Page_Sum;
+
+    /**
+     * 是否为竞赛创建者,0表示是，1表示不是
+     */
+    private Integer isCreated;
 }

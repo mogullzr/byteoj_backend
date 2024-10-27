@@ -15,12 +15,15 @@ import com.example.backend.models.vo.competition.CompetitionRankVo;
 import com.example.backend.service.algorithm.ProblemAlgorithmService;
 import com.example.backend.service.competition.CompetitionsService;
 import com.example.backend.service.user.UserService;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -55,7 +58,7 @@ public class CompetitionController {
         return ResultUtils.success(resultList);
     }
 
-//    @AccessLimit(seconds=5, maxCount=50, needLogin=false)
+    @AccessLimit(seconds=5, maxCount=50, needLogin=false)
     @PostMapping("/search/competitionId")
     private BaseResponse<CompetitionInfoVo> competitionSearchByCompetitionId(Long competition_id, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -178,6 +181,22 @@ public class CompetitionController {
 
         boolean result = competitionsService.competitionUserJoinCancel(competition_id, uuid);
         return ResultUtils.success(result);
+    }
+
+    @AccessLimit(seconds = 1, maxCount = 1000, needLogin = true)
+    @SneakyThrows
+    @ResponseBody
+    @GetMapping("/get/rank/excel")
+    private BaseResponse<Void> competitionAdminGetRankExcel(Long competition_id, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+        if (httpServletRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
+        }
+
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        Long uuid = loginUser.getUuid();
+
+        competitionsService.competitionAdminGetRankExcel(competition_id, uuid, httpServletResponse);
+        return null;
     }
 
 }

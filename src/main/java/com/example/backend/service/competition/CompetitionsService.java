@@ -7,6 +7,8 @@ import com.example.backend.models.vo.SubmissionsAlgorithmRecordsVo;
 import com.example.backend.models.vo.competition.CompetitionInfoVo;
 import com.example.backend.models.vo.competition.CompetitionRankVo;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -100,4 +102,13 @@ public interface CompetitionsService extends IService<Competitions> {
      * @return 是否报名成功
      */
     boolean competitionUserJoinCancel(Long competition_id, Long uuid);
+
+    /**
+     * 到处对应竞赛的排行榜Excel表格信息
+     *
+     * @param competitionId 竞赛ID
+     * @param uuid 用户ID
+     * @param httpServletResponse 前端请求
+     */
+    void competitionAdminGetRankExcel(Long competitionId, Long uuid, HttpServletResponse httpServletResponse) throws IOException;
 }

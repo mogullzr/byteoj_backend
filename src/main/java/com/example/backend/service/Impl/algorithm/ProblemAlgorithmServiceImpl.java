@@ -976,8 +976,9 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         data.put("code", source_code);
         data.put("language", language);
         data.put("input", input_list.get(0));
-        data.put("cpuLimit", time_used * 1000000000L);
+        data.put("cpuLimit", time_used * 3000000000L);
         fileList.add(data);
+
 
         HttpResponse response = HttpRequest.post("http://101.43.48.120:6048/build")
                 .header("Content-Type", "application/json")  // 设置 Content-Type 为 application/json

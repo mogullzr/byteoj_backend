@@ -1,5 +1,10 @@
 package com.example.backend.service.Impl.competition;
 
+import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.support.ExcelTypeEnum;
+import com.alibaba.excel.write.metadata.style.WriteCellStyle;
+import com.alibaba.excel.write.style.HorizontalCellStyleStrategy;
+import com.alibaba.excel.write.style.column.LongestMatchColumnWidthStyleStrategy;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -19,11 +24,18 @@ import com.example.backend.models.vo.competition.CompetitionProblemInfo;
 import com.example.backend.models.vo.competition.CompetitionRankDetailVo;
 import com.example.backend.models.vo.competition.CompetitionRankVo;
 import com.example.backend.service.competition.CompetitionsService;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -233,30 +245,7 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
             }
             rank_user_list.add(competitionRankDetailVo);
         });
-//        // 自定义排序
-//        rank_user_list.sort(new Comparator<CompetitionRankDetailVo>() {
-//            @Override
-//            public int compare(CompetitionRankDetailVo p1, CompetitionRankDetailVo p2) {
-//                if (Objects.equals(p1.getAc_num(), p2.getAc_num())) {
-//                    List<SubmissionsAlgorithmRecordsVo> problemRecordList1 = p1.getProblem_record_list();
-//                    List<SubmissionsAlgorithmRecordsVo> problemRecordList2 = p2.getProblem_record_list();
-//                    AtomicLong p1_num = new AtomicLong();
-//                    AtomicLong p2_num = new AtomicLong();
-//
-//                    problemRecordList1.forEach((record) -> {
-//                        p1_num.addAndGet(record.getTest_num() == null ? 0 : record.getTest_num());
-//                    });
-//
-//                    problemRecordList2.forEach((record) -> {
-//                        p2_num.addAndGet(record.getTest_num() == null ? 0 : record.getTest_num());
-//                    });
-//
-//                    return (int) (p1_num.get() - p2_num.get());
-//                } else {
-//                    return (int) (p2.getAc_num() - p1.getAc_num());
-//                }
-//            }
-//        });
+
         if (!rank_user_list.isEmpty()) {
             rank_user_list.get(0).setPage_num(competitionsUserMapper.selectPage(competitionsUserPage, competitionsUserQueryWrapper).getPages());
         }
@@ -558,6 +547,158 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
         return true;
     }
 
+    @SneakyThrows
+    @Override
+    public void competitionAdminGetRankExcel(Long competitionId, Long uuid, HttpServletResponse httpServletResponse){
+        QueryWrapper<Competitions> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("competition_id", competitionId);
+        queryWrapper.eq("created_by", uuid);
+
+        Competitions competition = competitionsMapper.selectOne(queryWrapper);
+
+        if (Objects.isNull(competition)) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "竞赛信息不存在？还是你在抓我包？？？");
+        }
+
+        List<CompetitionRankDetailVo> rank_user_list = new ArrayList<>();
+        List<CompetitionProblemInfo> problem_list = new ArrayList<>();
+        CompetitionRankVo competitionRankVo = new CompetitionRankVo();
+
+        // 1.首先搜索出当前竞赛的各个题目的总尝试次数和通过次数
+        QueryWrapper<CompetitionsProblemsAlgorithm> competitionsProblemsAlgorithmQueryWrapper = new QueryWrapper<>();
+        competitionsProblemsAlgorithmQueryWrapper.eq("competition_id", competitionId);
+        List<CompetitionsProblemsAlgorithm> competitionsProblemsAlgorithmList = competitionsProblemsAlgorithmMapper.selectList(competitionsProblemsAlgorithmQueryWrapper);
+        if (competitionsProblemsAlgorithmList == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "竞赛题目信息不存在");
+        }
+
+        competitionsProblemsAlgorithmList.forEach((problem)->{
+            CompetitionProblemInfo competitionsProblemsAlgorithm = new CompetitionProblemInfo();
+            competitionsProblemsAlgorithm.setIndex(problem.getIdx());
+            competitionsProblemsAlgorithm.setScore(problem.getScore());
+            competitionsProblemsAlgorithm.setAc_num(problem.getAc_total());
+            competitionsProblemsAlgorithm.setTest_num(problem.getTest_total());
+
+            problem_list.add(competitionsProblemsAlgorithm);
+        });
+
+        // 2.在competitions_user中根据ac_num，score进行降序排序
+        QueryWrapper<CompetitionsUser> competitionsUserQueryWrapper = new QueryWrapper<>();
+        competitionsUserQueryWrapper.eq("competition_id", competitionId);
+        competitionsUserQueryWrapper.eq("is_participant", 0);
+
+        if (competition.getPattern() == 0) {
+            competitionsUserQueryWrapper.orderByDesc("ac_num");
+        } else {
+            competitionsUserQueryWrapper.orderByDesc("score");
+        }
+
+        competitionsUserQueryWrapper.orderByAsc("time_penalty");
+        List<CompetitionsUser> competitionsUsers = competitionsUserMapper.selectList(competitionsUserQueryWrapper);
+
+        // 3.拿到前20名的用户信息,开始搜索20名用户的各个题目的最终ac记录和最终wrong记录
+        competitionsUsers.forEach((user)->{
+            CompetitionRankDetailVo competitionRankDetailVo = new CompetitionRankDetailVo();
+
+            // 3.1寻找用户几个基本信息
+            QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
+            userQueryWrapper.eq("uuid", user.getUuid());
+            User user1 = userMapper.selectOne(userQueryWrapper);
+            AtomicReference<Long> total_score = new AtomicReference<>(0L);
+
+            competitionRankDetailVo.setUuid(user1.getUuid());
+            competitionRankDetailVo.setUsername(user1.getUsername());
+            Integer rating = getRating(user1);
+            competitionRankDetailVo.setRated(rating);
+            competitionRankDetailVo.setSchool(user1.getSchool());
+            competitionRankDetailVo.setAc_num(user.getAc_num());
+
+            // 秒转为时分秒
+            Long seconds = user.getTime_penalty();
+            Long hours =  seconds / 3600;
+            Long minutes = (seconds % 3600) / 60;
+            Long remainingSeconds = seconds % 60;
+            competitionRankDetailVo.setTime_penalty(String.format("%02d:%02d:%02d", hours, minutes, remainingSeconds));
+
+            // 3.2寻找用户的所有最终对应提交记录信息
+            AtomicInteger is_ak = new AtomicInteger(0);
+            List<SubmissionsAlgorithmRecordsVo> submissionsAlgorithmRecordsVoList = new ArrayList<>();
+            problem_list.forEach((problem)->{
+                SubmissionsAlgorithmRecordsVo submissionAlgorithmRecordVo = new SubmissionsAlgorithmRecordsVo();
+                QueryWrapper<CompetitionsProblemsAlgorithm> competitionsUserQueryWrapper1 = new QueryWrapper<>();
+                competitionsUserQueryWrapper1.eq("idx", problem.getIndex());
+                competitionsUserQueryWrapper1.eq("competition_id", competitionId);
+                CompetitionsProblemsAlgorithm competitionsProblemsAlgorithm = competitionsProblemsAlgorithmMapper.selectOne(competitionsUserQueryWrapper1);
+
+                Long problem_id = competitionsProblemsAlgorithm.getProblem_id();
+
+                QueryWrapper<CompetitionAcProblemsAlgorithm> competitionAcProblemsAlgorithmQueryWrapper = new QueryWrapper<>();
+                competitionAcProblemsAlgorithmQueryWrapper.eq("competition_id", competitionId);
+                competitionAcProblemsAlgorithmQueryWrapper.eq("uuid",user.getUuid());
+                competitionAcProblemsAlgorithmQueryWrapper.eq("idx", problem.getIndex());
+
+                CompetitionAcProblemsAlgorithm competitionAcProblemsAlgorithm = competitionAcProblemsAlgorithmMapper.selectOne(competitionAcProblemsAlgorithmQueryWrapper);
+
+                QueryWrapper<SubmissionsAlgorithm> submissionsAlgorithmQueryWrapper = new QueryWrapper<>();
+
+                submissionsAlgorithmQueryWrapper.eq("problem_id", problem_id);
+                submissionsAlgorithmQueryWrapper.eq("competition_id", competitionId);
+                submissionsAlgorithmQueryWrapper.eq("uuid", user.getUuid());
+                submissionsAlgorithmQueryWrapper.le("submit_time",competition.getEnd_time());
+                submissionsAlgorithmQueryWrapper.ge("submit_time", competition.getStart_time());
+                if (competition.getPattern() == 0) {
+                    submissionsAlgorithmQueryWrapper.eq("results", "Accepted");
+                }
+
+                if (competitionAcProblemsAlgorithm == null) {
+                    is_ak.set(1);
+                    submissionsAlgorithmRecordsVoList.add(submissionAlgorithmRecordVo);
+                    return;
+                } else if (competitionAcProblemsAlgorithm.getStatus() == 1) {
+                    is_ak.set(1);
+                }
+
+                if (competition.getPattern() != 0) {
+                    submissionsAlgorithmQueryWrapper.orderByDesc("score");
+                }
+                List<SubmissionsAlgorithm> submissionsAlgorithmList = submissionsAlgorithmMapper.selectList(submissionsAlgorithmQueryWrapper);
+                SubmissionsAlgorithm submissionsAlgorithm;
+                if (!submissionsAlgorithmList.isEmpty()) {
+                    submissionsAlgorithm = submissionsAlgorithmList.get(0);
+                    submissionAlgorithmRecordVo.setSubmission_id(submissionsAlgorithm.getSubmission_id());
+                    submissionAlgorithmRecordVo.setScore(submissionsAlgorithm.getScore());
+                    submissionAlgorithmRecordVo.setTest_num(competitionAcProblemsAlgorithm.getTest_num());
+                    if (competitionAcProblemsAlgorithm.getStatus() == 1) {
+                        submissionsAlgorithmRecordsVoList.add(submissionAlgorithmRecordVo);
+                        return;
+                    }
+                    submissionAlgorithmRecordVo.setSubmit_time(submissionsAlgorithm.getSubmit_time());
+                    submissionAlgorithmRecordVo.setResult(submissionsAlgorithm.getResults());
+                    submissionAlgorithmRecordVo.setLanguage(submissionsAlgorithm.getLanguages());
+                    submissionAlgorithmRecordVo.setResult(submissionsAlgorithm.getResults());
+
+                    submissionsAlgorithmRecordsVoList.add(submissionAlgorithmRecordVo);
+                    total_score.updateAndGet(v -> v + submissionsAlgorithm.getScore());
+                } else {
+                    submissionsAlgorithmRecordsVoList.add(submissionAlgorithmRecordVo);
+                }
+            });
+            competitionRankDetailVo.setProblem_record_list(submissionsAlgorithmRecordsVoList);
+            competitionRankDetailVo.setIs_ak(is_ak.get());
+            if (competition.getPattern() != 0) {
+                competitionRankDetailVo.setTotal_score(total_score.get());
+            }
+            rank_user_list.add(competitionRankDetailVo);
+        });
+
+        // 插入
+        competitionRankVo.setRank_user_list(rank_user_list);
+        competitionRankVo.setProblem_list(problem_list);
+
+        // 最后根据这些信息进行Excel表格写入操作
+        SetRankExcel(competition.getCompetition_name(), competitionRankVo, httpServletResponse);
+    }
+
     /**
      * 是否filter过滤器来过滤找出两个列表的不同项
      *
@@ -672,8 +813,11 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
             }
         }
 
-
-
+        if (Objects.equals(user.getUuid(), uuid)) {
+            competitionInfoVo.setIsCreated(0);
+        } else {
+            competitionInfoVo.setIsCreated(1);
+        }
         competitionInfoVo.setUsername(user.getUsername());
         competitionInfoVo.setPattern(competition.getPattern());
         competitionInfoVo.setStatus(competition.getStatus());
@@ -687,6 +831,102 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
             problemAlgorithmBankQueryWrapper.eq("is_delete", 0);
         }
         return problemAlgorithmBankMapper.selectOne(problemAlgorithmBankQueryWrapper);
+    }
+
+    /**
+     * 导出排名Excel表格
+     *
+     * @param competitionRankVo 脱敏后的竞赛信息
+     */
+    @SneakyThrows
+    private void SetRankExcel(String competitionName, CompetitionRankVo competitionRankVo, HttpServletResponse httpServletResponse){
+        List<CompetitionRankDetailVo> rankUserList = competitionRankVo.getRank_user_list();
+        List<CompetitionProblemInfo> problemList = competitionRankVo.getProblem_list();
+        String fileName = URLEncoder.encode(competitionName + "排行榜成员名单" + ".xlsx", StandardCharsets.UTF_8);
+        httpServletResponse.setContentType("application/vnd.ms-excel;charset=utf-8");
+        httpServletResponse.setCharacterEncoding("utf-8");
+        httpServletResponse.setHeader("Content-Disposition", "attachment;filename=" + fileName);
+        EasyExcel.write(httpServletResponse.getOutputStream())
+                .head(head(competitionName + "排行榜成员名单", problemList))
+                .excelType(ExcelTypeEnum.XLSX)
+                //自动列宽
+                .registerWriteHandler(new LongestMatchColumnWidthStyleStrategy())
+                .autoCloseStream(Boolean.TRUE)
+                .sheet("Sheet1")
+                //对应的列数据
+                .doWrite(dataList(rankUserList));
+    }
+
+    /**
+     * 自定义表头部
+     *
+     * @return
+     */
+    private static List<List<String>> head(String competitionName, List<CompetitionProblemInfo> problemList) {
+        //两排说明油两个头
+        List<List<String>> list = new ArrayList<>();
+        List<String> list1 = new ArrayList<>();
+        List<String> list2 = new ArrayList<>();
+        List<String> list3 = new ArrayList<>();
+        List<String> list4 = new ArrayList<>();
+        List<String> list5 = new ArrayList<>();
+        list1.add(competitionName);
+        list1.add("排名");
+        list2.add(competitionName);
+        list2.add("用户名");
+        list3.add(competitionName);
+        list3.add("学校");
+        list4.add(competitionName);
+        list4.add("通过数");
+        list5.add(competitionName);
+        list5.add("罚时");
+        list.add(list1);
+        list.add(list2);
+        list.add(list3);
+        list.add(list4);
+        list.add(list5);
+
+        if (problemList.isEmpty()) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "此竞赛不存在题目，请重新选择！！！");
+        }
+
+        problemList.forEach((problem)->{
+            List<String> list0 = new ArrayList<>();
+            list0.add(problem.getIndex());
+            list.add(list0);
+        });
+
+
+        return list;
+    }
+
+    private static List<List<Object>> dataList(List<CompetitionRankDetailVo> rankList) {
+        List<List<Object>> list = new ArrayList<>();
+        for (int item = 0; item < rankList.size(); item++) {
+            CompetitionRankDetailVo rankUser = rankList.get(item);
+            List<Object> list1 = new ArrayList<>();
+            list1.add(String.valueOf(item + 1));
+            list1.add(rankUser.getUsername());
+            list1.add(rankUser.getSchool());
+            list1.add(String.valueOf(rankUser.getAc_num()));
+            list1.add(rankUser.getTime_penalty());
+
+            int size = rankUser.getProblem_record_list().size();
+            for(int j = 0; j < size; j ++) {
+                Object result = rankUser.getProblem_record_list().get(j).getResult();
+                if (Objects.equals("Accepted", result)) {
+                    if (rankUser.getProblem_record_list().get(j).getTest_num() != null) {
+                        list1.add("-" + rankUser.getProblem_record_list().get(j).getTest_num());
+                    } else {
+                        list1.add("-0");
+                    }
+                } else {
+                    list1.add(" ");
+                }
+            }
+            list.add(list1);
+        }
+        return list;
     }
 }
 
