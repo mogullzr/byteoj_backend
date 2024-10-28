@@ -205,6 +205,9 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
                 submissionsAlgorithmQueryWrapper.le("submit_time",competition.getEnd_time());
                 submissionsAlgorithmQueryWrapper.ge("submit_time", competition.getStart_time());
 
+                if (competition.getPattern() == 0) {
+                    submissionsAlgorithmQueryWrapper.eq("results", "Accepted");
+                }
                 if (competitionAcProblemsAlgorithm == null) {
                     is_ak.set(1);
                     submissionsAlgorithmRecordsVoList.add(submissionAlgorithmRecordVo);
