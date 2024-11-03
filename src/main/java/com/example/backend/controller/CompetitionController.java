@@ -153,7 +153,6 @@ public class CompetitionController {
 
         return ResultUtils.success(result);
     }
-
     @AccessLimit(seconds=5, maxCount=1000, needLogin=true)
     @PostMapping("/join")
     private BaseResponse<Boolean> competitionUserJoin(Long competition_id, String password, HttpServletRequest httpServletRequest){

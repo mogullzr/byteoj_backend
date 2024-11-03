@@ -80,6 +80,11 @@ public class ProblemAlgorithmBankVo implements Serializable {
      * 题目描述
      */
     private String description;
+
+    /**
+     * 视频链接
+     */
+    private String url;
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 }

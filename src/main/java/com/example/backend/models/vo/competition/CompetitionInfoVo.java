@@ -59,7 +59,7 @@ public class CompetitionInfoVo implements Serializable {
     private Integer status;
 
     /**
-     * 0表示参加，1表示有没参加,2表示比赛进行中但是没有报名，3表示比赛进行中但是报名了，4表示比赛结束了
+     * 0表示参加，1表示有没参加,2表示比赛进行中但是没有报名，3表示比赛进行中但是报名了，4表示比赛结束而且报名了，5表示比赛结束了没有报名的
      */
     private Integer user_status;
     /**

@@ -22,6 +22,7 @@
             <result property="test_total" column="test_total" jdbcType="BIGINT"/>
             <result property="ac_total" column="ac_total" jdbcType="BIGINT"/>
             <result property="description" column="description" jdbcType="VARCHAR"/>
+            <result property="url" column="url" jdbcType="VARCHAR"/>
     </resultMap>
 
     <sql id="Base_Column_List">
@@ -30,6 +31,6 @@
         create_by_name,create_time,update_by_id,
         update_by_name,update_time,status,
         is_delete,source_name,test_total,
-        ac_total,description
+        ac_total,description,url
     </sql>
 </mapper>

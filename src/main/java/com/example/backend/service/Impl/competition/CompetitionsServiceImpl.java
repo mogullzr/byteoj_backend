@@ -795,7 +795,7 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
 
             if (competitionsUser == null) {
                 if (nowDate.after(competition.getEnd_time())) {
-                    competitionInfoVo.setUser_status(4);
+                    competitionInfoVo.setUser_status(5);
                 } else if (nowDate.after(competition.getStart_time())){
                     competitionInfoVo.setUser_status(2);
                 } else {
@@ -803,7 +803,12 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
                 }
             } else {
                 if (nowDate.after(competition.getEnd_time())) {
-                    competitionInfoVo.setUser_status(4);
+                    if (competitionsUser.getIs_participant() == 0) {
+                        competitionInfoVo.setUser_status(4);
+                    } else {
+                        competitionInfoVo.setUser_status(5);
+                    }
+
                 } else if (nowDate.after(competition.getStart_time())){
                     if (competitionsUser.getIs_participant().equals(0)){
                         competitionInfoVo.setUser_status(3);

@@ -27,13 +27,13 @@ public class CompetitionsRatedUtil {
 
     // 规定在每天的12点到24点每隔30min执行
 //    @Scheduled(cron = "0 0/30 12-23 * * ?")
-    @Scheduled(fixedRate = 1000 * 60 * 60)
+    @Scheduled(fixedRate = 1000 * 60 * 40)
     public void executeRated() {
         Date date = new Date();
-        Calendar calendar = Calendar.getInstance();
-
-        calendar.setTime(date);
-        calendar.add(Calendar.HOUR, 8);
+//        Calendar calendar = Calendar.getInstance();
+//
+//        calendar.setTime(date);
+//        calendar.add(Calendar.HOUR, 8);
 //        date = calendar.getTime();
 
         long time = 60 * 40 * 1000;

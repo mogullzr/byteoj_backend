@@ -98,6 +98,11 @@ public class ProblemAlgorithmBank implements Serializable {
      */
     private Integer is_delete;
 
+    /**
+     * 网站地址
+     */
+    private String url;
+
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 }

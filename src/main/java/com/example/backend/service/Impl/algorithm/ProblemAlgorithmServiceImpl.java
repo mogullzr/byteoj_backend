@@ -1146,7 +1146,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 //                "}";
         long time_used = problemAlgorithmLimit.getCpu_limit() * 1000000000L;
         long memory_used = problemAlgorithmLimit.getMemory_limit() * 1024L * 1024L;
-        AtomicLong total_memory_used = new AtomicLong(0L);
+        long total_memory_used = 0L;
         long total_time_used = 0L;
 
         QueryWrapper<AlgorithmTestCase> algorithmTestCaseQueryWrapper = new QueryWrapper<>();
@@ -1157,6 +1157,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "对不起，这道题目的测试样例还没有添加，请即使联系管理员进行查询");
         }
 
+        
         List<Integer> time_used_list = new ArrayList<>();
         List<Integer> memory_used_list = new ArrayList<>();
         List<String> result_list = new ArrayList<>();
@@ -1168,6 +1169,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         paramMap.put("language", language);
         paramMap.put("code", source_code);
         paramMap.put("input", algorithmTestCases.get(0));
+        paramMap.put("cpuLimit", time_used * 3);
         fileList.add(paramMap);
 
         HttpResponse response = HttpRequest.post("http://101.43.48.120:6048/build")
@@ -1203,8 +1205,8 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         algorithmTestCases.forEach((algorithmTestCase -> {
             HashMap<String, Object> Param = new HashMap<>();
             Param.put("input", algorithmTestCase.getInput());
-            Param.put("cpuLimit", time_used * 1000000000L);
-            Param.put("memoryLimit", memory_used * 1024 * 1024);
+            Param.put("cpuLimit", time_used);
+            Param.put("memoryLimit", memory_used);
             Param.put("fileId", fileId);
             Param.put("language", finalLanguage);
 
@@ -1240,7 +1242,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 
             // 处理各个报错信息以及内存计算
             if (judge.getMemory() != null){
-                total_memory_used.updateAndGet(v -> Math.toIntExact(v + judge.getMemory()));
+                total_memory_used += judge.getMemory();
                 memory_used_list.add(Math.toIntExact(judge.getMemory() / (1024 * 1024)));
                 if (!Objects.equals(judge.getOutput().trim(), output.trim())){
                     result_list.add("Wrong Answer");
@@ -1249,7 +1251,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
                     result_list.add("Accepted");
                 }
             } else {
-                total_memory_used.addAndGet(0L);
+                total_memory_used = 0L;
                 memory_used_list.add(0);
                 result_list.add(judge.getStatus());
             }
@@ -1485,7 +1487,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 
         // 插入细节信息
         submissionAlgorithmDetails.setSubmission_id(submission_id);
-        submissionAlgorithmDetails.setMemory_used(total_memory_used.get() / (1024 * 1024));
+        submissionAlgorithmDetails.setMemory_used(total_memory_used / (1024 * 1024));
         submissionAlgorithmDetails.setTime_used((int) (total_time_used / 1000000));
 
         submissionAlgorithmDetailsMapper.insert(submissionAlgorithmDetails);
@@ -1578,6 +1580,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         problemAlgorithmBankVo.setDescription(problemAlgorithmBank.getDescription());
         problemAlgorithmBankVo.setTest_total(problemAlgorithmBank.getTest_total());
         problemAlgorithmBankVo.setAc_total(problemAlgorithmBank.getAc_total());
+        problemAlgorithmBankVo.setUrl(problemAlgorithmBank.getUrl());
 
         QueryWrapper<ProblemAlgorithmLimit> problemAlgorithmLimitQueryWrapper = new QueryWrapper<>();
         problemAlgorithmLimitQueryWrapper.eq("problem_id", problemAlgorithmBank.getProblem_id());
