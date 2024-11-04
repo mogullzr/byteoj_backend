@@ -68,8 +68,24 @@
             <option name="tableUIInfoList">
               <list>
                 <TableUIInfo>
-                  <option name="className" value="CompetitionAcProblemsAlgorithm" />
-                  <option name="tableName" value="competition_ac_problems_algorithm" />
+                  <option name="className" value="Course" />
+                  <option name="tableName" value="course" />
+                </TableUIInfo>
+                <TableUIInfo>
+                  <option name="className" value="CourseProblems" />
+                  <option name="tableName" value="course_problems" />
+                </TableUIInfo>
+                <TableUIInfo>
+                  <option name="className" value="CourseProblemsAcNum" />
+                  <option name="tableName" value="course_problems_ac_num" />
+                </TableUIInfo>
+                <TableUIInfo>
+                  <option name="className" value="CourseUserAcProblem" />
+                  <option name="tableName" value="course_user_ac_problem" />
+                </TableUIInfo>
+                <TableUIInfo>
+                  <option name="className" value="CourseUserAcStatus" />
+                  <option name="tableName" value="course_user_ac_status" />
                 </TableUIInfo>
               </list>
             </option>

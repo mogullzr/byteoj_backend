@@ -1,4 +1,4 @@
-package com.example.backend.models.vo;
+package com.example.backend.models.vo.submission;
 
 import lombok.Data;
 

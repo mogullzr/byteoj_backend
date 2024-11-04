@@ -3,7 +3,8 @@ package com.example.backend.service.competition;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.backend.models.domain.competiton.Competitions;
 import com.example.backend.models.request.CompetitionAddRequest;
-import com.example.backend.models.vo.SubmissionsAlgorithmRecordsVo;
+import com.example.backend.models.vo.UserVo;
+import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import com.example.backend.models.vo.competition.CompetitionInfoVo;
 import com.example.backend.models.vo.competition.CompetitionRankVo;
 
@@ -111,4 +112,11 @@ public interface CompetitionsService extends IService<Competitions> {
      * @param httpServletResponse 前端请求
      */
     void competitionAdminGetRankExcel(Long competitionId, Long uuid, HttpServletResponse httpServletResponse) throws IOException;
+
+    /**
+     * 放回榜单前十用户信息以及竞赛分数
+     *
+     * @return 竞赛分数榜单前十
+     */
+    List<UserVo> competitionSearchRankTop10();
 }

@@ -1,10 +1,9 @@
 package com.example.backend.models.vo.competition;
 
-import com.example.backend.models.vo.SubmissionsAlgorithmRecordsVo;
+import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.util.Date;
 import java.util.List;
 
 @Data

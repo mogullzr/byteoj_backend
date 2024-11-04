@@ -3,8 +3,7 @@ package com.example.backend.service.math408;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.backend.models.domain.math408.ProblemMath408Bank;
 import com.example.backend.models.request.ProblemMath408Request;
-import com.example.backend.models.vo.ProblemMath408BankVo;
-import io.swagger.models.auth.In;
+import com.example.backend.models.vo.problem.ProblemMath408BankVo;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;

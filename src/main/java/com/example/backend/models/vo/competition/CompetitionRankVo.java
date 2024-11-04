@@ -2,7 +2,6 @@
 
 package com.example.backend.models.vo.competition;
 
-import com.example.backend.models.vo.SubmissionsAlgorithmRecordsVo;
 import lombok.Data;
 
 import java.io.Serializable;

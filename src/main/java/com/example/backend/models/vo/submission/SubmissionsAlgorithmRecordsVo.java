@@ -1,6 +1,5 @@
-package com.example.backend.models.vo;
+package com.example.backend.models.vo.submission;
 
-import com.example.backend.models.domain.algorithm.submission.SubmissionAlgorithmDetails;
 import lombok.Data;
 
 import java.io.Serializable;

@@ -1,7 +1,6 @@
 package com.example.backend.service.Impl.posts;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.injector.methods.SelectCount;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.backend.common.ErrorCode;
@@ -11,8 +10,8 @@ import com.example.backend.models.domain.posts.*;
 import com.example.backend.models.domain.user.User;
 import com.example.backend.models.request.PostsCommentRequest;
 import com.example.backend.models.request.PostsRequest;
-import com.example.backend.models.vo.PostsCommentVo;
-import com.example.backend.models.vo.PostsVo;
+import com.example.backend.models.vo.post.PostsCommentVo;
+import com.example.backend.models.vo.post.PostsVo;
 import com.example.backend.service.posts.PostsService;
 import org.springframework.stereotype.Service;
 

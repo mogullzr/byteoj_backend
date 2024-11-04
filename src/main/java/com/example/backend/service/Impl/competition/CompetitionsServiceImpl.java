@@ -2,8 +2,6 @@ package com.example.backend.service.Impl.competition;
 
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.support.ExcelTypeEnum;
-import com.alibaba.excel.write.metadata.style.WriteCellStyle;
-import com.alibaba.excel.write.style.HorizontalCellStyleStrategy;
 import com.alibaba.excel.write.style.column.LongestMatchColumnWidthStyleStrategy;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -18,28 +16,26 @@ import com.example.backend.models.domain.competiton.*;
 import com.example.backend.models.domain.user.User;
 import com.example.backend.models.request.CompetitionAddRequest;
 import com.example.backend.models.request.CompetitionProblems;
-import com.example.backend.models.vo.SubmissionsAlgorithmRecordsVo;
+import com.example.backend.models.vo.UserVo;
+import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import com.example.backend.models.vo.competition.CompetitionInfoVo;
 import com.example.backend.models.vo.competition.CompetitionProblemInfo;
 import com.example.backend.models.vo.competition.CompetitionRankDetailVo;
 import com.example.backend.models.vo.competition.CompetitionRankVo;
 import com.example.backend.service.competition.CompetitionsService;
+import com.example.backend.service.user.UserService;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
 import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -54,29 +50,33 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
     implements CompetitionsService{
 
     @Resource
-    CompetitionsMapper competitionsMapper;
+    private CompetitionsMapper competitionsMapper;
 
     @Resource
-    CompetitionsUserMapper competitionsUserMapper;
+    private CompetitionsUserMapper competitionsUserMapper;
 
     @Resource
-    CompetitionAcProblemsAlgorithmMapper competitionAcProblemsAlgorithmMapper;
+    private CompetitionAcProblemsAlgorithmMapper competitionAcProblemsAlgorithmMapper;
     @Resource
-    CompetitionsProblemsAlgorithmMapper competitionsProblemsAlgorithmMapper;
+    private CompetitionsProblemsAlgorithmMapper competitionsProblemsAlgorithmMapper;
 
     @Resource
-    CompetitionsProblemsMath408Mapper competitionsProblemsMath408Mapper;
+    private CompetitionsProblemsMath408Mapper competitionsProblemsMath408Mapper;
 
     @Resource
-    ProblemAlgorithmBankMapper problemAlgorithmBankMapper;
+    private ProblemAlgorithmBankMapper problemAlgorithmBankMapper;
 
     @Resource
-    SubmissionsAlgorithmMapper submissionsAlgorithmMapper;
+    private SubmissionsAlgorithmMapper submissionsAlgorithmMapper;
 
     @Resource
-    SubmissionAlgorithmDetailsMapper submissionAlgorithmDetailsMapper;
+    private SubmissionAlgorithmDetailsMapper submissionAlgorithmDetailsMapper;
     @Resource
-    UserMapper userMapper;
+    private UserMapper userMapper;
+
+    @Resource
+    private UserService userService;
+
     /**
      * 盐值，混淆密码,不懂的去了解MD5加密方式
      */
@@ -700,6 +700,28 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
 
         // 最后根据这些信息进行Excel表格写入操作
         SetRankExcel(competition.getCompetition_name(), competitionRankVo, httpServletResponse);
+    }
+
+    @Override
+    public List<UserVo> competitionSearchRankTop10() {
+        Page<User> page = new Page<>(1, 10);
+        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
+        userQueryWrapper.orderByDesc("rating");
+
+        List<User> records = userMapper.selectPage(page, userQueryWrapper).getRecords();
+        List<UserVo> userVos = new ArrayList<>();
+
+        for (User record : records) {
+            UserVo safetyUser = new UserVo();
+            Integer rating = record.getRating();
+
+            safetyUser.setUsername(record.getUsername());
+            safetyUser.setRating(rating);
+            safetyUser.setUuid(record.getUuid());
+            safetyUser.setRated(getRating(record));
+            userVos.add(safetyUser);
+        }
+        return userVos;
     }
 
     /**

@@ -11,7 +11,7 @@ import com.example.backend.mapper.*;
 import com.example.backend.models.domain.math408.*;
 import com.example.backend.models.domain.user.User;
 import com.example.backend.models.request.ProblemMath408Request;
-import com.example.backend.models.vo.ProblemMath408BankVo;
+import com.example.backend.models.vo.problem.ProblemMath408BankVo;
 import com.example.backend.service.math408.ProblemMath408Service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

@@ -110,4 +110,9 @@ public class UserVo implements Serializable {
      * 个人网站地址
      */
     private String url;
+
+    /**
+     * 竞赛等级
+     */
+    private Integer rated;
 }

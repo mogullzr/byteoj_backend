@@ -4,8 +4,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.backend.models.domain.posts.Posts;
 import com.example.backend.models.request.PostsCommentRequest;
 import com.example.backend.models.request.PostsRequest;
-import com.example.backend.models.vo.PostsCommentVo;
-import com.example.backend.models.vo.PostsVo;
+import com.example.backend.models.vo.post.PostsCommentVo;
+import com.example.backend.models.vo.post.PostsVo;
 
 import java.util.List;
 

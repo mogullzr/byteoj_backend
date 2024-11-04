@@ -635,3 +635,87 @@ create table website_background_pictures
         foreign key (uuid) references user (uuid)
 )
     comment '网站的背景图片集';
+
+-- auto-generated definition
+create table course
+(
+    course_id                bigint           not null comment '课程id'
+        primary key,
+    course_title             varchar(256)     not null comment '课程名称',
+    course_title_description varchar(256)     not null comment '课程描述',
+    create_name              varchar(256)     not null comment '创建者用户名',
+    avatar                   text             not null comment '课程头像地址',
+    num                      bigint default 0 not null comment '参加人数',
+    start_time               datetime         null comment '课程开始时间',
+    end_time                 datetime         null comment '结束时间',
+    is_delete                int    default 0 not null comment '逻辑删除',
+    create_time              datetime         not null comment '创建时间',
+    constraint course_pk2
+        unique (course_id)
+);
+
+-- auto-generated definition
+create table course_problems
+(
+    course_problem_id      bigint auto_increment comment '课程问题ID'
+        primary key,
+    course_problems        text             not null comment '每个专栏的标题名称',
+    problem_algorithm_type text             not null comment '每个专栏里的类别名称',
+    problem_id_list        text             not null comment '每个专栏类别的题目ID列表',
+    course_id              bigint           not null comment '课程id',
+    create_time            datetime         not null comment '创建时间',
+    update_time            datetime         not null comment '更新时间',
+    is_delete              bigint default 0 not null comment '逻辑删除',
+    constraint course_problems_pk2
+        unique (course_problem_id),
+    constraint course_problems_course_course_id_fk
+        foreign key (course_id) references course (course_id)
+)
+    comment '课程专栏信息';
+
+-- auto-generated definition
+create table course_problems_ac_num
+(
+    ac_num_id  bigint auto_increment comment 'ID'
+        primary key,
+    course_id  bigint        not null comment '课程ID',
+    problem_id bigint        not null comment '问题ID',
+    num        int default 0 not null comment '通过题目的数量',
+    constraint course_problems_ac_num_pk2
+        unique (ac_num_id),
+    constraint course_problems_ac_num_course_course_id_fk
+        foreign key (course_id) references course (course_id)
+)
+    comment '某课程某题目的通过人数';
+
+-- auto-generated definition
+create table course_user_ac_problem
+(
+    course_ac_problem_id bigint auto_increment comment 'ID'
+        primary key,
+    uuid                 bigint           not null comment '用户ID',
+    num                  bigint default 0 not null comment '通过题目数量',
+    course_id            bigint           not null comment '课程ID',
+    constraint course_user_ac_problem_pk2
+        unique (course_ac_problem_id),
+    constraint course_user_ac_problem_course_course_id_fk
+        foreign key (course_id) references course (course_id)
+)
+    comment '用户AC题目基本信息';
+
+-- auto-generated definition
+create table course_user_ac_status
+(
+    ac_status_id           bigint auto_increment comment 'ID'
+        primary key,
+    problem_id             bigint           not null comment '问题ID',
+    problem_name           varchar(256)     not null comment '问题名称',
+    course_problems_ac_num bigint default 0 not null comment '某课程某题目的通过人数',
+    course_id              bigint           not null comment '课程ID',
+    constraint course_user_ac_status_pk2
+        unique (ac_status_id),
+    constraint course_user_ac_status_course_course_id_fk
+        foreign key (course_id) references course (course_id)
+)
+    comment '用户每道题目的代码提交状态';
+

@@ -9,7 +9,8 @@ import com.example.backend.exception.BusinessException;
 import com.example.backend.models.domain.user.User;
 import com.example.backend.models.request.CompetitionAddRequest;
 import com.example.backend.models.request.ProblemAlgorithmRequest;
-import com.example.backend.models.vo.SubmissionsAlgorithmRecordsVo;
+import com.example.backend.models.vo.UserVo;
+import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import com.example.backend.models.vo.competition.CompetitionInfoVo;
 import com.example.backend.models.vo.competition.CompetitionRankVo;
 import com.example.backend.service.algorithm.ProblemAlgorithmService;
@@ -23,7 +24,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -94,6 +94,16 @@ public class CompetitionController {
         }
 
         List<SubmissionsAlgorithmRecordsVo> result = competitionsService.competitionSearchRecords(competition_id, PageNum);
+        return ResultUtils.success(result);
+    }
+
+    @PostMapping("/search/top")
+    private BaseResponse<List<UserVo>> competitionSearchRankTop10(HttpServletRequest httpServletRequest) {
+        if (httpServletRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"信息不能为空");
+        }
+
+        List<UserVo> result = competitionsService.competitionSearchRankTop10();
         return ResultUtils.success(result);
     }
 
@@ -197,5 +207,4 @@ public class CompetitionController {
         competitionsService.competitionAdminGetRankExcel(competition_id, uuid, httpServletResponse);
         return null;
     }
-
 }
