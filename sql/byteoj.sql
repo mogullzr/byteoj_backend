@@ -719,3 +719,17 @@ create table course_user_ac_status
 )
     comment '用户每道题目的代码提交状态';
 
+-- auto-generated definition
+create table user_last_enter
+(
+    id           bigint auto_increment comment 'ID'
+        primary key,
+    uuid         bigint                                                             null comment '用户ID',
+    url          varchar(256) default 'https://www.byteoj.com/problems/algorithm/1' not null comment '题目链接',
+    problem_name varchar(256)                                                       null comment '题目编号 + 题目名称',
+    constraint user_last_enter_pk2
+        unique (id),
+    constraint user_last_enter_user_uuid_fk
+        foreign key (uuid) references user (uuid)
+);
+

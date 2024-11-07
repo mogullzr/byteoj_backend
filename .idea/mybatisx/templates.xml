@@ -68,24 +68,8 @@
             <option name="tableUIInfoList">
               <list>
                 <TableUIInfo>
-                  <option name="className" value="Course" />
-                  <option name="tableName" value="course" />
-                </TableUIInfo>
-                <TableUIInfo>
-                  <option name="className" value="CourseProblems" />
-                  <option name="tableName" value="course_problems" />
-                </TableUIInfo>
-                <TableUIInfo>
-                  <option name="className" value="CourseProblemsAcNum" />
-                  <option name="tableName" value="course_problems_ac_num" />
-                </TableUIInfo>
-                <TableUIInfo>
-                  <option name="className" value="CourseUserAcProblem" />
-                  <option name="tableName" value="course_user_ac_problem" />
-                </TableUIInfo>
-                <TableUIInfo>
-                  <option name="className" value="CourseUserAcStatus" />
-                  <option name="tableName" value="course_user_ac_status" />
+                  <option name="className" value="UserLastEnter" />
+                  <option name="tableName" value="user_last_enter" />
                 </TableUIInfo>
               </list>
             </option>

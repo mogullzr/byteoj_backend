@@ -10,6 +10,7 @@ import com.example.backend.exception.BusinessException;
 import com.example.backend.mapper.ProblemAlgorithmBankMapper;
 import com.example.backend.mapper.ProblemAlgorithmTagsMapper;
 import com.example.backend.mapper.SubmissionsAlgorithmMapper;
+import com.example.backend.models.domain.algorithm.UserLastEnter;
 import com.example.backend.models.domain.algorithm.probleminfo.ProblemAlgorithmBank;
 import com.example.backend.models.domain.algorithm.submission.SubmissionsAlgorithm;
 import com.example.backend.models.domain.algorithm.tag.ProblemAlgorithmTags;
@@ -22,6 +23,7 @@ import com.example.backend.models.vo.competition.CompetitionProblemsVo;
 import com.example.backend.models.vo.problem.ProblemAlgorithmBankVo;
 import com.example.backend.models.vo.problem.ProblemDailyNumVo;
 import com.example.backend.models.vo.problem.ProblemTagsVo;
+import com.example.backend.models.vo.problem.ProblemUserLastVo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import com.example.backend.service.algorithm.ProblemAlgorithmService;
 import com.example.backend.service.user.UserService;
@@ -70,7 +72,7 @@ public class ProblemAlgorithmController {
         return ResultUtils.success(result);
     }
 
-    @AccessLimit(seconds=5, maxCount=1000, needLogin=false)
+    @AccessLimit(seconds=5, maxCount=30, needLogin=false)
     @PostMapping("/search/page")
     private BaseResponse<List<ProblemAlgorithmBankVo>> problemAlgorithmSearchByPage(Integer pageNum, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -163,7 +165,7 @@ public class ProblemAlgorithmController {
         return ResultUtils.success(result);
     }
 
-    @AccessLimit(seconds=1, maxCount=1000, needLogin = true)
+    @AccessLimit(seconds=5, maxCount=30, needLogin = true)
     @PostMapping("/search/problems")
     private BaseResponse<List<CompetitionProblemsVo>> competitionSearchProblems(Long competition_id, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -176,7 +178,7 @@ public class ProblemAlgorithmController {
         return ResultUtils.success(result);
     }
 
-    @AccessLimit(seconds=5, maxCount=1000, needLogin = true)
+    @AccessLimit(seconds=5, maxCount=40, needLogin = true)
     @PostMapping("/search/problem")
     private BaseResponse<ProblemAlgorithmBankVo> competitionSearchProblem(Long competition_id, String index, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -189,7 +191,7 @@ public class ProblemAlgorithmController {
         return ResultUtils.success(result);
     }
 
-    @AccessLimit(seconds=5, maxCount=100, needLogin=false)
+    @AccessLimit(seconds=5, maxCount=30, needLogin=false)
     @PostMapping("/search/keyword")
     private BaseResponse<List<ProblemAlgorithmBankVo>> problemAlgorithmSearchByKeyword(String keyWord, Long PageNum, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -332,7 +334,7 @@ public class ProblemAlgorithmController {
         return ResultUtils.success(result);
     }
 
-    @AccessLimit(seconds=5, maxCount=1000, needLogin=true)
+    @AccessLimit(seconds=5, maxCount=30, needLogin=true)
     @PostMapping("/records/recordId")
     private BaseResponse<SubmissionsAlgorithmRecordsVo> problemAlgorithmRecordByRecordId(HttpServletRequest httpServletRequest, Long submission_id, Long competition_id) {
         if (httpServletRequest == null) {
@@ -429,7 +431,7 @@ public class ProblemAlgorithmController {
 
     }
 
-    @AccessLimit(seconds=5, maxCount=1000, needLogin=true)
+    @AccessLimit(seconds=5, maxCount=30, needLogin=true)
     @PostMapping("/judge/test")
     private BaseResponse<List<Judge>> problemAlgorithmJudge(@RequestBody JudgeRequest judgeRequest, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -444,7 +446,7 @@ public class ProblemAlgorithmController {
         return ResultUtils.success(result);
     }
 
-    @AccessLimit(seconds=5, maxCount=1000, needLogin=true)
+    @AccessLimit(seconds=5, maxCount=20, needLogin=true)
     @PostMapping("/judge/submit")
     private BaseResponse<Judge> problemAlgorithmJudgeSubmit(@RequestBody JudgeRequest judgeRequest, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -474,6 +476,35 @@ public class ProblemAlgorithmController {
         }
 
         Boolean result = problemAlgorithmService.problemAlgorithmRecordAdd(uuid, judgeRequest);
+        return ResultUtils.success(result);
+    }
+
+
+    @AccessLimit(seconds = 3, maxCount = 20, needLogin = true)
+    @GetMapping("/search/problemLast")
+    private BaseResponse<ProblemUserLastVo> problemAlgorithmUserLast(HttpServletRequest httpServletRequest){
+        if (httpServletRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
+        }
+
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        Long uuid = loginUser.getUuid();
+
+        ProblemUserLastVo problemUserLastVo = problemAlgorithmService.problemAlgorithmUserLast(uuid);
+        return ResultUtils.success(problemUserLastVo);
+    }
+
+    @AccessLimit(seconds = 3, maxCount = 20, needLogin = true)
+    @GetMapping("/set/problemLast")
+    private BaseResponse<Boolean> problemAlgorithmSetUserLast(UserLastEnter userLastEnter, HttpServletRequest httpServletRequest){
+        if (httpServletRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
+        }
+
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        Long uuid = loginUser.getUuid();
+
+        boolean result = problemAlgorithmService.problemAlgorithmSetUserLast(userLastEnter, uuid);
         return ResultUtils.success(result);
     }
 }

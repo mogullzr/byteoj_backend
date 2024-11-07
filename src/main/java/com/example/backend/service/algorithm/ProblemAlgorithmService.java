@@ -1,6 +1,7 @@
 package com.example.backend.service.algorithm;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.example.backend.models.domain.algorithm.UserLastEnter;
 import com.example.backend.models.domain.algorithm.probleminfo.ProblemAlgorithmBank;
 import com.example.backend.models.domain.judge.Judge;
 import com.example.backend.models.request.JudgeRequest;
@@ -10,6 +11,7 @@ import com.example.backend.models.vo.competition.CompetitionProblemsVo;
 import com.example.backend.models.vo.problem.ProblemAlgorithmBankVo;
 import com.example.backend.models.vo.problem.ProblemDailyNumVo;
 import com.example.backend.models.vo.problem.ProblemTagsVo;
+import com.example.backend.models.vo.problem.ProblemUserLastVo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 
 import javax.servlet.http.HttpServletRequest;
@@ -224,5 +226,20 @@ public interface ProblemAlgorithmService extends IService<ProblemAlgorithmBank> 
      */
     Judge problemAlgorithmSubmit(JudgeRequest judgeRequest, Long uuid);
 
+    /**]
+     * 返回当前用户上一次访问题目的链接
+     *
+     * @param uuid
+     * @return
+     */
+    ProblemUserLastVo problemAlgorithmUserLast(Long uuid);
 
+    /**
+     * 是否设置信息成功
+     *
+     * @param userLastEnter 前端的请求
+     * @param uuid 用户ID
+     * @return 是否设置成功
+     */
+    boolean problemAlgorithmSetUserLast(UserLastEnter userLastEnter, Long uuid);
 }

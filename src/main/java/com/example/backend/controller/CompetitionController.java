@@ -41,7 +41,7 @@ public class CompetitionController {
     @Resource
     UserService userService;
 
-//    @AccessLimit(seconds=5, maxCount=30, needLogin=false)
+    @AccessLimit(seconds=3, maxCount=20, needLogin=false)
     @PostMapping("/search/page")
     private BaseResponse<List<CompetitionInfoVo>> competitionSearchByPage(Long PageNum, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -58,7 +58,7 @@ public class CompetitionController {
         return ResultUtils.success(resultList);
     }
 
-    @AccessLimit(seconds=5, maxCount=50, needLogin=false)
+    @AccessLimit(seconds=3, maxCount=30, needLogin=false)
     @PostMapping("/search/competitionId")
     private BaseResponse<CompetitionInfoVo> competitionSearchByCompetitionId(Long competition_id, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -76,7 +76,7 @@ public class CompetitionController {
     }
 
 
-    @AccessLimit(seconds = 5, maxCount = 1000, needLogin = true)
+    @AccessLimit(seconds = 3, maxCount = 20, needLogin = true)
     @PostMapping("/search/rank/pageNum")
     private BaseResponse<CompetitionRankVo> competitionSearchRank(Long competition_id, Integer PageNum, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -86,7 +86,7 @@ public class CompetitionController {
         CompetitionRankVo result = competitionsService.competitionSearchRank(competition_id, PageNum);
         return ResultUtils.success(result);
     }
-    @AccessLimit(seconds = 5, maxCount = 1000, needLogin = true)
+    @AccessLimit(seconds = 3, maxCount = 30, needLogin = true)
     @PostMapping("/search/records/pageNum")
     private BaseResponse<List<SubmissionsAlgorithmRecordsVo>> competitionSearchRecord(Long competition_id, Long PageNum, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -107,7 +107,7 @@ public class CompetitionController {
         return ResultUtils.success(result);
     }
 
-    @AccessLimit(seconds = 5,maxCount = 1000,needLogin = true)
+    @AccessLimit(seconds = 3,maxCount = 15,needLogin = true)
     @PostMapping("/user/add")
     private BaseResponse<Long> competitionAddByUser(@RequestBody CompetitionAddRequest competitionAddRequest,HttpServletRequest httpServletRequest){
         if (httpServletRequest == null) {
@@ -135,7 +135,7 @@ public class CompetitionController {
         return ResultUtils.success(result);
     }
 
-    @AccessLimit(seconds=5, maxCount=1000, needLogin=true)
+    @AccessLimit(seconds=5, maxCount=25, needLogin=true)
     @PostMapping("/user/modify")
     private BaseResponse<Boolean> competitionModifyByUser(@RequestBody CompetitionAddRequest competitionAddRequest, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -163,7 +163,7 @@ public class CompetitionController {
 
         return ResultUtils.success(result);
     }
-    @AccessLimit(seconds=5, maxCount=1000, needLogin=true)
+    @AccessLimit(seconds=1, maxCount=5, needLogin=true)
     @PostMapping("/join")
     private BaseResponse<Boolean> competitionUserJoin(Long competition_id, String password, HttpServletRequest httpServletRequest){
         if (httpServletRequest == null) {
@@ -178,7 +178,7 @@ public class CompetitionController {
 
     }
 
-    @AccessLimit(seconds=5, maxCount=1000, needLogin=true)
+    @AccessLimit(seconds=1, maxCount=5, needLogin=true)
     @PostMapping("/join/cancel")
     private BaseResponse<Boolean> competitionUserJoinCancel(Long competition_id, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -192,7 +192,7 @@ public class CompetitionController {
         return ResultUtils.success(result);
     }
 
-    @AccessLimit(seconds = 1, maxCount = 1000, needLogin = true)
+    @AccessLimit(seconds = 3, maxCount = 15, needLogin = true)
     @SneakyThrows
     @ResponseBody
     @GetMapping("/get/rank/excel")

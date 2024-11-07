@@ -58,13 +58,15 @@ public class FangshuaInterceptor extends HandlerInterceptorAdapter {
             }
             // 从redis中获取用户访问的次数
             String ip_visit_count = RedisUtils.getStr(key);
-
+            Long expire = RedisUtils.getExpire(key);
             // 第一次访问
             if(ip_visit_count == null){
                 RedisUtils.set(key, 1, seconds, TimeUnit.SECONDS);
             } else if(Long.parseLong(ip_visit_count) < maxCount){
                 // 次数 + 1
-                RedisUtils.set(key, Long.parseLong(ip_visit_count) + 1, RedisUtils.getExpire(key), TimeUnit.SECONDS);
+                if (expire > 0) {
+                    RedisUtils.set(key, Long.parseLong(ip_visit_count) + 1, expire, TimeUnit.SECONDS);
+                }
             } else {
                 // 超出访问次数，封禁2min
                 if (user == null) {

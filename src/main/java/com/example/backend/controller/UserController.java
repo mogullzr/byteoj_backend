@@ -86,7 +86,7 @@ public class UserController {
         return ResultUtils.success(result);
     }
 
-    @AccessLimit(seconds=5, maxCount=30, needLogin=false)
+    @AccessLimit(seconds=5, maxCount=20, needLogin=false)
     @PostMapping("/admin/login")
     private BaseResponse<UserVo> adminLogin(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest httpServletRequest) {
         if (userLoginRequest == null) {

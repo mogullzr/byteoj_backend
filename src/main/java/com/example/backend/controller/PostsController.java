@@ -40,7 +40,7 @@ public class  PostsController {
     @Resource
     private UserService userService;
 
-    @AccessLimit(seconds=5, maxCount=1000, needLogin=true)
+    @AccessLimit(seconds=3, maxCount=15, needLogin=true)
     @PostMapping("/add")
     private BaseResponse<Boolean> PostAdd(@RequestBody PostsRequest postsRequest, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -61,7 +61,7 @@ public class  PostsController {
 
     }
 
-    @AccessLimit(seconds=5, maxCount=20, needLogin=true)
+    @AccessLimit(seconds=3, maxCount=10, needLogin=true)
     @PostMapping("/delete")
     private BaseResponse<Boolean> PostDelete(Long post_id, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -81,7 +81,7 @@ public class  PostsController {
         return ResultUtils.success(result);
     }
 
-    @AccessLimit(seconds=5, maxCount=20, needLogin=true)
+    @AccessLimit(seconds=3, maxCount=15, needLogin=true)
     @PostMapping("/modify")
     private BaseResponse<Boolean> PostModify(@RequestBody PostsRequest postsRequest, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -95,7 +95,7 @@ public class  PostsController {
         return ResultUtils.success(result);
     }
 
-//    @AccessLimit(seconds=5, maxCount=30, needLogin=false)
+    @AccessLimit(seconds=5, maxCount=30, needLogin=false)
     @PostMapping("/search/page")
     private BaseResponse<List<PostsVo>> PostSearchByPage(Long PageNum, Integer uuid, HttpServletRequest httpServletRequest){
         if(httpServletRequest == null) {
@@ -106,7 +106,7 @@ public class  PostsController {
         return ResultUtils.success(result);
     }
 
-    @AccessLimit(seconds=5, maxCount=1000, needLogin=false)
+    @AccessLimit(seconds=3, maxCount=15, needLogin=false)
     @PostMapping("/search/postsId")
     private BaseResponse<PostsVo> PostSearchByPostsId(Long post_id, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -122,7 +122,7 @@ public class  PostsController {
         return ResultUtils.success(postsVo);
     }
 
-    @AccessLimit(seconds=5, maxCount=20, needLogin=false)
+    @AccessLimit(seconds=3, maxCount=15, needLogin=false)
     @PostMapping("/search/comment")
     private BaseResponse<List<List<PostsCommentVo>>> PostSearchCommentByPostId(Long post_id, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -265,7 +265,7 @@ public class  PostsController {
         return ResultUtils.success(result);
     }
 
-    @AccessLimit(seconds=5, maxCount=1000, needLogin=true)
+    @AccessLimit(seconds=5, maxCount=30, needLogin=true)
     @PostMapping("/post/answer/problemId")
     private BaseResponse<List<PostsVo>> PostGetPostByProblemId(Long problem_id, Long PageNum, Long status, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {

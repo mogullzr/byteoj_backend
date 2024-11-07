@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.backend.common.ErrorCode;
+import com.example.backend.common.ResultUtils;
 import com.example.backend.exception.BusinessException;
 import com.example.backend.mapper.*;
 import com.example.backend.models.domain.algorithm.probleminfo.ProblemAlgorithmBank;
@@ -31,6 +32,7 @@ import com.example.backend.models.vo.competition.CompetitionProblemsVo;
 import com.example.backend.models.vo.problem.ProblemAlgorithmBankVo;
 import com.example.backend.models.vo.problem.ProblemDailyNumVo;
 import com.example.backend.models.vo.problem.ProblemTagsVo;
+import com.example.backend.models.vo.problem.ProblemUserLastVo;
 import com.example.backend.models.vo.submission.SubmissionAlgorithmDetailRecordVo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import com.example.backend.service.algorithm.ProblemAlgorithmService;
@@ -38,7 +40,9 @@ import com.example.backend.models.domain.algorithm.*;
 import com.example.backend.models.domain.user.User;
 import com.example.backend.models.request.ProblemAlgorithmRequest;
 import com.example.backend.service.user.UserService;
+import com.example.backend.utils.RedisUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -48,6 +52,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -101,7 +106,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
     private UserService userService;
 
     @Resource
-    private RestTemplate restTemplate;
+    private UserLastEnterMapper userLastEnterMapper;
     @Override
     public List<ProblemAlgorithmBankVo> problemAlgorithmSearchAll(Integer uuid, HttpServletRequest httpServletRequest) {
         QueryWrapper<ProblemAlgorithmBank> queryWrapper = new QueryWrapper<>();
@@ -502,7 +507,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
     }
 
     @Override
-    public List<SubmissionsAlgorithmRecordsVo> problemRecordsByUuidAndProblemIdByPage(Long problem_id, Long uuid, Long PageNum) {
+    public List<SubmissionsAlgorithmRecordsVo>  problemRecordsByUuidAndProblemIdByPage(Long problem_id, Long uuid, Long PageNum) {
         Page<SubmissionsAlgorithm> page = new Page<>(PageNum, 10);
         QueryWrapper<SubmissionsAlgorithm> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("problem_id", problem_id);
@@ -514,7 +519,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         for (int item = 0; item < submissionsAlgorithm.size(); item++) {
             QueryWrapper<SubmissionAlgorithmDetails> submissionAlgorithmDetailsQueryWrapper = new QueryWrapper<>();
             submissionAlgorithmDetailsQueryWrapper.eq("submission_id", submissionsAlgorithm.get(item).getSubmission_id());
-
+            submissionAlgorithmDetailsQueryWrapper.orderByDesc("submission_id");
             submissionsAlgorithmRecordsVoList.add(getSubmissionsAlgorithmRecordsVO(submissionsAlgorithm.get(item), submissionAlgorithmDetailsMapper.selectOne(submissionAlgorithmDetailsQueryWrapper)));
         }
 
@@ -1510,6 +1515,60 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
                 .execute();  // 执行请求
 
         return lastJudge;
+    }
+
+    @Override
+    public ProblemUserLastVo problemAlgorithmUserLast(Long uuid) {
+        String key = "/problem/set/problemLast" + uuid;
+        String last_url_problem = RedisUtils.getStr(key);
+        String last_url = "";
+        String last_problem_name = "";
+        ProblemUserLastVo problemUserLastVo = new ProblemUserLastVo();
+        if (Objects.isNull(last_url_problem) || last_url_problem.isEmpty()) {
+            QueryWrapper<UserLastEnter> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("uuid", uuid);
+            UserLastEnter userLastEnter = userLastEnterMapper.selectOne(queryWrapper);
+            last_url = userLastEnter.getUrl();
+            last_problem_name = userLastEnter.getProblem_name();
+            RedisUtils.set(key, last_url + "??" + last_url_problem, 30 * 60, TimeUnit.SECONDS);
+        } else {
+            String[] last_url_problem_list = last_url_problem.split("\\?\\?");
+            last_url = last_url_problem_list[0];
+            last_problem_name = last_url_problem_list[1];
+            if (Objects.isNull(last_url) || Objects.isNull(last_problem_name) || last_url.isEmpty() || last_problem_name.isEmpty()) {
+                QueryWrapper<UserLastEnter> queryWrapper = new QueryWrapper<>();
+                queryWrapper.eq("uuid", uuid);
+                UserLastEnter userLastEnter = userLastEnterMapper.selectOne(queryWrapper);
+                last_url = userLastEnter.getUrl();
+                last_problem_name = userLastEnter.getProblem_name();
+                RedisUtils.set(key, last_url + "??" + last_url_problem, 30 * 60, TimeUnit.SECONDS);
+            }
+        }
+
+        problemUserLastVo.setProblem_url(last_url);
+        problemUserLastVo.setProblem_name(last_problem_name);
+        return problemUserLastVo;
+    }
+
+    @Override
+    public boolean problemAlgorithmSetUserLast(UserLastEnter userLastEnter, Long uuid) {
+        String last_url = userLastEnter.getUrl();
+        String last_problem_name = userLastEnter.getProblem_name();
+        userLastEnter.setUuid(uuid);
+
+        if (StringUtils.isAnyBlank(last_problem_name, last_url)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不允许为空");
+        }
+
+        QueryWrapper<UserLastEnter> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("uuid", uuid);
+        Long count = userLastEnterMapper.selectCount(queryWrapper);
+        if (count == 0) {
+            userLastEnterMapper.insert(userLastEnter);
+        } else {
+            userLastEnterMapper.update(userLastEnter, queryWrapper);
+        }
+        return RedisUtils.set("/problem/set/problemLast" + uuid, last_url + "??" + last_problem_name, 30 * 60, TimeUnit.SECONDS);
     }
 
     private ProblemAlgorithmBank getProblemAlgorithmBank(Long problem_id, int is_delete) {

@@ -34,7 +34,7 @@ public class CourseController {
     @Resource
     private CourseService courseService;
 
-    @AccessLimit(seconds = 1, maxCount =  1000, needLogin = false)
+    @AccessLimit(seconds = 3, maxCount =  15, needLogin = false)
     @PostMapping("/search/pageNum")
     private BaseResponse<List<Course>> courseSearchByPageNum(Long PageNum, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -46,7 +46,7 @@ public class CourseController {
         return ResultUtils.success(courseList);
     }
 
-    @AccessLimit(seconds = 1, maxCount =  1000, needLogin = true)
+    @AccessLimit(seconds = 3, maxCount =  25, needLogin = true)
     @PostMapping("/search/courseId")
     private BaseResponse<Course> courseSearchByCourseId(Long CourseId, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -61,7 +61,7 @@ public class CourseController {
         return ResultUtils.success(course);
     }
 
-    @AccessLimit(seconds = 1, maxCount =  1000, needLogin = true)
+    @AccessLimit(seconds = 3, maxCount =  30, needLogin = true)
     @PostMapping("/search/problems")
     private BaseResponse<List<CourseProblemsVo>> courseSearchProblemsByCourseId(Long CourseId, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -90,7 +90,7 @@ public class CourseController {
 //
 //        return ResultUtils.success(courseProblemsVos);
 //    }
-    @AccessLimit(seconds = 1, maxCount =  1000, needLogin = true)
+    @AccessLimit(seconds = 3, maxCount =  10, needLogin = true)
     @PostMapping("/admin/add")
     private BaseResponse<Boolean> courseAdminAdd(@RequestBody CourseRequest courseRequest, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -107,7 +107,7 @@ public class CourseController {
         return ResultUtils.success(result);
     }
 
-    @AccessLimit(seconds = 1, maxCount =  1000, needLogin = true)
+    @AccessLimit(seconds = 3, maxCount =  12, needLogin = true)
     @PostMapping("/admin/delete")
     private BaseResponse<Boolean> courseAdminDelete(Long courseId, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -122,7 +122,7 @@ public class CourseController {
         return ResultUtils.success(result);
     }
 
-    @AccessLimit(seconds = 1, maxCount =  1000, needLogin = true)
+    @AccessLimit(seconds = 3, maxCount =  15, needLogin = true)
     @PostMapping("/admin/problem/set")
     private BaseResponse<Boolean> courseAdminProblemSet(@RequestBody CourseRequest courseRequest, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -138,7 +138,7 @@ public class CourseController {
         return ResultUtils.success(result);
     }
 
-    @AccessLimit(seconds = 1, maxCount =  1000, needLogin = true)
+    @AccessLimit(seconds = 3, maxCount =  10, needLogin = true)
     @PostMapping("/admin/user/set")
     private BaseResponse<Boolean> courseAdminUserSet(Long course_id, List<Long> user_list, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
