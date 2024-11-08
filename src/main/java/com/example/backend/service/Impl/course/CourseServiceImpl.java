@@ -20,7 +20,10 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @Slf4j
@@ -78,7 +81,14 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
             CourseProblemsVo courseProblemsVo = new CourseProblemsVo();
 
             courseProblemsVo.setProblems_type(courseProblems1.getCourse_problems());
-            List<Long> problem_id_list = Collections.singletonList(courseProblems1.getProblem_id_list()).stream().map(Long::parseLong).collect(Collectors.toList());
+            // 正则表达式分割
+            Pattern pattern = Pattern.compile("\\d+");
+            Matcher matcher = pattern.matcher(courseProblems1.getProblem_id_list());
+            List<Long> problem_id_list = Stream.generate(() -> matcher.find() ? matcher.group() : null)
+                    .takeWhile(Objects::nonNull)
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+
             List<CourseChildProblems> courseChildProblemsList = new ArrayList<>();
             List<CourseProblem> courseProblemList = new ArrayList<>();
             CourseChildProblems courseChildProblems = new CourseChildProblems();

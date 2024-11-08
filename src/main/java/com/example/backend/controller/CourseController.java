@@ -53,15 +53,12 @@ public class CourseController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
 
-        User loginUser = userService.getLoginUser(httpServletRequest);
-        Long uuid = loginUser.getUuid();
-
         Course course = courseService.courseSearchByCourseId(CourseId);
 
         return ResultUtils.success(course);
     }
 
-    @AccessLimit(seconds = 3, maxCount =  30, needLogin = true)
+//    @AccessLimit(seconds = 3, maxCount =  30, needLogin = true)
     @PostMapping("/search/problems")
     private BaseResponse<List<CourseProblemsVo>> courseSearchProblemsByCourseId(Long CourseId, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -69,8 +66,8 @@ public class CourseController {
         }
 
         User loginUser = userService.getLoginUser(httpServletRequest);
-        Long uuid = loginUser.getUuid();
-
+//        Long uuid = loginUser.getUuid();
+        Long uuid = 9L;
         List<CourseProblemsVo> courseProblemsVos = courseService.courseSearchProblemsByCourseId(CourseId, uuid);
 
         return ResultUtils.success(courseProblemsVos);
