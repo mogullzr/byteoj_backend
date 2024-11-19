@@ -102,6 +102,25 @@ logging:
     rollingpolicy:
       file-name-pattern: ${LOG_FILE}.%d{yyyy-MM-dd}.%i.txt
       max-file-size: 1MB
+
+anti:
+  reptile:
+    manager:
+      # 是否开启爬虫
+      enabled: true
+      ua-rule:
+        # 不允许使用代理
+        allowed-proxy: false
+        # 对User-Agent校验
+        enabled: true
+        # 允许Linux访问
+        allowed-linux: true
+        # 允许移动PC移动
+        allowed-pc: true
+      ip-rule:
+        # 同时发送的请求数最高限制
+        request-max-size: 2000
+
 aliyun:
   oss:
     endpoint: # 阿里云OSS地址，这里看你自己的OSS选择

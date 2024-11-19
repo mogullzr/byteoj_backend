@@ -40,7 +40,7 @@ public class OssUtils {
 
         // 获取文件后缀名允许
         int originalFilenameStartIndex = file.indexOf('/');
-        int originalFilenameEndIndex = file.indexOf(';');
+        int originalFilenameEndIndex = file.indexOf (';');
         String originalFilename = file.substring(originalFilenameStartIndex+1,originalFilenameEndIndex);
         if (SystemConstants.Picture_Format_JPEG.equals(originalFilename)) {
             fileName += ".jpeg";

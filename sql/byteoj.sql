@@ -329,6 +329,7 @@ create table competitions
 )
     comment '比赛基本信息表' collate = utf8mb4_unicode_ci;
 
+-- auto-generated definition
 create table competition_ac_problems_algorithm
 (
     id             int              not null comment 'ID'
@@ -341,11 +342,15 @@ create table competition_ac_problems_algorithm
     after_status   int    default 1 not null comment '赛后这道题目的zh',
     constraint competition_ac_problems_algorithm_pk2
         unique (id),
+    constraint competition_ac_problems_algorithm_uuid_competition_id_idx_uindex
+        unique (uuid, competition_id, idx),
     constraint competition_ac_problems_algorithm_competitions_competition_id_fk
         foreign key (competition_id) references competitions (competition_id),
     constraint competition_ac_problems_algorithm_user_uuid_fk
         foreign key (uuid) references user (uuid)
 );
+
+
 
 create index created_by
     on competitions (created_by);

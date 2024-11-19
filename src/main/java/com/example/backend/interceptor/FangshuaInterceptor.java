@@ -36,7 +36,7 @@ public class FangshuaInterceptor extends HandlerInterceptorAdapter {
             int seconds = accessLimit.seconds();
             Long maxCount = accessLimit.maxCount();
             boolean login = accessLimit.needLogin();
-            String key =  request.getRequestURI() + request.getRemoteAddr().replace(":", ".");
+            String key =  request.getRequestURI() + getClientIp(request).replace(":", ".");
 //            getLocationInfo(request.getRemoteAddr());
             User user = userService.getLoginUser(request);
             // 如果需要登录
@@ -83,6 +83,29 @@ public class FangshuaInterceptor extends HandlerInterceptorAdapter {
         return true;
     }
 
+    /**
+     * 获取客户端的真实IP地址
+     *
+     * @param request HTTP请求
+     * @return 客户端的真实IP地址
+     */
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        // 如果通过了多级代理，X-Forwarded-For的值会是多个IP地址，第一个为真实IP地址
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0];
+        }
+        return ip;
+    }
     /**
      * 根据IP搜索出IP所在地点
      *

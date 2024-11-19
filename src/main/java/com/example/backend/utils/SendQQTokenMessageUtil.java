@@ -3,9 +3,9 @@ package com.example.backend.utils;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.backend.mapper.UserMapper;
 import com.example.backend.models.domain.user.User;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -13,6 +13,7 @@ import javax.annotation.Resource;
 import java.util.List;
 
 @Component
+@Slf4j
 public class SendQQTokenMessageUtil {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     @Resource

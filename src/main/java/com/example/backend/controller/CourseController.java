@@ -8,6 +8,7 @@ import com.example.backend.exception.BusinessException;
 import com.example.backend.models.domain.course.Course;
 import com.example.backend.models.domain.user.User;
 import com.example.backend.models.request.CourseRequest;
+import com.example.backend.models.request.CourseUserRequest;
 import com.example.backend.models.vo.course.CourseProblemsVo;
 import com.example.backend.service.course.CourseService;
 import com.example.backend.service.user.UserService;
@@ -58,7 +59,7 @@ public class CourseController {
         return ResultUtils.success(course);
     }
 
-//    @AccessLimit(seconds = 3, maxCount =  30, needLogin = true)
+    @AccessLimit(seconds = 3, maxCount =  30, needLogin = true)
     @PostMapping("/search/problems")
     private BaseResponse<List<CourseProblemsVo>> courseSearchProblemsByCourseId(Long CourseId, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -66,27 +67,26 @@ public class CourseController {
         }
 
         User loginUser = userService.getLoginUser(httpServletRequest);
-//        Long uuid = loginUser.getUuid();
-        Long uuid = 9L;
+        Long uuid = loginUser.getUuid();
         List<CourseProblemsVo> courseProblemsVos = courseService.courseSearchProblemsByCourseId(CourseId, uuid);
 
         return ResultUtils.success(courseProblemsVos);
     }
 
-//    @AccessLimit(seconds = 1, maxCount =  1000, needLogin = true)
-//    @PostMapping("/search/rank")
-//    private BaseResponse<> courseSearchProblemsByCourseId(Long CourseId, HttpServletRequest httpServletRequest) {
-//        if (httpServletRequest == null) {
-//            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
-//        }
-//
-//        User loginUser = userService.getLoginUser(httpServletRequest);
-//        Long uuid = loginUser.getUuid();
-//
-//        List<CourseProblemsVo> courseProblemsVos = courseService.courseSearchProblemsByCourseId(CourseId);
-//
-//        return ResultUtils.success(courseProblemsVos);
-//    }
+    @AccessLimit(seconds = 3, maxCount =  30, needLogin = true)
+    @PostMapping("/search/rank")
+    private BaseResponse<Long> courseSearchRankByCourseId(Long CourseId, HttpServletRequest httpServletRequest) {
+        if (httpServletRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
+        }
+
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        Long uuid = loginUser.getUuid();
+
+        Long result = courseService.courseSearchRankByCourseId(CourseId, uuid);
+
+        return ResultUtils.success(result);
+    }
     @AccessLimit(seconds = 3, maxCount =  10, needLogin = true)
     @PostMapping("/admin/add")
     private BaseResponse<Boolean> courseAdminAdd(@RequestBody CourseRequest courseRequest, HttpServletRequest httpServletRequest) {
@@ -95,7 +95,6 @@ public class CourseController {
         }
 
         User loginUser = userService.getLoginUser(httpServletRequest);
-        Long uuid = loginUser.getUuid();
         String userAccount = loginUser.getAccount();
         boolean isAdmin = userService.isAdmin(httpServletRequest);
 
@@ -111,8 +110,6 @@ public class CourseController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
 
-        User loginUser = userService.getLoginUser(httpServletRequest);
-        Long uuid = loginUser.getUuid();
         boolean isAdmin = userService.isAdmin(httpServletRequest);
         boolean result = courseService.courseAdminDelete(courseId, isAdmin);
 
@@ -126,10 +123,7 @@ public class CourseController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
 
-        User loginUser = userService.getLoginUser(httpServletRequest);
-        Long uuid = loginUser.getUuid();
         boolean isAdmin = userService.isAdmin(httpServletRequest);
-
         boolean result = courseService.courseAdminProblemSet(courseRequest, isAdmin);
 
         return ResultUtils.success(result);
@@ -137,17 +131,16 @@ public class CourseController {
 
     @AccessLimit(seconds = 3, maxCount =  10, needLogin = true)
     @PostMapping("/admin/user/set")
-    private BaseResponse<Boolean> courseAdminUserSet(Long course_id, List<Long> user_list, HttpServletRequest httpServletRequest) {
+    private BaseResponse<Boolean> courseAdminUserSet(@RequestBody CourseUserRequest courseUserRequest, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
 
-        User loginUser = userService.getLoginUser(httpServletRequest);
-        Long uuid = loginUser.getUuid();
         boolean isAdmin = userService.isAdmin(httpServletRequest);
+        Long course_id = courseUserRequest.getCourse_id();
+        List<Long> user_list = courseUserRequest.getUser_list();
         boolean result = courseService.courseAdminUserSet(course_id, user_list, isAdmin);
 
         return ResultUtils.success(result);
     }
-
 }
