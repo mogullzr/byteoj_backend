@@ -9,6 +9,7 @@ import com.example.backend.mapper.*;
 import com.example.backend.models.domain.algorithm.AcAlgorithmProblem;
 import com.example.backend.models.domain.algorithm.probleminfo.ProblemAlgorithmBank;
 import com.example.backend.models.domain.course.*;
+import com.example.backend.models.domain.user.User;
 import com.example.backend.models.request.CourseRequest;
 import com.example.backend.models.vo.course.CourseChildProblems;
 import com.example.backend.models.vo.course.CourseProblem;
@@ -29,6 +30,8 @@ import java.util.stream.Stream;
 @Service
 @Slf4j
 public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> implements CourseService {
+    @Resource
+    private UserMapper userMapper;
     @Resource
     private CourseMapper courseMapper;
 
@@ -223,7 +226,20 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         course.setStart_time(start_time);
         course.setEnd_time(end_time);
         course.setCreate_time(new Date());
-        return courseMapper.insert(course) == 1;
+        courseMapper.insert(course);
+
+        // 管理员自动导入参加
+        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
+        userQueryWrapper.eq("role", 1);
+
+        List<User> userList = userMapper.selectList(userQueryWrapper);
+        for (User user : userList) {
+            CourseUserAcProblem courseUserAcProblem = new CourseUserAcProblem();
+            courseUserAcProblem.setCourse_id(course_id);
+            courseUserAcProblem.setUuid(user.getUuid());
+            courseUserAcProblemMapper.insert(courseUserAcProblem);
+        }
+        return true;
     }
 
 

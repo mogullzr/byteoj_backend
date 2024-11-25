@@ -496,7 +496,7 @@ public class ProblemAlgorithmController {
 
     @AccessLimit(seconds = 3, maxCount = 20, needLogin = true)
     @GetMapping("/set/problemLast")
-    private BaseResponse<Boolean> problemAlgorithmSetUserLast(UserLastEnter userLastEnter, HttpServletRequest httpServletRequest){
+    private BaseResponse<Boolean> problemAlgorithmSetUserLast(@RequestBody UserLastEnter userLastEnter, HttpServletRequest httpServletRequest){
         if (httpServletRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
