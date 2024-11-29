@@ -1,5 +1,6 @@
 package com.example.backend.controller;
 
+import cn.hutool.core.io.resource.InputStreamResource;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.common.AccessLimit;
@@ -28,11 +29,16 @@ import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import com.example.backend.service.algorithm.ProblemAlgorithmService;
 import com.example.backend.service.user.UserService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 @RestController
@@ -414,6 +420,26 @@ public class ProblemAlgorithmController {
         return ResultUtils.success(result);
 
     }
+
+    @PostMapping("/admin/testCaseFile/get")
+    private BaseResponse<ResponseEntity<byte[]>> problemAlgorithmTestCaseFileGet(Long problem_id, HttpServletRequest httpServletRequest) throws UnsupportedEncodingException {
+        if (httpServletRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
+        }
+
+        boolean isAdmin = userService.isAdmin(httpServletRequest);
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        Long uuid = -1L;
+        if (loginUser != null) {
+            uuid = loginUser.getUuid();
+        } else {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录！！！");
+        }
+
+        ResponseEntity<byte[]> result = problemAlgorithmService.problemTestCaseFileGet(problem_id,isAdmin);
+
+        return ResultUtils.success(result);
+    }
     @PostMapping("/admin/testCase/add")
     private BaseResponse<Boolean> problemAlgorithmTestCaseAdd(@RequestBody List<ProblemAlgorithmTestCaseRequest> problemAlgorithmTestCaseRequestList, Long problem_id, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -431,6 +457,22 @@ public class ProblemAlgorithmController {
 
     }
 
+    @PostMapping("/admin/testCaseFile/add")
+    private BaseResponse<Boolean> problemAlgorithmTestCasesAdd(@RequestParam("file") MultipartFile TestFile, Long problem_id, HttpServletRequest httpServletRequest) throws IOException {
+        if (httpServletRequest == null || TestFile.isEmpty()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求信息和文件信息均不允许为空！！！");
+        }
+
+        boolean isAdmin = userService.isAdmin(httpServletRequest);
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录！！！");
+        }
+        Boolean result = problemAlgorithmService.problemTestCasesFileAdd(TestFile, isAdmin, problem_id);
+
+        return ResultUtils.success(result);
+
+    }
     @AccessLimit(seconds=5, maxCount=30, needLogin=true)
     @PostMapping("/judge/test")
     private BaseResponse<List<Judge>> problemAlgorithmJudge(@RequestBody JudgeRequest judgeRequest, HttpServletRequest httpServletRequest) {

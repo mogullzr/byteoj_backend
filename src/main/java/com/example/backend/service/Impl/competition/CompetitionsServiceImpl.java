@@ -27,6 +27,7 @@ import com.example.backend.service.user.UserService;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
@@ -107,7 +108,6 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
         QueryWrapper<Competitions> competitionsQueryWrapper = new QueryWrapper<>();
         competitionsQueryWrapper.eq("competition_id", competition_id);
         Competitions competition = competitionsMapper.selectOne(competitionsQueryWrapper);
-
         return getCompetitionInfoVo(competition, uuid);
     }
 

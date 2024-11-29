@@ -3,7 +3,6 @@ package com.example.backend.service.Impl.webchat;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.example.backend.common.ResultUtils;
 import com.example.backend.mapper.PublicChatRoomsMapper;
 import com.example.backend.mapper.UserMapper;
 import com.example.backend.models.domain.user.User;
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -30,13 +28,13 @@ public class PublicChatMessagesServiceImpl extends ServiceImpl<PublicChatMessage
     implements PublicChatMessagesService{
 
     @Resource
-    PublicChatMessagesMapper publicChatMessagesMapper;
+    private PublicChatMessagesMapper publicChatMessagesMapper;
 
     @Resource
-    PublicChatRoomsMapper publicChatRoomsMapper;
+    private PublicChatRoomsMapper publicChatRoomsMapper;
 
     @Resource
-    UserMapper userMapper;
+    private UserMapper userMapper;
     @Override
     public List<MessageVo> WebSocketGetMessageByRoomId(Long room_id, Integer PageNum) {
         Page<PublicChatMessages> page = new Page<>(PageNum, 50);

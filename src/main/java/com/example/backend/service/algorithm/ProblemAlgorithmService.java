@@ -1,5 +1,6 @@
 package com.example.backend.service.algorithm;
 
+import cn.hutool.core.io.resource.InputStreamResource;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.backend.models.domain.algorithm.UserLastEnter;
 import com.example.backend.models.domain.algorithm.probleminfo.ProblemAlgorithmBank;
@@ -13,8 +14,14 @@ import com.example.backend.models.vo.problem.ProblemDailyNumVo;
 import com.example.backend.models.vo.problem.ProblemTagsVo;
 import com.example.backend.models.vo.problem.ProblemUserLastVo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 /**
@@ -193,6 +200,16 @@ public interface ProblemAlgorithmService extends IService<ProblemAlgorithmBank> 
     Boolean problemTestCaseAdd(List<ProblemAlgorithmTestCaseRequest> problemAlgorithmTestCaseRequestList, boolean isAdmin, Long problem_id);
 
     /**
+     * 是否添加成功
+     *
+     *
+     * @param isAdmin 是否为管理员
+     * @param problem_id 问题ID
+     * @return 是否添加成功
+     */
+    Boolean problemTestCasesFileAdd(MultipartFile TestFile, boolean isAdmin, Long problem_id) throws IOException;
+
+    /**
      * 获取题目的所有测试样例
      *
      * @param problem_id 问题ID
@@ -200,6 +217,15 @@ public interface ProblemAlgorithmService extends IService<ProblemAlgorithmBank> 
      * @return 所有测试样例信息
      */
     List<ProblemAlgorithmTestCaseRequest> problemTestCaseGet(Long problem_id, boolean isAdmin);
+
+    /**
+     * 获取测试样例的CSV文件
+     *
+     * @param problem_id 问题ID
+     * @param isAdmin 是否未管理员
+     * @return
+     */
+    ResponseEntity<byte[]> problemTestCaseFileGet(Long problem_id, boolean isAdmin) throws UnsupportedEncodingException;
     /**
      * 对调试信息进行处理
      *

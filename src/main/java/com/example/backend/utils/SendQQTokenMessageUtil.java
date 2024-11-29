@@ -17,10 +17,10 @@ import java.util.List;
 public class SendQQTokenMessageUtil {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     @Resource
-    EmailSendUtil emailSendUtil;
+    private EmailSendUtil emailSendUtil;
 
     @Resource
-    UserMapper userMapper;
+   private UserMapper userMapper;
 
     /**
      * 定时任务——管理员Token定时修改发送

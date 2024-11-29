@@ -1,15 +1,17 @@
 package com.example.backend.service.Impl.algorithm;
 
+import cn.hutool.core.io.resource.InputStreamResource;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.json.JSONUtil;
+import cn.hutool.poi.excel.ExcelUtil;
+import cn.hutool.poi.excel.ExcelWriter;
 import com.alibaba.nacos.shaded.com.google.common.reflect.TypeToken;
 import com.alibaba.nacos.shaded.com.google.gson.Gson;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.backend.common.ErrorCode;
-import com.example.backend.common.ResultUtils;
 import com.example.backend.exception.BusinessException;
 import com.example.backend.mapper.*;
 import com.example.backend.models.domain.algorithm.probleminfo.ProblemAlgorithmBank;
@@ -44,16 +46,25 @@ import com.example.backend.utils.RedisUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.io.*;
 import java.lang.reflect.Type;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -874,6 +885,61 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
     }
 
     @Override
+    public Boolean problemTestCasesFileAdd(MultipartFile TestFile, boolean isAdmin, Long problem_id) throws IOException {
+        if (!isAdmin){
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "对不起，您的权限不足");
+        }
+
+        QueryWrapper<AlgorithmTestCase> algorithmTestCaseQueryWrapper = new QueryWrapper<>();
+        algorithmTestCaseQueryWrapper.eq("problem_id", problem_id);
+
+        algorithmTestCaseMapper.delete(algorithmTestCaseQueryWrapper);
+
+        // 读取文件内容
+        List<Map<String, String>> testCaseTemp = parseCsv(TestFile);
+
+        // 处理解析后的数据
+        for (Map<String, String> testCase : testCaseTemp) {
+            String input = testCase.get("input");
+            String output = testCase.get("output");
+
+            AlgorithmTestCase algorithmTestCase = new AlgorithmTestCase();
+            algorithmTestCase.setProblem_id(problem_id);
+            algorithmTestCase.setInput(input);
+            algorithmTestCase.setOutput(output);
+            algorithmTestCase.setCreate_time(new Date());
+            algorithmTestCaseMapper.insert(algorithmTestCase);
+        }
+
+        return true;
+    }
+
+    private List<Map<String, String>> parseCsv(MultipartFile file) throws IOException {
+        List<Map<String, String>> testCaseTemp = new ArrayList<>();
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                // 使用正则表达式解析CSV行
+                String[] columns = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+                for (int i = 0; i < columns.length; i++) {
+                    columns[i] = columns[i].replaceAll("^\"|\"$", ""); // 去除引号
+                }
+
+                // 假设每行有两个数据，分别存储在columns[0]和columns[1]
+                String input = columns[0];
+                String output = columns[1];
+                // 将处理后的数据存储到数组中
+                Map<String, String> testCase = new HashMap<>();
+                testCase.put("input", input);
+                testCase.put("output", output);
+                testCaseTemp.add(testCase);
+            }
+        }
+
+        return testCaseTemp;
+    }
+    @Override
     public List<ProblemAlgorithmTestCaseRequest> problemTestCaseGet(Long problem_id, boolean isAdmin) {
         if (!isAdmin){
             throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "对不起，您的权限不足");
@@ -892,6 +958,29 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         });
 
         return problemAlgorithmTestCaseRequestList;
+    }
+
+    @Override
+    public ResponseEntity<byte[]> problemTestCaseFileGet(Long problem_id, boolean isAdmin) throws UnsupportedEncodingException {
+        if (!isAdmin){
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "对不起，您的权限不足");
+        }
+
+        QueryWrapper<AlgorithmTestCase> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("problem_id", problem_id);
+        List<AlgorithmTestCase> algorithmTestCases = algorithmTestCaseMapper.selectList(queryWrapper);
+        String problemCsvAlgorithmTestCase = "";
+
+        // 设定CSV数据
+        for (AlgorithmTestCase testCase : algorithmTestCases) {
+            problemCsvAlgorithmTestCase += testCase.getInput() + "," + testCase.getOutput() + "\n";
+        }
+
+        // 将 CSV 内容转换为字节数组
+        byte[] csvBytes = problemCsvAlgorithmTestCase.getBytes(StandardCharsets.UTF_8);
+
+        // 返回响应
+        return new ResponseEntity<>(csvBytes, HttpStatus.OK);
     }
 
     @Override

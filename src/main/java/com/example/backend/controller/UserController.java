@@ -1,8 +1,6 @@
 package com.example.backend.controller;
 
-import com.alibaba.nacos.shaded.org.checkerframework.checker.units.qual.A;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.injector.methods.SelectPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.common.*;
 import com.example.backend.exception.BusinessException;
@@ -161,7 +159,7 @@ public class UserController {
             Duration duration_2 = Duration.between(timestampInstant_2, now);
 
             // 获取相差的秒数
-            if (Math.abs(duration_1.getSeconds()) >= 60 || Math.abs(duration_2.getSeconds()) >= 60) {
+            if (Math.abs(duration_1.getSeconds()) >= 360 || Math.abs(duration_2.getSeconds()) >= 360) {
                 throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "小伙子你还挺狂，敢抓我包？？？？？");
             }
 
