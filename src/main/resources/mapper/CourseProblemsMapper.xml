@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.backend.mapper.CourseProblemsMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.backend.models.domain.course.CourseProblems">
+            <id property="course_problem_id" column="course_problem_id" jdbcType="BIGINT"/>
+            <result property="course_problems" column="course_problems" jdbcType="BIGINT"/>
+            <result property="problem_algorithm_type" column="problem_algorithm_type" jdbcType="VARCHAR"/>
+            <result property="problem_id_list" column="problem_id_list" jdbcType="VARCHAR"/>
+            <result property="course_id" column="course_id" jdbcType="BIGINT"/>
+            <result property="create_time" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="update_time" column="update_time" jdbcType="TIMESTAMP"/>
+            <result property="is_delete" column="is_delete" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        course_problem_id,course_problems,problem_algorithm_type,
+        problem_id_list,course_id,create_time,
+        update_time,is_delete
+    </sql>
+</mapper>

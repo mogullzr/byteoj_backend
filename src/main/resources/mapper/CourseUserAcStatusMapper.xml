@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.backend.mapper.CourseUserAcStatusMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.backend.models.domain.course.CourseUserAcStatus">
+            <id property="ac_status_id" column="ac_status_id" jdbcType="BIGINT"/>
+            <result property="problem_id" column="problem_id" jdbcType="BIGINT"/>
+            <result property="problem_name" column="problem_name" jdbcType="VARCHAR"/>
+            <result property="course_problems_ac_num" column="course_problems_ac_num" jdbcType="BIGINT"/>
+            <result property="course_id" column="course_id" jdbcType="BIGINT"/>
+            <result property="is" column="is" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        ac_status_id,problem_id,problem_name,
+        course_problems_ac_num,course_id,is
+    </sql>
+</mapper>
