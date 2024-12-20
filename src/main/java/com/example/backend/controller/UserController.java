@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -33,6 +34,7 @@ import java.time.Instant;
 import java.util.*;
 
 import static com.example.backend.constant.UserConstant.USER_LOGIN_STATE;
+import static com.example.backend.utils.EmailSendUtil.SALT;
 
 
 @RestController
@@ -69,21 +71,33 @@ public class UserController {
 
     @Value("${GITHUB.ClientSecret}")
     private String Client_secret;
-
+    // TODO 注意一下下面这一部分注释了
+//
+//    @PostMapping("/register")
+//    private BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
+//        if (userRegisterRequest == null){
+//            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
+//        }
+//        String Account = userRegisterRequest.getAccount();
+//        String Email = userRegisterRequest.getEmail();
+//        String confirmNumber = userRegisterRequest.getConfirmNumber();
+//        String Password = userRegisterRequest.getPassword();
+//        String checkPassword = userRegisterRequest.getCheckPassword();
+//        Long result = userService.UserRegister(Account, Email, confirmNumber, Password, checkPassword);
+//        return ResultUtils.success(result);
+//    }
     @PostMapping("/register")
     private BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
         if (userRegisterRequest == null){
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
         String Account = userRegisterRequest.getAccount();
-        String Email = userRegisterRequest.getEmail();
-        String confirmNumber = userRegisterRequest.getConfirmNumber();
         String Password = userRegisterRequest.getPassword();
         String checkPassword = userRegisterRequest.getCheckPassword();
-        Long result = userService.UserRegister(Account, Email, confirmNumber, Password, checkPassword);
+
+        Long result = userService.UserRegister(Account, Password, checkPassword);
         return ResultUtils.success(result);
     }
-
     @AccessLimit(seconds=5, maxCount=20, needLogin=false)
     @PostMapping("/admin/login")
     private BaseResponse<UserVo> adminLogin(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest httpServletRequest) {
@@ -196,11 +210,11 @@ public class UserController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "不对，有问题！");
         }
         // 从redis数据库中获取email_code验证码用来做判断
-        String email_code = RedisUtils.getStr(EmailConstant.EMAIL_CODE.getValue() + user.getUuid() + user.getAccount());
+        String email_code = RedisUtils.getStr(EmailConstant.EMAIL_CODE.getValue() + userLoginEmailRequest.getEmail());
         if (email_code == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "验证码已过期");
         }
-        if(!userLoginEmailRequest.getCode().equals(email_code)){
+        if(!DigestUtils.md5DigestAsHex((SALT + userLoginEmailRequest.getCode()).getBytes()).equals(email_code)){
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "验证码错误");
         }
         // 登陆成功 清楚本地redis邮箱验证码
@@ -257,23 +271,30 @@ public class UserController {
         return ResultUtils.success(result);
     }
 
-    @AccessLimit(seconds=5, maxCount=30, needLogin=false)
+    @AccessLimit(seconds=5, maxCount=30, needLogin=true)
     @PostMapping("/modify")
     private BaseResponse<Boolean> userModify(@RequestBody UserModifyRequest user, HttpServletRequest httpServletRequest) {
         if (user == null || httpServletRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
+
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        if (!Objects.equals(loginUser.getUuid(), user.getUuid())) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "请你不要乱爬！！！！！小心封了你哟");
+        }
+        user.setUuid(loginUser.getUuid());
+
         boolean result = userService.UserModify(user, httpServletRequest);
         return ResultUtils.success(result);
     }
 
     @AccessLimit(seconds=5, maxCount=10, needLogin=false)
     @PostMapping("/upload")
-    private BaseResponse<Boolean> userUploadPicture(@RequestBody String base64Image, Integer status, HttpServletRequest httpServletRequest) throws IOException {
+    private BaseResponse<String> userUploadPicture(@RequestBody String base64Image, Integer status, HttpServletRequest httpServletRequest) throws IOException {
         if (httpServletRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
-        boolean result = userService.UserUploadPicture(base64Image, status, httpServletRequest);
+        String result = userService.UserUploadPicture(base64Image, status, httpServletRequest);
         return ResultUtils.success(result);
     }
 

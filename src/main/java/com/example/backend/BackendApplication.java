@@ -15,6 +15,7 @@ import java.util.Stack;
 @EnableAspectJAutoProxy
 @EnableScheduling
 @MapperScan("com.example.backend.mapper")
+@MapperScan("generator.mapper")
 public class BackendApplication {
     public static void main(String[] args) {
         SpringApplication.run(BackendApplication.class, args);

@@ -8,7 +8,7 @@ import lombok.Getter;
 
 @Getter
 public enum EmailConstant {
-    ADMIN_SEND_1_TOKEN("尊敬的管理员，您好，这周新的口令已经更新了，请即使查看哦(*^▽^*)："),
+    ADMIN_SEND_1_TOKEN("尊敬的管理员，您好，这周新的口令已经更新了，请及时查看哦(*^▽^*)："),
     ADMIN_SEND_2_TOKEN("下次口令也会以同样的方式在一周后发给你哦(*^▽^*)"),
     EMAIL_SEND_SUCCESS("皇上，臣妾已为您发送了邮箱哦！"),//邮件发送成功，请查收！
     EMAIL_MESSAGE("您的QQ邮箱验证码为："),

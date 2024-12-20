@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class EmailSendUtil {
     // 混淆盐值
-    private static final String SALT = "Mogullzr,搞我网站的我是你爹";
+    public static final String SALT = "Mogullzr,搞我网站的我是你爹";
     @Resource
     private UserMapper userMapper;
 
@@ -73,6 +73,7 @@ public class EmailSendUtil {
 
         // 定义email信息格式
         SimpleMailMessage message = new SimpleMailMessage();
+
         // 接收者邮箱，为调用本方法传入的接收者的邮箱xxx@qq.com
         message.setTo(to);
         // 调用生成6位数字和字母的方法，生成验证码，该方法在下面定义好了

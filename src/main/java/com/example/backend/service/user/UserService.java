@@ -20,20 +20,21 @@ import java.util.List;
  * @createDate 2024-07-12 11:09:40
  */
 public interface UserService extends IService<User> {
+    // TODO 这里注释了注意一下
+//    /**
+//     * 用户注册
+//     *
+//     * @author Mogullzr
+//     * @param Email 邮箱
+//     * @param confirmNumber 验证码
+//     * @param Account 用户名
+//     * @param Password 密码
+//     * @param CheckPassword 确认密码
+//     * @return 新用户id
+//     */
 
-    /**
-     * 用户注册
-     *
-     * @author Mogullzr
-     * @param Email 邮箱
-     * @param confirmNumber 验证码
-     * @param Account 用户名
-     * @param Password 密码
-     * @param CheckPassword 确认密码
-     * @return 新用户id
-     */
-    long UserRegister(String Account, String Email, String confirmNumber, String Password, String CheckPassword);
-
+//    long UserRegister(String Account, String Email, String confirmNumber, String Password, String CheckPassword);
+    long UserRegister(String Account, String Password, String CheckPassword);
     /**
      * 管理员登录
      *
@@ -106,9 +107,9 @@ public interface UserService extends IService<User> {
      * @param base64Image 需要的图片base64
      * @param status 0表示上传头像，1表示上传背景图片，2表示上传文章图片
      * @param httpServletRequest 前端发送信息·
-     * @return 是否上传成功
+     * @return 是否上传成功/返回上传之后的地址
      */
-    boolean UserUploadPicture(String base64Image, Integer status, HttpServletRequest httpServletRequest) throws IOException;
+    String UserUploadPicture(String base64Image, Integer status, HttpServletRequest httpServletRequest) throws IOException;
 
     /**
      * 用户用户uuid获取图片信息
@@ -126,6 +127,8 @@ public interface UserService extends IService<User> {
      * @return 是否设置成功
      */
     boolean UserSetPictureBackground(String picture_address, Long uuid);
+
+
     /**
      * 获取当前用户信息
      *

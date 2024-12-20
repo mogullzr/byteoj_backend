@@ -24,6 +24,7 @@ import com.example.backend.models.request.UserModifyRequest;
 import com.example.backend.utils.EmailSendUtil;
 import com.example.backend.utils.OssUtils;
 import com.example.backend.utils.RedisUtils;
+import com.example.backend.utils.SendQQTokenMessageUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -77,10 +78,91 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Value("${ROLE_MAX.UUID}")
     private Long BOSS_UUID;
+    // TODO 这里注释了
+//    @Override
+//    public long UserRegister(String Account, String Email, String confirmNumber, String Password, String CheckPassword) {
+//        // 1.一般账户密码参数校验
+//        if (StringUtils.isAnyBlank(Account, Email, confirmNumber, Password, CheckPassword)) {
+//            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
+//        }
+//
+//        if (Account.length() < 4) {
+//            throw new BusinessException(ErrorCode.PARAMS_ERROR, "账户密码不能少于4位");
+//        }
+//
+//        if (Password.length() < 8 || CheckPassword.length() < 8) {
+//            throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码不能少于8位");
+//        }
+//
+//        if (!Password.equals(CheckPassword)) {
+//            throw new BusinessException(ErrorCode.PARAMS_ERROR, "两次输入密码不一致");
+//        }
+//
+//        // 2.判断用户名是否存在
+//        QueryWrapper<User>queryWrapper = new QueryWrapper<>();
+//        queryWrapper.eq("account", Account);
+//        long count = this.count(queryWrapper);
+//        if (count > 0) {
+//            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户已存在");
+//        }
+//        // 3.账户部分不允许出现特殊字符
+//        String validPattern = "[`~!@#$%^&*()+=|{}':;',\\[\\].<>/?~！@#￥%……&*（）——+|{}【】‘；：”“’。，、？]";
+//        Matcher matcher = Pattern.compile(validPattern).matcher(Account);
+//        if (matcher.find()) {
+//            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户名中不允许出现特殊字符");
+//        }
+//
+//        // 4.进行QQ验证码的校验工作
+//        queryWrapper = new QueryWrapper<>();
+//        queryWrapper.eq("email", Email);
+//        User user = userMapper.selectOne(queryWrapper);
+//        if (user != null) {
+//            throw new BusinessException(ErrorCode.PARAMS_ERROR, "what do you want to do???这个QQ号已经注册过了！");
+//        }
+//        // 从redis数据库中获取email_code验证码用来做判断
+//        String email_code = RedisUtils.getStr(EmailConstant.EMAIL_CODE.getValue() + Email);
+//        if (email_code == null) {
+//            throw new BusinessException(ErrorCode.PARAMS_ERROR, "验证码已过期");
+//        }
+//        if(!Objects.equals(DigestUtils.md5DigestAsHex((SALT + confirmNumber).getBytes()), email_code)){
+//            throw new BusinessException(ErrorCode.PARAMS_ERROR, "验证码错误");
+//        }
+//
+//        user = new User();
+//        user.setAccount(Account);
+//        user.setUsername(Account);
+//        user.setEmail(Email);
+//        user.setRating(1200);
+//        user.setRole(1);
+//        user.setCreate_time(new Date());
+//        user.setUpdate_time(new Date());
+//        user.setReadings(0);
+//        // 验证成功，清除本地redis邮箱验证码
+//        RedisUtils.del(EmailConstant.EMAIL_CODE.getValue() + EmailConstant.EMAIL_CODE_ERROR.getValue() + user.getUuid());
+//
+//        // 5.密码使用MD5进行加密
+//        String encryptPassword = DigestUtils.md5DigestAsHex((SALT + Password).getBytes());
+//
+//        // 6.插入数据
+//        user.setAccount(Account);
+//        user.setPassword(encryptPassword);
+//        user.setUsername(Account);
+//        user.setEmail(Email);
+//
+//        // 7.将用户信息插入user表中
+//        queryWrapper = new QueryWrapper<>();
+//        queryWrapper.eq("uuid", user.getUuid());
+//        boolean saveResult = this.save(user);
+//
+//        if (!saveResult) {
+//            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "注册失败");
+//        }
+//        return user.getUuid();
+//    }
     @Override
-    public long UserRegister(String Account, String Email, String confirmNumber, String Password, String CheckPassword) {
+    public long UserRegister(String Account, String Password, String CheckPassword) {
         // 1.一般账户密码参数校验
-        if (StringUtils.isAnyBlank(Account, Email, confirmNumber, Password, CheckPassword)) {
+        if (StringUtils.isAnyBlank(Account, Password, CheckPassword)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
 
@@ -98,7 +180,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
         // 2.判断用户名是否存在
         QueryWrapper<User>queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("account", Account);
+        queryWrapper.eq("username", Account);
         long count = this.count(queryWrapper);
         if (count > 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户已存在");
@@ -110,44 +192,27 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户名中不允许出现特殊字符");
         }
 
-        // 4.进行QQ验证码的校验工作
-        queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("email", Email);
         User user = userMapper.selectOne(queryWrapper);
         if (user != null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "what do you want to do???这个QQ号已经注册过了！");
         }
-        // 从redis数据库中获取email_code验证码用来做判断
-        String email_code = RedisUtils.getStr(EmailConstant.EMAIL_CODE.getValue() + Email);
-        if (email_code == null) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "验证码已过期");
-        }
-        if(!Objects.equals(DigestUtils.md5DigestAsHex((SALT + confirmNumber).getBytes()), email_code)){
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "验证码错误");
-        }
 
         user = new User();
-        user.setAccount(Account);
         user.setUsername(Account);
-        user.setEmail(Email);
-        user.setRating(1200);
         user.setRole(1);
         user.setCreate_time(new Date());
         user.setUpdate_time(new Date());
-        user.setReadings(0);
-        // 验证成功，清除本地redis邮箱验证码
-        RedisUtils.del(EmailConstant.EMAIL_CODE.getValue() + EmailConstant.EMAIL_CODE_ERROR.getValue() + user.getUuid());
+        user.setAccount(Account);
 
-        // 5.密码使用MD5进行加密
+        // 4.密码使用MD5进行加密
         String encryptPassword = DigestUtils.md5DigestAsHex((SALT + Password).getBytes());
 
-        // 6.插入数据
-        user.setAccount(Account);
-        user.setPassword(encryptPassword);
-        user.setUsername(Account);
-        user.setEmail(Email);
+        // 5.插入数据
 
-        // 7.将用户信息插入user表中
+        user.setUsername(Account);
+        user.setPassword(encryptPassword);
+
+        // 6.将用户信息插入user表中
         queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("uuid", user.getUuid());
         boolean saveResult = this.save(user);
@@ -459,7 +524,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     @Override
-    public boolean UserUploadPicture(String base64Image, Integer status, HttpServletRequest httpServletRequest) throws IOException {
+    public String UserUploadPicture(String base64Image, Integer status, HttpServletRequest httpServletRequest) throws IOException {
         // 获取当前登录用户信息
         Long uuid = -1L;
         User loginUser = userService.getLoginUser(httpServletRequest);
@@ -481,10 +546,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         // 1.当status为0的时候表示给用户传送头像
         if (status == 0) {
             String avatar = user.getAvatar();
-            if (avatar != null && avatar!="") {
+            if (avatar != null && !avatar.isEmpty()) {
                 ossUtils.deleteAvatar(user.getAvatar());
             }
             user.setAvatar(uploadOneFile);
+            userMapper.update(user, queryWrapper);
         }
         // 2.status为1的时候表示传送背景图片，注意下这里之后一定一定需要进行限制防止被冲烂了
         else if (status == 1) {
@@ -511,7 +577,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
 
         // 3.status为2的时候表示文章传送图片
-        return userMapper.update(user,queryWrapper) == 1;
+        return uploadOneFile;
     }
 
     @Override
@@ -682,7 +748,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         user.setRole(2);
 
         int insert = userMapper.insert(user);
-        return insert == 1;
+
+
+        return insert == 1 && emailSendUtil.sendTokenToAdminEmail(Email);
     }
 
     @Override
@@ -738,7 +806,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
         user.setRole(2);
         int update = userMapper.update(user, queryWrapper);
-        return update == 1;
+        return update == 1 && emailSendUtil.sendTokenToAdminEmail(user.getEmail());
 
     }
 }
