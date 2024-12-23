@@ -159,7 +159,7 @@ public interface UserService extends IService<User> {
      *
      * @return 用户信息列表
      */
-    List<User> adminGetUserList(Long PageNum);
+    List<User> adminGetUserList(Integer pageNum);
 
     /**
      * 封禁指定用户ID列表

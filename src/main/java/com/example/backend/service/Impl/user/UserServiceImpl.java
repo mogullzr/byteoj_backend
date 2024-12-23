@@ -625,7 +625,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     @Override
-    public List<User> adminGetUserList(Long PageNum) {
+    public List<User> adminGetUserList(Integer pageNum) {
         Page<User> page = new Page<>(PageNum, 15);
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         queryWrapper.ne("role", 2);

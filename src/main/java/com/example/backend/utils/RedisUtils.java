@@ -965,7 +965,7 @@ public class RedisUtils {
      * @return
      */
     public static Set<TypedTuple<String>> zReverseRangeWithScores(String key,
-                                                                  long pageSize) {
+                                                                  Integer pageSize) {
         return stringRedisTemplate.opsForZSet().reverseRangeByScoreWithScores(key, Double.MIN_VALUE,
                 Double.MAX_VALUE, 0, pageSize);
     }
@@ -977,7 +977,7 @@ public class RedisUtils {
      * @return
      */
     public static Set<TypedTuple<String>> zReverseRangeByScoreWithScores(String key,
-                                                                         double max, long pageSize) {
+                                                                         double max, Integer pageSize) {
         return stringRedisTemplate.opsForZSet().reverseRangeByScoreWithScores(key, Double.MIN_VALUE, max,
                 1, pageSize);
     }

@@ -378,7 +378,7 @@ public class UserController {
     }
 
     @PostMapping("/admin/get")
-    private BaseResponse<List<User>> adminGetUserList(Long PageNum, HttpServletRequest httpServletRequest) {
+    private BaseResponse<List<User>> adminGetUserList(Integer pageNum, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
