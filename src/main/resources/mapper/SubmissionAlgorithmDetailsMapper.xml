@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.backend.mapper.SubmissionAlgorithmDetailsMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.backend.models.domain.algorithm.submission.SubmissionAlgorithmDetails">
+            <id property="detail_id" column="detail_id" jdbcType="BIGINT"/>
+            <result property="submission_id" column="submission_id" jdbcType="BIGINT"/>
+            <result property="time_used" column="time_used" jdbcType="INTEGER"/>
+            <result property="memory_used" column="memory_used" jdbcType="BIGINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        detail_id,submission_id,time_used,
+        memory_used
+    </sql>
+</mapper>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.backend.mapper.AlgorithmTestCaseMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.backend.models.domain.algorithm.test.AlgorithmTestCase">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="problem_id" column="problem_id" jdbcType="BIGINT"/>
+            <result property="input" column="input" jdbcType="VARCHAR"/>
+            <result property="output" column="output" jdbcType="VARCHAR"/>
+            <result property="create_time" column="create_time" jdbcType="DATE"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,problem_id,input,
+        output,create_time
+    </sql>
+</mapper>

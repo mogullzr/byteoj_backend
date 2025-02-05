@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.backend.mapper.PostsTagsMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.backend.models.domain.posts.PostsTags">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="post_id" column="post_id" jdbcType="BIGINT"/>
+            <result property="tag_name" column="tag_name" jdbcType="VARCHAR"/>
+            <result property="uuid" column="uuid" jdbcType="BIGINT"/>
+            <result property="create_time" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="is_delete" column="is_delete" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,post_id,tag_name,
+        uuid,create_time,is_delete
+    </sql>
+</mapper>

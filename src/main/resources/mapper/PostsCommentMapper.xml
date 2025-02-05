@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.backend.mapper.PostsCommentMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.backend.models.domain.posts.PostsComment">
+            <id property="comment_id" column="comment_id" jdbcType="BIGINT"/>
+            <result property="content" column="content" jdbcType="VARCHAR"/>
+            <result property="post_id" column="post_id" jdbcType="BIGINT"/>
+            <result property="root_comment_id" column="root_comment_id" jdbcType="BIGINT"/>
+            <result property="uuid" column="uuid" jdbcType="BIGINT"/>
+            <result property="comment_like_count" column="comment_like_count" jdbcType="BIGINT"/>
+            <result property="to_comment_id" column="to_comment_id" jdbcType="BIGINT"/>
+            <result property="create_time" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="is_delete" column="is_delete" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        comment_id,content,post_id,
+        root_comment_id,uuid,comment_like_count,
+        to_comment_id,create_time,
+        is_delete
+    </sql>
+</mapper>
