@@ -1,0 +1,142 @@
+spring:
+  jackson:
+    time-zone: Asia/Shanghai
+  mail:
+    host: smtp.qq.com # 指定邮件服务器的主机名，这里默认是smtp.qq.com，表示使用的是腾讯的SMTP服务器。
+    port: 465 # 587也行，但是就不需要开放ssl的enable了，同时修改protocol协议为 smtps 才行
+    username: "xxxxx@qq.com" # xxxx@qq.com  这里是发送者
+    password: "xxxxxx"  # 这里就是我前面提到的授权码了
+    properties: # 其他配置
+      mail:
+        smtp:
+          ssl:
+            enable: true
+          socketFactoryClass: javax.net.ssl.SSLSocketFactory # 指定SSL Socket工厂类，用于创建加密的邮件连接。
+          auto: true # 设置为true表示启用自动连接。
+        starttls: # 配置STARTTLS加密连接
+          enable: true # 设置为true表示启用STARTTLS。
+          required: true # 设置为true表示STARTTLS是必需的，如果不可用，则会抛出异常。
+    default-encoding: UTF-8 # 设置邮件内容的默认编码格式为UTF-8 默认就是UTF-8
+    protocol: smtps
+  main:
+    #    解决升级Spring Boot2.6后,因依赖循环引用导致启动时报错的问题
+    allow-circular-references: true
+  profiles:
+    active: dev
+    name: backend
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${hm.db.host}:3306/${hm.db.table}?rewriteBatchedStatements=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: ${hm.db.name}
+    password: ${hm.db.pwd}
+    # session失效时间(分钟)和存储工作配置
+    # session:
+    # timeout: 86400
+    # store-type: redis # 默认为none
+  # 支持 swagger3
+  mvc:
+    pathmatch:
+      matching-strategy: ANT_PATH_MATCHER
+  # redis配置
+  redis:
+    # 端口
+    port: 6379
+    host: ${hm.redis.host}
+    # 使用的数据库索引，默认是0
+    database: 0
+    # 连接超时时间
+    timeout: 1800000
+    # 设置密码
+    password: ${hm.redis.pwd}
+    lettuce :
+      pool:
+        # 最大阻塞等待时间，负数表示没有限制
+        max-wait: -1
+        # 连接池中的最大空闲连接
+        max-idle: 5
+        # 连接池中的最小空闲连接
+        min-idle: 0
+        # 连接池中最大连接数，负数表示没有限制
+        max-active: 20
+
+  # RabbitMQ 配置
+  rabbitmq:
+    host: localhost
+    port: 15672
+    username: guest
+    password: guest
+    virtual-host: /
+    # 开启消息发送确认
+    publisher-returns: true
+    listener:
+      simple:
+        acknowledge-mode: manual
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+server:
+  # 端口
+  port: 7091
+  address: 0.0.0.0
+  # 自定义路径
+  servlet:
+    context-path: /api
+#    session:
+#      cookie:
+#        domain: localhost
+mybatis-plus:
+  configuration:
+    #    会默认将下滑线转换成驼峰式
+    map-underscore-to-camel-case: false
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: isDelete # 全局逻辑删除的实体字段名(since 3.3.0,配置后可以忽略不配置步骤2)
+      logic-delete-value: 1 # 逻辑已删除值(默认为 1)
+      logic-not-delete-value: 0 # 逻辑未删除值(默认为 0)
+logging:
+  # 日志持久化存储文件 nohup java -jar xxx.jar > /dev/null 2>&1 &
+  file:
+    name: ./log/spring.log
+  # 日志分割
+  logback:
+    rollingpolicy:
+      file-name-pattern: ${LOG_FILE}.%d{yyyy-MM-dd}.%i.txt
+      max-file-size: 1MB
+  anti:
+    reptile:
+      manager:
+        # 是否开启爬虫
+        enabled: true
+        ua-rule:
+          # 不允许使用代理
+          allowed-proxy: false
+          # 对User-Agent校验
+          enabled: true
+          # 允许Linux访问
+          allowed-linux: true
+          # 允许移动PC移动
+          allowed-pc: true
+        ip-rule:
+          # 同时发送的请求数最高限制
+          request-max-size: 2000
+
+
+aliyun:
+  oss:
+    endpoint: xxxxxxx # 阿里云OSS地址，这里看你自己的OSS选择
+    accessKeyId: xxxxxx # 阿里云OSS账号
+    accessKeySecret: xxxxxx # 阿里云OSS密钥
+    #        bucket可以由控制台创建，也可以使用java代码创建
+    bucketName: xxxxxxx #阿里云OSS上的存储块bucket名字
+
+interfaceAccess:
+  second: 60        # 接口访问second秒内最多只能访问requestCount次
+  requestCount: 60    # 请求3次
+  lockTime: 60      # 禁用时长--单位/秒
+
+ROLE_MAX:
+  UUID: 9
+JUDGE_URL:
+  URL: xxxxxx

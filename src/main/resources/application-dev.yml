@@ -1,0 +1,9 @@
+hm:
+  db:
+    host: mysql
+    name: root
+    table: byteoj
+    pwd: "142398749lzr"
+  redis:
+    host: redis
+    pwd: ",s8ab3kz9U4J20[wRFOM!Vg(cu7S#1W@"

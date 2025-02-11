@@ -1,4 +1,4 @@
-package com.example.backend.models.domain.algorithm;
+package com.example.backend.models.domain.competiton;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -9,12 +9,12 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 
- * @TableName user_last_enter
+ * 比赛题目关联表
+ * @TableName competitions_problems_math408
  */
-@TableName(value ="user_last_enter")
+@TableName(value ="competitions_problems_math408")
 @Data
-public class UserLastEnter implements Serializable {
+public class CompetitionsProblemsMath408 implements Serializable {
     /**
      * ID
      */
@@ -22,21 +22,15 @@ public class UserLastEnter implements Serializable {
     private Long id;
 
     /**
-     * 用户ID
+     * 比赛ID
      */
-    private Long uuid;
+    private Long competition_id;
 
     /**
-     * 题目链接
+     * 问题ID
      */
-    private String url;
-
-    /**
-     * 题目编号 + 题目名称
-     */
-    private String problem_name;
+    private Long problem_id;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
-
 }

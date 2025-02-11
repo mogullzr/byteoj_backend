@@ -87,4 +87,9 @@ public class PostsVo implements Serializable {
      * 更新时间
      */
     private Date update_time;
+    /**
+     *
+     * 总面数
+     */
+    private Integer pages;
 }

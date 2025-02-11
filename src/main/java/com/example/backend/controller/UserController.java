@@ -82,6 +82,12 @@ public class UserController {
 //        Long result = userService.UserRegister(Account, Email, confirmNumber, Password, checkPassword);
 //        return ResultUtils.success(result);
 //    }
+    @PostMapping("/search/uuid")
+    @AccessLimit(seconds = 3, maxCount = 20, needLogin = true)
+    private BaseResponse<UserVo> userSearchByUuid(Long uuid, HttpServletRequest httpServletRequest) {
+        UserVo userVo = userService.UserSearchByUuid(uuid);
+        return ResultUtils.success(userVo);
+    }
     @PostMapping("/register")
     private BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
         if (userRegisterRequest == null){

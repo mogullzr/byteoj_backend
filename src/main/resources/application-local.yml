@@ -1,0 +1,9 @@
+hm:
+  db:
+    host: localhost
+    name: root
+    table: trialoj
+    pwd: "142398749lzr"
+  redis:
+    host: 127.0.0.1
+    pwd: "142398749lzr"

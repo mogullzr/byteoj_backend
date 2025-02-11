@@ -115,4 +115,9 @@ public class UserVo implements Serializable {
      * 竞赛等级
      */
     private Integer rated;
+
+    /**
+     * 总面数
+     */
+    private Integer pages;
 }

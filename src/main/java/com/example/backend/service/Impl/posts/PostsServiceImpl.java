@@ -468,7 +468,7 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts>
         List<PostsVo> postsVoList = new ArrayList<>();
 
         // 1.标签查询
-        if (!tagsList.isEmpty()) {
+        if (tagsList != null && !tagsList.isEmpty()) {
             QueryWrapper<PostsTags> postsTagsQueryWrapper = new QueryWrapper<>();
             for (Integer tag : tagsList) {
                 postsTagsQueryWrapper.eq("tag_id", tag);
@@ -484,12 +484,16 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts>
             postsQueryWrapper.like("title", keyword).or();
             postsQueryWrapper.like("content", keyword);
         }
-
-        postsList = postsMapper.selectPage(postsPage, postsQueryWrapper).getRecords();
+        Page<Posts> page = postsMapper.selectPage(postsPage, postsQueryWrapper);
+        postsList = page.getRecords();
         postsList.forEach((post)->{
             postsVoList.add(getPostsVo(post));
         });
-
+        if (!postsList.isEmpty()) {
+            PostsVo postsVo = postsVoList.get(0);
+            postsVo.setPages((int) page.getPages());
+            postsVoList.set(0, postsVo);
+        }
         return postsVoList;
     }
 

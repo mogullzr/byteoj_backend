@@ -79,6 +79,34 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Value("${ROLE_MAX.UUID}")
     private Long BOSS_UUID;
+
+    @Override
+    public UserVo UserSearchByUuid(Long uuid) {
+        if (uuid == null || uuid <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数存在问题");
+        }
+
+        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
+        userQueryWrapper.eq("uuid", uuid);
+        User user = userMapper.selectOne(userQueryWrapper);
+
+        return getUserSafetyUser(user);
+    }
+
+    private UserVo getUserSafetyUser(User user) {
+        UserVo userVo = new UserVo();
+        userVo.setUsername(user.getUsername());
+        userVo.setAvatar(user.getAvatar());
+        userVo.setSchool(user.getSchool());
+        userVo.setRating(user.getRating());
+        userVo.setProfile(user.getProfile());
+        userVo.setReadings(user.getReadings());
+        userVo.setTags(user.getTags());
+        userVo.setUrl(user.getUrl());
+
+        return userVo;
+    }
+
     // TODO 这里注释了
 //    @Override
 //    public long UserRegister(String Account, String Email, String confirmNumber, String Password, String CheckPassword) {
@@ -825,11 +853,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
 
         Page<User> userPage = new Page<>(pageNum, pageSize);
-        List<User> userList = userMapper.selectPage(userPage, queryWrapper).getRecords();
+        Page<User> page = userMapper.selectPage(userPage, queryWrapper);
+        List<User> userList = page.getRecords();
         List<UserVo> userVoList = new ArrayList<>();
 
         for (User user : userList) {
             userVoList.add(getSafetyUser(user));
+        }
+
+        if (!userVoList.isEmpty()) {
+            UserVo userVo = userVoList.get(0);
+            userVo.setPages((int) page.getPages());
+            userVoList.set(0, userVo);
         }
         return userVoList;
     }

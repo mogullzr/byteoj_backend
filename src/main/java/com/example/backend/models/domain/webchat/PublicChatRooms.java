@@ -1,4 +1,4 @@
-package com.example.backend.models.domain.algorithm;
+package com.example.backend.models.domain.webchat;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -9,34 +9,33 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 
- * @TableName user_last_enter
+ * 公共聊天室表
+ * @TableName public_chat_rooms
  */
-@TableName(value ="user_last_enter")
+@TableName(value ="public_chat_rooms")
 @Data
-public class UserLastEnter implements Serializable {
+public class PublicChatRooms implements Serializable {
     /**
-     * ID
+     * 房间号
      */
     @TableId(type = IdType.AUTO)
-    private Long id;
+    private Long room_id;
 
     /**
-     * 用户ID
+     * 房间名称
      */
-    private Long uuid;
+    private String room_name;
 
     /**
-     * 题目链接
+     * 描述
      */
-    private String url;
+    private String description;
 
     /**
-     * 题目编号 + 题目名称
+     * 聊天室的人數
      */
-    private String problem_name;
+    private Long online_num;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
-
 }

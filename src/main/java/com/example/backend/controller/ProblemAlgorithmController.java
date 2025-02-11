@@ -8,6 +8,7 @@ import com.example.backend.common.ErrorCode;
 import com.example.backend.common.ResultUtils;
 import com.example.backend.exception.BusinessException;
 import com.example.backend.mapper.ProblemAlgorithmBankMapper;
+import com.example.backend.mapper.ProblemAlgorithmTagsMapper;
 import com.example.backend.mapper.SubmissionsAlgorithmMapper;
 import com.example.backend.models.domain.algorithm.UserLastEnter;
 import com.example.backend.models.domain.algorithm.submission.SubmissionsAlgorithm;
@@ -43,12 +44,22 @@ import java.util.List;
 @Controller
 public class ProblemAlgorithmController {
     @Resource
+    ProblemAlgorithmBankMapper problemAlgorithmBankMapper;
+    @Resource
     private ProblemAlgorithmService problemAlgorithmService;
+
+    @Resource
+    private ProblemAlgorithmTagsMapper problemAlgorithmTagsMapper;
+
     @Resource
     private SubmissionsAlgorithmMapper submissionsAlgorithmMapper;
 
+
+
     @Resource
     private UserService userService;
+
+
 
     @PostMapping("/search")
     @AccessLimit(seconds = 1, maxCount = 10, needLogin = false)
@@ -79,6 +90,40 @@ public class ProblemAlgorithmController {
         return ResultUtils.success(result);
     }
 
+    @GetMapping("/get/tagsPlusCategory")
+    private BaseResponse<List<ProblemTagsVo>> problemAlgorithmGetTagsPlusCategory(HttpServletRequest httpServletRequest) {
+        if (httpServletRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
+        }
+
+        List<ProblemTagsVo> result = problemAlgorithmService.problemAlgorithmGetTagsPlusCategory();
+        return ResultUtils.success(result);
+    }
+
+    @AccessLimit(seconds=5, maxCount=30, needLogin = true)
+    @PostMapping("/search/problems")
+    private BaseResponse<List<CompetitionProblemsVo>> competitionSearchProblems(Long competition_id, HttpServletRequest httpServletRequest) {
+        if (httpServletRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
+        }
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        Long uuid = -1L;
+        uuid = loginUser.getUuid();
+        List<CompetitionProblemsVo> result = problemAlgorithmService.competitionSearchProblems(competition_id, uuid);
+        return ResultUtils.success(result);
+    }
+    @AccessLimit(seconds=5, maxCount=40, needLogin = true)
+    @PostMapping("/search/problem")
+    private BaseResponse<ProblemAlgorithmBankVo> competitionSearchProblem(Long competition_id, String index, HttpServletRequest httpServletRequest) {
+        if (httpServletRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
+        }
+
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        Long uuid = loginUser.getUuid();
+        ProblemAlgorithmBankVo result = problemAlgorithmService.competitionSearchProblem(competition_id, index, uuid);
+        return ResultUtils.success(result);
+    }
     @AccessLimit(seconds=5, maxCount=50, needLogin=false)
     @PostMapping("/search/problemId")
     private BaseResponse<ProblemAlgorithmBankVo> problemAlgorithmSearchByProblemId(Integer problem_id, HttpServletRequest httpServletRequest) {
@@ -87,6 +132,22 @@ public class ProblemAlgorithmController {
         }
 
         ProblemAlgorithmBankVo result = problemAlgorithmService.problemSearchByProblemId(problem_id, httpServletRequest);
+        return ResultUtils.success(result);
+    }
+
+    @PostMapping("/search/difficulty/sum")
+    private BaseResponse<Long>  problemAlgorithmSearchSumByDifficulty(String difficulty, HttpServletRequest httpServletRequest) {
+        if (httpServletRequest == null || difficulty == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
+        }
+
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        Long uuid = -1L;
+        if (loginUser != null) {
+            uuid = loginUser.getUuid();
+        }
+
+        Long result = problemAlgorithmService.problemSearchByDifficultyAndUuid(difficulty, uuid);
         return ResultUtils.success(result);
     }
 
@@ -248,6 +309,148 @@ public class ProblemAlgorithmController {
         }
 
         Boolean result = problemAlgorithmService.problemAlgorithmRecordAdd(uuid, judgeRequest);
+        return ResultUtils.success(result);
+    }
+
+    @PostMapping("/admin/add")
+    private BaseResponse<Boolean> problemAlgorithmAdd(@RequestBody ProblemAlgorithmRequest problemAlgorithmRequest, String username, Integer status, HttpServletRequest httpServletRequest) {
+        if (httpServletRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
+        }
+
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        Long uuid = -1L;
+        if (loginUser != null) {
+            uuid = loginUser.getUuid();
+        } else {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录呢！");
+        }
+        boolean isAdmin = userService.isAdmin(httpServletRequest);
+        Boolean result = problemAlgorithmService.problemAdd(problemAlgorithmRequest, isAdmin, uuid, username, status, httpServletRequest);
+        return ResultUtils.success(result);
+    }
+
+    @PostMapping("/admin/delete")
+    private BaseResponse<Boolean> problemAlgorithmDelete(Long problem_id, HttpServletRequest httpServletRequest) {
+        if (httpServletRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
+        }
+
+        boolean isAdmin = userService.isAdmin(httpServletRequest);
+        Boolean result = problemAlgorithmService.problemDelete(problem_id, isAdmin, httpServletRequest);
+
+        return ResultUtils.success(result);
+    }
+
+    @PostMapping("/admin/modify")
+    private BaseResponse<Boolean> problemAlgorithmModify(@RequestBody ProblemAlgorithmRequest problemAlgorithmRequest, HttpServletRequest httpServletRequest) {
+        if (httpServletRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
+        }
+
+        boolean isAdmin = userService.isAdmin(httpServletRequest);
+        Boolean result = problemAlgorithmService.problemModify(problemAlgorithmRequest, isAdmin, httpServletRequest);
+
+        return ResultUtils.success(result);
+    }
+
+    @PostMapping("/admin/testCase/get")
+    private BaseResponse<List<ProblemAlgorithmTestCaseRequest>> problemAlgorithmTestCaseGet(Long problem_id, HttpServletRequest httpServletRequest) {
+        if (httpServletRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
+        }
+
+        boolean isAdmin = userService.isAdmin(httpServletRequest);
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        Long uuid = -1L;
+        if (loginUser != null) {
+            uuid = loginUser.getUuid();
+        } else {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录！！！");
+        }
+        List<ProblemAlgorithmTestCaseRequest> result = problemAlgorithmService.problemTestCaseGet(problem_id,isAdmin);
+
+        return ResultUtils.success(result);
+
+    }
+
+    @PostMapping("/admin/testCaseFile/get")
+    private BaseResponse<ResponseEntity<byte[]>> problemAlgorithmTestCaseFileGet(Long problem_id, HttpServletRequest httpServletRequest) throws UnsupportedEncodingException {
+        if (httpServletRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
+        }
+
+        boolean isAdmin = userService.isAdmin(httpServletRequest);
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        Long uuid = -1L;
+        if (loginUser != null) {
+            uuid = loginUser.getUuid();
+        } else {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录！！！");
+        }
+
+        ResponseEntity<byte[]> result = problemAlgorithmService.problemTestCaseFileGet(problem_id,isAdmin);
+
+        return ResultUtils.success(result);
+    }
+    @PostMapping("/admin/testCase/add")
+    private BaseResponse<Boolean> problemAlgorithmTestCaseAdd(@RequestBody List<ProblemAlgorithmTestCaseRequest> problemAlgorithmTestCaseRequestList, Long problem_id, HttpServletRequest httpServletRequest) {
+        if (httpServletRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
+        }
+
+        boolean isAdmin = userService.isAdmin(httpServletRequest);
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录！！！");
+        }
+        Boolean result = problemAlgorithmService.problemTestCaseAdd(problemAlgorithmTestCaseRequestList, isAdmin, problem_id);
+
+        return ResultUtils.success(result);
+
+    }
+
+    @PostMapping("/admin/testCaseFile/add")
+    private BaseResponse<Boolean> problemAlgorithmTestCasesAdd(@RequestParam("file") MultipartFile TestFile, Long problem_id, HttpServletRequest httpServletRequest) throws IOException {
+        if (httpServletRequest == null || TestFile.isEmpty()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求信息和文件信息均不允许为空！！！");
+        }
+
+        boolean isAdmin = userService.isAdmin(httpServletRequest);
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录！！！");
+        }
+        Boolean result = problemAlgorithmService.problemTestCasesFileAdd(TestFile, isAdmin, problem_id);
+
+        return ResultUtils.success(result);
+
+    }
+    @AccessLimit(seconds = 3, maxCount = 20, needLogin = true)
+    @GetMapping("/search/problemLast")
+    private BaseResponse<ProblemUserLastVo> problemAlgorithmUserLast(HttpServletRequest httpServletRequest){
+        if (httpServletRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
+        }
+
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        Long uuid = loginUser.getUuid();
+
+        ProblemUserLastVo problemUserLastVo = problemAlgorithmService.problemAlgorithmUserLast(uuid);
+        return ResultUtils.success(problemUserLastVo);
+    }
+
+    @AccessLimit(seconds = 3, maxCount = 20, needLogin = true)
+    @PostMapping("/set/problemLast")
+    private BaseResponse<Boolean> problemAlgorithmSetUserLast(@RequestBody UserLastEnter userLastEnter, HttpServletRequest httpServletRequest){
+        if (httpServletRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
+        }
+
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        Long uuid = loginUser.getUuid();
+
+        boolean result = problemAlgorithmService.problemAlgorithmSetUserLast(userLastEnter, uuid);
         return ResultUtils.success(result);
     }
 }

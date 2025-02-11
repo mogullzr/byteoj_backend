@@ -1,4 +1,9 @@
 package com.example.backend.service.Impl.algorithm;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import cn.hutool.http.HttpRequest;
@@ -19,29 +24,48 @@ import com.example.backend.models.domain.algorithm.submission.SubmissionAlgorith
 import com.example.backend.models.domain.algorithm.submission.SubmissionAlgorithmRecords;
 import com.example.backend.models.domain.algorithm.submission.SubmissionsAlgorithm;
 import com.example.backend.models.domain.algorithm.tag.ProblemAlgorithmTags;
+import com.example.backend.models.domain.algorithm.tag.ProblemAlgorithmTagsClassify;
 import com.example.backend.models.domain.algorithm.tag.ProblemAlgorithmTagsRelation;
 import com.example.backend.models.domain.algorithm.test.AlgorithmTestCase;
+import com.example.backend.models.domain.competiton.CompetitionAcProblemsAlgorithm;
+import com.example.backend.models.domain.competiton.Competitions;
+import com.example.backend.models.domain.competiton.CompetitionsProblemsAlgorithm;
+import com.example.backend.models.domain.competiton.CompetitionsUser;
 import com.example.backend.models.domain.judge.Judge;
 import com.example.backend.models.request.JudgeRequest;
 import com.example.backend.models.request.problem.AlgorithmQueryRequest;
+import com.example.backend.models.request.problem.ProblemAlgorithmRequest;
+import com.example.backend.models.request.problem.ProblemAlgorithmTestCaseRequest;
+import com.example.backend.models.vo.competition.CompetitionProblemsVo;
 import com.example.backend.models.vo.problem.ProblemAlgorithmBankVo;
 import com.example.backend.models.vo.problem.ProblemDailyNumVo;
+import com.example.backend.models.vo.problem.ProblemTagsVo;
+import com.example.backend.models.vo.problem.ProblemUserLastVo;
 import com.example.backend.models.vo.submission.SubmissionAlgorithmDetailRecordVo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import com.example.backend.service.algorithm.ProblemAlgorithmService;
 import com.example.backend.models.domain.algorithm.*;
 import com.example.backend.models.domain.user.User;
+import com.example.backend.service.user.UserService;
+import com.example.backend.utils.RedisUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -61,15 +85,27 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
     private ProblemAlgorithmTagsRelationMapper problemAlgorithmTagsRelationMapper;
 
     @Resource
+    private ProblemAlgorithmTagsClassifyMapper problemAlgorithmTagsClassifyMapper;
+
+    @Resource ProblemAlgorithmTagsClassifyRelationMapper problemAlgorithmTagsClassifyRelationMapper;
+    @Resource
     private ProblemAlgorithmBankMapper problemAlgorithmBankMapper;
     @Resource
     ProblemAlgorithmLimitMapper problemAlgorithmLimitMapper;
 
     @Resource
+    CompetitionAcProblemsAlgorithmMapper competitionAcProblemsAlgorithmMapper;
+    @Resource
     AlgorithmTestCaseMapper algorithmTestCaseMapper;
     @Resource
     SubmissionsAlgorithmMapper submissionsAlgorithmMapper;
 
+    @Resource
+    CompetitionsProblemsAlgorithmMapper competitionsProblemsAlgorithmMapper;
+    @Resource
+    CompetitionsMapper competitionsMapper;
+    @Resource
+    CompetitionsUserMapper competitionsUserMapper;
     @Resource
     SubmissionAlgorithmDetailsMapper submissionAlgorithmDetailsMapper;
 
@@ -77,12 +113,33 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
     SubmissionAlgorithmRecordsMapper submissionAlgorithmRecordsMapper;
     @Resource
     private UserMapper userMapper;
+    @Resource
+    private UserService userService;
 
     @Resource
     private UserLastEnterMapper userLastEnterMapper;
 
     @Resource
     private JdbcTemplate jdbcTemplate;
+
+    @Override
+    public List<SubmissionsAlgorithmRecordsVo> problemAlgorithmRecordsAllByUuidByPage(Long uuid, Long PageNum) {
+        Page<SubmissionsAlgorithm> page = new Page<>(PageNum, 15);
+        QueryWrapper<SubmissionsAlgorithm> submissionsAlgorithmQueryWrapper = new QueryWrapper<>();
+        submissionsAlgorithmQueryWrapper.eq("uuid", uuid);
+
+        List<SubmissionsAlgorithm> submissionsAlgorithmList = submissionsAlgorithmMapper.selectPage(page, submissionsAlgorithmQueryWrapper).getRecords();
+        List<SubmissionsAlgorithmRecordsVo> submissionsAlgorithmRecordsVoList = new ArrayList<>();
+
+        for (int item = 0; item < submissionsAlgorithmList.size(); item++) {
+            QueryWrapper<SubmissionAlgorithmDetails> submissionAlgorithmDetailsQueryWrapper = new QueryWrapper<>();
+            submissionAlgorithmDetailsQueryWrapper.eq("submission_id", submissionsAlgorithmList.get(item).getSubmission_id());
+
+            submissionsAlgorithmRecordsVoList.add(getSubmissionsAlgorithmRecordsVO(submissionsAlgorithmList.get(item), submissionAlgorithmDetailsMapper.selectOne(submissionAlgorithmDetailsQueryWrapper)));
+        }
+
+        return submissionsAlgorithmRecordsVoList;
+    }
 
     @Override
     public List<ProblemAlgorithmBankVo> ListAlgorithmVoByPage(AlgorithmQueryRequest algorithmQueryRequest, Long uuid) {
@@ -1019,5 +1076,633 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 
         return problemAlgorithmBankVo;
     }
+    @Override
+    public List<SubmissionsAlgorithmRecordsVo>  problemRecordsByUuidAndProblemIdByPage(Long problem_id, Long uuid, Long PageNum) {
+        Page<SubmissionsAlgorithm> page = new Page<>(PageNum, 10);
+        QueryWrapper<SubmissionsAlgorithm> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("problem_id", problem_id);
+        queryWrapper.eq("uuid", uuid);
 
+        List<SubmissionsAlgorithm> submissionsAlgorithm = submissionsAlgorithmMapper.selectPage(page, queryWrapper).getRecords();
+        List<SubmissionsAlgorithmRecordsVo> submissionsAlgorithmRecordsVoList = new ArrayList<>();
+
+        for (int item = 0; item < submissionsAlgorithm.size(); item++) {
+            QueryWrapper<SubmissionAlgorithmDetails> submissionAlgorithmDetailsQueryWrapper = new QueryWrapper<>();
+            submissionAlgorithmDetailsQueryWrapper.eq("submission_id", submissionsAlgorithm.get(item).getSubmission_id());
+            submissionAlgorithmDetailsQueryWrapper.orderByDesc("submission_id");
+            submissionsAlgorithmRecordsVoList.add(getSubmissionsAlgorithmRecordsVO(submissionsAlgorithm.get(item), submissionAlgorithmDetailsMapper.selectOne(submissionAlgorithmDetailsQueryWrapper)));
+        }
+
+        return submissionsAlgorithmRecordsVoList;
+    }
+
+    @Override
+    public List<ProblemTagsVo> problemAlgorithmGetTagsPlusCategory() {
+        List<ProblemTagsVo> tagsVoLists = new ArrayList<>();
+        LinkedHashMap<String, Integer> category_relation = new LinkedHashMap<>();
+        problemAlgorithmTagsClassifyRelationMapper.selectList(null).forEach((classifyRelation)->{
+            category_relation.put(classifyRelation.getCategory_name(), classifyRelation.getCategory_id());
+        });
+
+        for (String key : category_relation.keySet()) {
+            List<Integer> list = new ArrayList<>();
+            ProblemTagsVo problemTagsVo = new ProblemTagsVo();
+            Integer category_id = category_relation.get(key);
+
+            problemTagsVo.setCategory(key);
+            QueryWrapper<ProblemAlgorithmTagsClassify> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("category",category_id);
+            problemAlgorithmTagsClassifyMapper.selectList(queryWrapper).forEach((classify)->{
+                list.add(classify.getTag_id());
+            });
+            List<ProblemAlgorithmTagsRelation> problemAlgorithmTagsRelationList = problemAlgorithmTagsRelationMapper.selectBatchIds(list);
+            List<String> tag_list = new ArrayList<>();
+            problemAlgorithmTagsRelationList.forEach((tagRelation)->{
+                tag_list.add(tagRelation.getTag_name());
+            });
+            problemTagsVo.setTag_list(tag_list);
+            tagsVoLists.add(problemTagsVo);
+        }
+
+        return tagsVoLists;
+    }
+
+    @Override
+    public List<CompetitionProblemsVo> competitionSearchProblems(Long competition_id, Long uuid) {
+        QueryWrapper<CompetitionsProblemsAlgorithm> competitionsProblemsAlgorithmQueryWrapper = new QueryWrapper<>();
+        QueryWrapper<Competitions> competitionsQueryWrapper = new QueryWrapper<>();
+        competitionsProblemsAlgorithmQueryWrapper.eq("competition_id", competition_id);
+        List<CompetitionsProblemsAlgorithm> competitionsProblemsAlgorithmList = competitionsProblemsAlgorithmMapper.selectList(competitionsProblemsAlgorithmQueryWrapper);
+        List<CompetitionProblemsVo> problemAlgorithmBankVoList = new ArrayList<>();
+
+        if (competitionsProblemsAlgorithmList == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "该竞赛不存在或者，该竞赛不存在题目？？？系统出错了！！！联系管理员！！！898561494@qq.com");
+        }
+
+        QueryWrapper<CompetitionsUser> competitionsUserQueryWrapper = new QueryWrapper<>();
+        competitionsUserQueryWrapper.eq("competition_id", competition_id);
+        competitionsUserQueryWrapper.eq("uuid", uuid);
+        competitionsUserQueryWrapper.eq("is_participant", 0);
+        if (competitionsUserMapper.selectOne(competitionsUserQueryWrapper) == null) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "对不起，你还没有报名比赛，拒绝访问题目！！！");
+        }
+
+        competitionsQueryWrapper.eq("competition_id", competition_id);
+        Competitions competitions = competitionsMapper.selectOne(competitionsQueryWrapper);
+        Date competitionDate = competitions.getStart_time();
+        Date date = new Date();
+        if (date.before(competitionDate)) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "比赛时间还没到，请自重！！！");
+        }
+        competitionsProblemsAlgorithmList.forEach((problem)->{
+            CompetitionProblemsVo competitionProblemsVo = new CompetitionProblemsVo();
+            competitionProblemsVo.setIndex(problem.getIdx());
+            competitionProblemsVo.setProblem_name(problem.getProblem_name());
+            competitionProblemsVo.setAc_total(problem.getAc_total());
+            competitionProblemsVo.setTest_total(problem.getTest_total());
+
+            QueryWrapper<CompetitionAcProblemsAlgorithm> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("competition_id", problem.getCompetition_id());
+            queryWrapper.eq("idx", problem.getIdx());
+            queryWrapper.eq("uuid", uuid);
+
+            CompetitionAcProblemsAlgorithm competitionAcProblemsAlgorithm = competitionAcProblemsAlgorithmMapper.selectOne(queryWrapper);
+            if (Objects.isNull(competitionAcProblemsAlgorithm)) {
+                competitionProblemsVo.setStatus(1);
+            } else {
+                competitionProblemsVo.setStatus(competitionAcProblemsAlgorithm.getAfter_status());
+            }
+            problemAlgorithmBankVoList.add(competitionProblemsVo);
+        });
+        return problemAlgorithmBankVoList;
+    }
+
+    @Override
+    public ProblemAlgorithmBankVo competitionSearchProblem(Long competition_id, String index, Long uuid) {
+        // 查看是否允许查找相关竞赛的题目
+        QueryWrapper<Competitions> competitionsQueryWrapper = new QueryWrapper<>();
+        competitionsQueryWrapper.eq("competition_id", competition_id);
+        Competitions competition = competitionsMapper.selectOne(competitionsQueryWrapper);
+        if (competition == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "竞赛不存在");
+        }
+
+        // 判断当前用户是否参加改比赛
+        QueryWrapper<CompetitionsUser> competitionsUserQueryWrapper = new QueryWrapper<>();
+        competitionsUserQueryWrapper.eq("uuid", uuid);
+        competitionsUserQueryWrapper.eq("competition_id", competition_id);
+        CompetitionsUser competitionsUser = competitionsUserMapper.selectOne(competitionsUserQueryWrapper);
+        if (competitionsUser == null || competitionsUser.getIs_participant() == 1) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有报名比赛");
+        }
+        // 观察时间判断是否运行查看题目
+        Date currentDate = new Date();
+        if (currentDate.before(competition.getStart_time())) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "对不起，比赛还没有开始，请自重");
+        }
+
+
+        QueryWrapper<CompetitionsProblemsAlgorithm> competitionsProblemsAlgorithmQueryWrapper = new QueryWrapper<>();
+        competitionsProblemsAlgorithmQueryWrapper.eq("competition_id", competition_id);
+        competitionsProblemsAlgorithmQueryWrapper.eq("idx", index);
+
+        CompetitionsProblemsAlgorithm competitionsProblemsAlgorithm = competitionsProblemsAlgorithmMapper.selectOne(competitionsProblemsAlgorithmQueryWrapper);
+        if (competitionsProblemsAlgorithm == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "这道题目不存在");
+        }
+
+        Long problem_id = competitionsProblemsAlgorithm.getProblem_id();
+        ProblemAlgorithmBank problemAlgorithmBank = getProblemAlgorithmBank(problem_id, 1);
+        if (problemAlgorithmBank == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "不存在这道题目的信息");
+        }
+        problemAlgorithmBank.setChinese_name(competitionsProblemsAlgorithm.getProblem_name());
+
+
+        List<String> tagsList = getProblemAlgorithmTags(problem_id, 1);
+        ProblemAlgorithmBankVo problemAlgorithmVO = getProblemAlgorithmVO(problemAlgorithmBank, -1L, tagsList);
+        problemAlgorithmVO.setProblem_id(null);
+        problemAlgorithmVO.setIndex(index);
+        problemAlgorithmVO.setDescription(problemAlgorithmBank.getDescription());
+        return problemAlgorithmVO;
+    }
+
+    @Override
+    public Long problemSearchByDifficultyAndUuid(String difficulty, Long uuid) {
+        QueryWrapper<AcAlgorithmProblem> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("difficulty_name", difficulty);
+        queryWrapper.eq("status", 1);
+        queryWrapper.eq("user_id", uuid);
+
+        return acAlgorithmProblemMapper.selectCount(queryWrapper);
+    }
+
+    @Override
+    public Boolean problemAdd(ProblemAlgorithmRequest problemAlgorithmRequest, boolean isAdmin, Long uuid, String username, Integer status, HttpServletRequest httpServletRequest) {
+        if (!isAdmin) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "对不起，您的权限不足");
+        }
+
+        Long problem_id = problemAlgorithmRequest.getProblem_id();
+        String Chinese_name = problemAlgorithmRequest.getChinese_name();
+        String English_name = problemAlgorithmRequest.getEnglish_name();
+        Integer CPU_limit = problemAlgorithmRequest.getCpu_limit();
+        Long create_id = problemAlgorithmRequest.getCreate_by_id();
+        String create_name = problemAlgorithmRequest.getCreate_by_name();
+        String difficulty_name = problemAlgorithmRequest.getDifficulty_name();
+        String description = problemAlgorithmRequest.getDescription();
+        Integer Memory_limit = problemAlgorithmRequest.getMemory_limit();
+        Date create_time = new Date();
+        // 基本的一些判空工作
+        if (problem_id == null
+                || Chinese_name == null
+                || CPU_limit == null
+                || create_id == null
+                || difficulty_name == null
+                || description == null
+                || Memory_limit == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "必填项不允许为空！！！");
+        }
+
+        assert create_id == null;
+        if (!create_id.equals(uuid)) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "系统错误！！！！你是谁？？？");
+        }
+        // 1.problem_id判别
+        if (1 > problem_id) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "题号设置不可小于1");
+        }
+
+        ProblemAlgorithmBank isExist = getProblemAlgorithmBank(problem_id, 1);
+        if (isExist != null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "题号已存在");
+        }
+
+        Pattern pattern = Pattern.compile("[\u4e00-\u9fa5]+");
+        // 2.Chinese_name判别
+        // 无需检验
+
+        // 3.English_name判别
+        if (English_name != null) {
+            Matcher English_matcher = pattern.matcher(English_name);
+            if (English_matcher.matches()) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "英文名不允许包含中文");
+            }
+        }
+
+        // 4.判断create_id是否存在
+        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
+        userQueryWrapper.eq("uuid", create_id);
+        Long count = userMapper.selectCount(userQueryWrapper);
+        if (count == 0) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "错误错误，用户不存在！！！");
+        }
+
+        // 5.其他的后续继续更新.....
+
+        // 6.将题目信息插入到各个表中去
+
+        // problem_algorithm_bank
+        ProblemAlgorithmBank problemAlgorithmBank = new ProblemAlgorithmBank();
+        problemAlgorithmBank.setProblem_id(problem_id);
+        problemAlgorithmBank.setChinese_name(Chinese_name);
+        problemAlgorithmBank.setDescription(description);
+        problemAlgorithmBank.setCreate_time(create_time);
+        problemAlgorithmBank.setCreate_by_id(create_id);
+        problemAlgorithmBank.setCreate_by_name(create_name);
+        problemAlgorithmBank.setDifficulty_name(difficulty_name);
+        problemAlgorithmBank.setShort_name(problemAlgorithmRequest.getShort_name());
+        problemAlgorithmBank.setSource_name(problemAlgorithmRequest.getSource_name());
+        problemAlgorithmBank.setAc_total(0);
+        problemAlgorithmBank.setTest_total(0);
+        // 表示这时候管理员在竞赛模式下创建题目，需要暂时隐藏题目
+        if (status != null && status == 0) {
+            problemAlgorithmBank.setIs_delete(1);
+        }
+        try {
+            this.save(problemAlgorithmBank);
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "题号已存在，暂时处于竞赛模拟状态中");
+        }
+
+
+        // problem_algorithm_limit
+        ProblemAlgorithmLimit problemAlgorithmLimit = new ProblemAlgorithmLimit();
+        problemAlgorithmLimit.setProblem_id(problem_id);
+        problemAlgorithmLimit.setCpu_limit(CPU_limit);
+        problemAlgorithmLimit.setMemory_limit(Memory_limit);
+        problemAlgorithmLimit.setCreate_by_id(uuid);
+        problemAlgorithmLimit.setCreate_by_name(username);
+
+        // 表示这时候管理员在竞赛模式下创建题目，需要暂时隐藏题目
+        if (status != null && status == 0) {
+            problemAlgorithmLimit.setIs_delete(1);
+        }
+
+        problemAlgorithmLimitMapper.insert(problemAlgorithmLimit);
+
+        // problem_algorithm_tags
+        List<Integer> tagsList = problemAlgorithmRequest.getTags_list();
+        int length = tagsList.size();
+
+        for (int item = 0; item < length; item++) {
+            ProblemAlgorithmTags problemAlgorithmTags = new ProblemAlgorithmTags();
+            Integer tag_id = tagsList.get(item);
+            QueryWrapper<ProblemAlgorithmTagsRelation> problemAlgorithmTagsRelationQueryWrapper = new QueryWrapper<>();
+            problemAlgorithmTagsRelationQueryWrapper.eq("tag_id", tag_id);
+
+            Long result = problemAlgorithmTagsRelationMapper.selectCount(problemAlgorithmTagsRelationQueryWrapper);
+            if (result == 0) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "不存在这样的算法标签，请重新添加");
+            }
+
+            problemAlgorithmTags.setProblem_id(problem_id);
+            problemAlgorithmTags.setTag_id(tag_id);
+
+
+            // 表示这时候管理员在竞赛模式下创建题目，需要暂时隐藏题目
+            if (status != null && status == 0) {
+                problemAlgorithmTags.setIs_delete(1);
+            }
+            problemAlgorithmTagsMapper.insert(problemAlgorithmTags);
+        }
+
+        return true;
+    }
+
+    @Override
+    public Boolean problemDelete(Long problem_id, boolean isAdmin, HttpServletRequest httpServletRequest) {
+        if (!isAdmin) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "对不起，你没有权限");
+        }
+
+        ProblemAlgorithmBank isExist = getProblemAlgorithmBank(problem_id, 0);
+        if (isExist == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "不存在这样的题目或题目已被隐藏");
+        }
+
+        // problem_algorithm_limit
+        QueryWrapper<ProblemAlgorithmLimit> problemAlgorithmLimitQueryWrapper = new QueryWrapper<>();
+        problemAlgorithmLimitQueryWrapper.eq("problem_id", problem_id);
+        problemAlgorithmLimitQueryWrapper.eq("is_delete", 0);
+        ProblemAlgorithmLimit problemAlgorithmLimit = problemAlgorithmLimitMapper.selectOne(problemAlgorithmLimitQueryWrapper);
+        problemAlgorithmLimit.setIs_delete(1);
+        problemAlgorithmLimitMapper.update(problemAlgorithmLimit, problemAlgorithmLimitQueryWrapper);
+
+        // problem_algorithm_bank
+        QueryWrapper<ProblemAlgorithmBank> problemAlgorithmBankQueryWrapper = new QueryWrapper<>();
+        problemAlgorithmBankQueryWrapper.eq("problem_id", problem_id);
+        problemAlgorithmBankQueryWrapper.eq("is_delete", 0);
+        isExist.setIs_delete(1);
+        problemAlgorithmBankMapper.update(isExist, problemAlgorithmBankQueryWrapper);
+
+        // problem_algorithm_tags
+        QueryWrapper<ProblemAlgorithmTags> problemAlgorithmTagsQueryWrapper = new QueryWrapper<>();
+        problemAlgorithmTagsQueryWrapper.eq("problem_id", problem_id);
+        problemAlgorithmTagsQueryWrapper.eq("is_delete", 0);
+        ProblemAlgorithmTags problemAlgorithmTags = problemAlgorithmTagsMapper.selectOne(problemAlgorithmTagsQueryWrapper);
+        isExist.setIs_delete(1);
+        problemAlgorithmTagsMapper.update(problemAlgorithmTags, problemAlgorithmTagsQueryWrapper);
+
+        return true;
+    }
+
+    @Override
+    public Boolean problemModify(ProblemAlgorithmRequest problemAlgorithmRequest, boolean isAdmin, HttpServletRequest httpServletRequest) {
+        if (!isAdmin) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "对不起，你没有修改权限");
+        }
+        Long problem_id = problemAlgorithmRequest.getProblem_id();
+        String Chinese_name = problemAlgorithmRequest.getChinese_name();
+        Integer CPU_limit = problemAlgorithmRequest.getCpu_limit();
+
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        Long update_id = loginUser.getUuid();
+        String update_name = loginUser.getUsername();
+
+        String difficulty_name = problemAlgorithmRequest.getDifficulty_name();
+        String description = problemAlgorithmRequest.getDescription();
+        Integer Memory_limit = problemAlgorithmRequest.getMemory_limit();
+
+        // 基本的一些判空工作
+        if (problem_id == null
+                || Chinese_name == null
+                || CPU_limit == null
+                || update_id == null
+                || update_name == null
+                || difficulty_name == null
+                || description == null
+                || Memory_limit == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "必填项不允许为空！！！");
+        }
+
+        // 1.problem_id判别
+        if (1 >= problem_id) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "题号设置不可小于1");
+        }
+
+        ProblemAlgorithmBank isExist = getProblemAlgorithmBank(problem_id, 1);
+        if (isExist == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "不存在此题，无法修改");
+        }
+
+        Pattern pattern = Pattern.compile("[\u4e00-\u9fa5]+");
+        // 2.Chinese_name判别
+        // 无需检验
+
+        // 3.English_name判别
+//        Matcher English_matcher = pattern.matcher(English_name);
+//        if (English_matcher.matches()) {
+//            throw new BusinessException(ErrorCode.PARAMS_ERROR, "英文名不允许包含中文");
+//        }
+
+        // 4.判断update_id是否存在
+        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
+        userQueryWrapper.eq("uuid", update_id);
+        Long count = userMapper.selectCount(userQueryWrapper);
+        if (count == 0) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "错误错误，用户不存在！！！");
+        }
+
+        // 5.其他的后续继续更新.....
+
+        // 6.将题目信息进行修改
+
+        // problem_algorithm_bank
+        ProblemAlgorithmBank problemAlgorithmBank = new ProblemAlgorithmBank();
+        QueryWrapper<ProblemAlgorithmBank> problemAlgorithmBankQueryWrapper = new QueryWrapper<>();
+        problemAlgorithmBankQueryWrapper.eq("problem_id", problem_id);
+        ProblemAlgorithmBank problem = getProblemAlgorithmBank(problem_id, 1);
+
+        problemAlgorithmBank.setProblem_id(problem_id);
+        problemAlgorithmBank.setChinese_name(Chinese_name);
+        problemAlgorithmBank.setDescription(description);
+        problemAlgorithmBank.setCreate_time(problem.getCreate_time());
+        problemAlgorithmBank.setCreate_by_id(problem.getCreate_by_id());
+        problemAlgorithmBank.setCreate_by_name(problem.getCreate_by_name());
+        problemAlgorithmBank.setUpdate_time(new Date());
+        problemAlgorithmBank.setUpdate_by_id(update_id);
+        problemAlgorithmBank.setUpdate_by_name(update_name);
+        problemAlgorithmBank.setDifficulty_name(difficulty_name);
+        problemAlgorithmBank.setShort_name(problemAlgorithmRequest.getShort_name());
+        problemAlgorithmBank.setAc_total(problem.getAc_total());
+        problemAlgorithmBank.setTest_total(problem.getTest_total());
+
+        problemAlgorithmBankMapper.update(problemAlgorithmBank, problemAlgorithmBankQueryWrapper);
+
+        // problem_algorithm_limit
+        ProblemAlgorithmLimit problemAlgorithmLimit = new ProblemAlgorithmLimit();
+        QueryWrapper<ProblemAlgorithmLimit> problemAlgorithmLimitQueryWrapper = new QueryWrapper<>();
+        problemAlgorithmLimitQueryWrapper.eq("problem_id", problem_id);
+
+        problemAlgorithmLimit.setProblem_id(problem_id);
+        problemAlgorithmLimit.setCpu_limit(CPU_limit);
+        problemAlgorithmLimit.setCreate_by_id(problem.getCreate_by_id());
+        problemAlgorithmLimit.setCreate_by_name(problem.getCreate_by_name());
+        problemAlgorithmLimit.setUpdate_by_id(update_id);
+        problemAlgorithmLimit.setUpdate_by_name(update_name);
+
+        problemAlgorithmLimitMapper.update(problemAlgorithmLimit, problemAlgorithmLimitQueryWrapper);
+
+        // problem_algorithm_tags
+        List<Integer> tagsList = problemAlgorithmRequest.getTags_list();
+        int length = tagsList.size();
+
+        for (int item = 0; item < length; item++) {
+            ProblemAlgorithmTags problemAlgorithmTags = new ProblemAlgorithmTags();
+            Integer tag_id = tagsList.get(item);
+            QueryWrapper<ProblemAlgorithmTagsRelation> problemAlgorithmTagsRelationQueryWrapper = new QueryWrapper<>();
+            problemAlgorithmTagsRelationQueryWrapper.eq("tag_id", tag_id);
+
+            Long result = problemAlgorithmTagsRelationMapper.selectCount(problemAlgorithmTagsRelationQueryWrapper);
+            if (result == 0) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "不存在这样的算法标签，请重新添加");
+            }
+
+            problemAlgorithmTags.setProblem_id(problem_id);
+            problemAlgorithmTags.setTag_id(tag_id);
+
+            QueryWrapper<ProblemAlgorithmTags> problemAlgorithmTagsQueryWrapper = new QueryWrapper<>();
+            problemAlgorithmTagsQueryWrapper.eq("problem_id", problem_id);
+
+            problemAlgorithmTagsMapper.update(problemAlgorithmTags, problemAlgorithmTagsQueryWrapper);
+        }
+        return true;
+    }
+
+    @Override
+    public Boolean problemTestCaseAdd(List<ProblemAlgorithmTestCaseRequest> problemAlgorithmTestCaseRequestList, boolean isAdmin, Long problem_id) {
+        if (!isAdmin){
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "对不起，您的权限不足");
+        }
+
+        QueryWrapper<AlgorithmTestCase> algorithmTestCaseQueryWrapper = new QueryWrapper<>();
+        algorithmTestCaseQueryWrapper.eq("problem_id", problem_id);
+
+        algorithmTestCaseMapper.delete(algorithmTestCaseQueryWrapper);
+
+        problemAlgorithmTestCaseRequestList.forEach((testCase)->{
+            AlgorithmTestCase algorithmTestCase = new AlgorithmTestCase();
+            algorithmTestCase.setProblem_id(problem_id);
+            algorithmTestCase.setInput(testCase.getInput());
+            algorithmTestCase.setOutput(testCase.getOutput());
+            algorithmTestCase.setCreate_time(new Date());
+            algorithmTestCaseMapper.insert(algorithmTestCase);
+        });
+
+        return true;
+    }
+
+    @Override
+    public Boolean problemTestCasesFileAdd(MultipartFile TestFile, boolean isAdmin, Long problem_id) throws IOException {
+        if (!isAdmin){
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "对不起，您的权限不足");
+        }
+
+        QueryWrapper<AlgorithmTestCase> algorithmTestCaseQueryWrapper = new QueryWrapper<>();
+        algorithmTestCaseQueryWrapper.eq("problem_id", problem_id);
+
+        algorithmTestCaseMapper.delete(algorithmTestCaseQueryWrapper);
+
+        // 读取文件内容
+        List<Map<String, String>> testCaseTemp = parseCsv(TestFile);
+
+        // 处理解析后的数据
+        for (Map<String, String> testCase : testCaseTemp) {
+            String input = testCase.get("input");
+            String output = testCase.get("output");
+
+            AlgorithmTestCase algorithmTestCase = new AlgorithmTestCase();
+            algorithmTestCase.setProblem_id(problem_id);
+            algorithmTestCase.setInput(input);
+            algorithmTestCase.setOutput(output);
+            algorithmTestCase.setCreate_time(new Date());
+            algorithmTestCaseMapper.insert(algorithmTestCase);
+        }
+
+        return true;
+    }
+
+    private List<Map<String, String>> parseCsv(MultipartFile file) throws IOException {
+        List<Map<String, String>> testCaseTemp = new ArrayList<>();
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                // 使用正则表达式解析CSV行
+                String[] columns = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+                for (int i = 0; i < columns.length; i++) {
+                    columns[i] = columns[i].replaceAll("^\"|\"$", ""); // 去除引号
+                }
+
+                // 假设每行有两个数据，分别存储在columns[0]和columns[1]
+                String input = columns[0];
+                String output = columns[1];
+                // 将处理后的数据存储到数组中
+                Map<String, String> testCase = new HashMap<>();
+                testCase.put("input", input);
+                testCase.put("output", output);
+                testCaseTemp.add(testCase);
+            }
+        }
+
+        return testCaseTemp;
+    }
+    @Override
+    public List<ProblemAlgorithmTestCaseRequest> problemTestCaseGet(Long problem_id, boolean isAdmin) {
+        if (!isAdmin){
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "对不起，您的权限不足");
+        }
+
+        QueryWrapper<AlgorithmTestCase> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("problem_id", problem_id);
+
+        List<AlgorithmTestCase> algorithmTestCases = algorithmTestCaseMapper.selectList(queryWrapper);
+        List<ProblemAlgorithmTestCaseRequest> problemAlgorithmTestCaseRequestList = new ArrayList<>();
+        algorithmTestCases.forEach((testCase)->{
+            ProblemAlgorithmTestCaseRequest problemAlgorithmTestCaseRequest = new ProblemAlgorithmTestCaseRequest();
+            problemAlgorithmTestCaseRequest.setInput(testCase.getInput());
+            problemAlgorithmTestCaseRequest.setOutput(testCase.getOutput());
+            problemAlgorithmTestCaseRequestList.add(problemAlgorithmTestCaseRequest);
+        });
+
+        return problemAlgorithmTestCaseRequestList;
+    }
+
+
+    @Override
+    public ResponseEntity<byte[]> problemTestCaseFileGet(Long problem_id, boolean isAdmin) throws UnsupportedEncodingException {
+        if (!isAdmin){
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "对不起，您的权限不足");
+        }
+
+        QueryWrapper<AlgorithmTestCase> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("problem_id", problem_id);
+        List<AlgorithmTestCase> algorithmTestCases = algorithmTestCaseMapper.selectList(queryWrapper);
+        String problemCsvAlgorithmTestCase = "";
+
+        // 设定CSV数据
+        for (AlgorithmTestCase testCase : algorithmTestCases) {
+            problemCsvAlgorithmTestCase += testCase.getInput() + "," + testCase.getOutput() + "\n";
+        }
+
+        // 将 CSV 内容转换为字节数组
+        byte[] csvBytes = problemCsvAlgorithmTestCase.getBytes(StandardCharsets.UTF_8);
+
+        // 返回响应
+        return new ResponseEntity<>(csvBytes, HttpStatus.OK);
+    }
+    @Override
+    public ProblemUserLastVo problemAlgorithmUserLast(Long uuid) {
+        String key = "/problem/set/problemLast" + uuid;
+        String last_url_problem = RedisUtils.getStr(key);
+        String last_url = "";
+        String last_problem_name = "";
+        ProblemUserLastVo problemUserLastVo = new ProblemUserLastVo();
+        if (Objects.isNull(last_url_problem) || last_url_problem.isEmpty()) {
+            QueryWrapper<UserLastEnter> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("uuid", uuid);
+            UserLastEnter userLastEnter = userLastEnterMapper.selectOne(queryWrapper);
+            last_url = userLastEnter.getUrl();
+            last_problem_name = userLastEnter.getProblem_name();
+            RedisUtils.set(key, last_url + "??" + last_url_problem, 30 * 60, TimeUnit.SECONDS);
+        } else {
+            String[] last_url_problem_list = last_url_problem.split("\\?\\?");
+            last_url = last_url_problem_list[0];
+            last_problem_name = last_url_problem_list[1];
+            if (Objects.isNull(last_url) || Objects.isNull(last_problem_name) || last_url.isEmpty() || last_problem_name.isEmpty()) {
+                QueryWrapper<UserLastEnter> queryWrapper = new QueryWrapper<>();
+                queryWrapper.eq("uuid", uuid);
+                UserLastEnter userLastEnter = userLastEnterMapper.selectOne(queryWrapper);
+                last_url = userLastEnter.getUrl();
+                last_problem_name = userLastEnter.getProblem_name();
+                RedisUtils.set(key, last_url + "??" + last_url_problem, 30 * 60, TimeUnit.SECONDS);
+            }
+        }
+
+        problemUserLastVo.setProblem_url(last_url);
+        problemUserLastVo.setProblem_name(last_problem_name);
+        return problemUserLastVo;
+    }
+
+    @Override
+    public boolean problemAlgorithmSetUserLast(UserLastEnter userLastEnter, Long uuid) {
+        String last_url = userLastEnter.getUrl();
+        String last_problem_name = userLastEnter.getProblem_name();
+        userLastEnter.setUuid(uuid);
+
+        if (StringUtils.isAnyBlank(last_problem_name, last_url)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不允许为空");
+        }
+
+        QueryWrapper<UserLastEnter> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("uuid", uuid);
+        Long count = userLastEnterMapper.selectCount(queryWrapper);
+        if (count == 0) {
+            userLastEnterMapper.insert(userLastEnter);
+        } else {
+            userLastEnterMapper.update(userLastEnter, queryWrapper);
+        }
+        return RedisUtils.set("/problem/set/problemLast" + uuid, last_url + "??" + last_problem_name, 30 * 60, TimeUnit.SECONDS);
+    }
 }

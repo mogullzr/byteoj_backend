@@ -33,6 +33,22 @@ public interface UserService extends IService<User> {
 //     */
 
 //    long UserRegister(String Account, String Email, String confirmNumber, String Password, String CheckPassword);
+
+    /**
+     * 获取所有用户允许知道的个人信心
+     *
+     * @param uuid 用户uuid
+     * @return 脱敏信息
+     */
+    UserVo UserSearchByUuid(Long uuid);
+
+    /**
+     *
+     * @param Account
+     * @param Password
+     * @param CheckPassword
+     * @return
+     */
     long UserRegister(String Account, String Password, String CheckPassword);
     /**
      * 管理员登录
