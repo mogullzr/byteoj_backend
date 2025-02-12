@@ -1,0 +1,511 @@
+2025-02-10 21:14:58.937  WARN 26084 --- [http-nio-0.0.0.0-7091-exec-3] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [org.springframework.jdbc.BadSqlGrammarException: <EOL><EOL>### Error querying database.  Cause: java.sql.SQLSyntaxErrorException: Unknown column 'problem_id' in 'field list'<EOL><EOL>### The error may exist in com/example/backend/mapper/PostsTagsMapper.java (best guess)<EOL><EOL>### The error may involve defaultParameterMap<EOL><EOL>### The error occurred while setting parameters<EOL><EOL>### SQL: SELECT   DISTINCT problem_id   FROM posts_tags      WHERE  (tag_id = ?)<EOL><EOL>### Cause: java.sql.SQLSyntaxErrorException: Unknown column 'problem_id' in 'field list'<EOL>; bad SQL grammar []; nested exception is java.sql.SQLSyntaxErrorException: Unknown column 'problem_id' in 'field list']
+2025-02-10 21:16:09.884  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-6] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 485
+2025-02-10 21:16:09.884  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-6] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 486
+2025-02-10 21:16:09.885  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-6] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 487
+2025-02-10 21:16:09.885  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-5] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 485
+2025-02-10 21:16:09.885  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-6] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 488
+2025-02-10 21:16:09.885  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-5] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 486
+2025-02-10 21:16:09.885  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-6] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 489
+2025-02-10 21:16:09.885  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-5] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 487
+2025-02-10 21:16:09.885  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-6] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 490
+2025-02-10 21:16:09.886  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-5] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 488
+2025-02-10 21:16:09.886  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-6] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 491
+2025-02-10 21:16:09.886  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-5] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 489
+2025-02-10 21:16:09.886  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-6] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 492
+2025-02-10 21:16:09.886  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-5] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 490
+2025-02-10 21:16:09.886  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-6] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 493
+2025-02-10 21:16:09.887  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-5] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 491
+2025-02-10 21:16:09.887  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-6] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 494
+2025-02-10 21:16:09.887  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-5] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 492
+2025-02-10 21:16:09.887  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-5] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 493
+2025-02-10 21:16:09.887  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-5] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 494
+2025-02-10 21:16:11.531  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-1] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 485
+2025-02-10 21:16:11.531  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-4] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 485
+2025-02-10 21:16:11.531  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-1] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 486
+2025-02-10 21:16:11.531  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-4] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 486
+2025-02-10 21:16:11.531  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-1] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 487
+2025-02-10 21:16:11.531  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-4] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 487
+2025-02-10 21:16:11.532  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-1] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 488
+2025-02-10 21:16:11.532  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-4] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 488
+2025-02-10 21:16:11.532  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-1] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 489
+2025-02-10 21:16:11.532  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-4] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 489
+2025-02-10 21:16:11.532  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-1] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 490
+2025-02-10 21:16:11.532  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-4] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 490
+2025-02-10 21:16:11.532  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-1] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 491
+2025-02-10 21:16:11.533  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-4] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 491
+2025-02-10 21:16:11.533  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-1] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 492
+2025-02-10 21:16:11.533  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-4] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 492
+2025-02-10 21:16:11.533  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-1] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 493
+2025-02-10 21:16:11.533  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-4] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 493
+2025-02-10 21:16:11.533  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-1] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 494
+2025-02-10 21:16:11.533  INFO 26084 --- [http-nio-0.0.0.0-7091-exec-4] c.e.b.s.I.a.ProblemAlgorithmServiceImpl  : No tags found for problem_id: 494
+2025-02-10 21:19:52.150  INFO 26084 --- [File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 1 class path change (0 additions, 1 deletion, 0 modifications)
+2025-02-10 21:19:52.171  INFO 26084 --- [Thread-15] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]
+2025-02-10 21:19:52.172  INFO 26084 --- [Thread-15] o.a.c.c.C.[Tomcat-2].[localhost].[/api]  : Destroying Spring FrameworkServlet 'dispatcherServlet'
+2025-02-10 21:19:52.179  WARN 26084 --- [Thread-15] o.a.c.loader.WebappClassLoaderBase       : The web application [api] appears to have started a thread named [lettuce-eventExecutorLoop-8-2] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base@17.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+ java.base@17.0.9/java.util.concurrent.locks.LockSupport.park(LockSupport.java:341)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(AbstractQueuedSynchronizer.java:506)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.unmanagedBlock(ForkJoinPool.java:3465)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.managedBlock(ForkJoinPool.java:3436)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1623)
+ java.base@17.0.9/java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:435)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor.takeTask(SingleThreadEventExecutor.java:244)
+ app//io.netty.util.concurrent.DefaultEventExecutor.run(DefaultEventExecutor.java:64)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)
+ app//io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+ app//io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+ java.base@17.0.9/java.lang.Thread.run(Thread.java:840)
+2025-02-10 21:19:52.180  WARN 26084 --- [Thread-15] o.a.c.loader.WebappClassLoaderBase       : The web application [api] appears to have started a thread named [lettuce-eventExecutorLoop-8-3] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base@17.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+ java.base@17.0.9/java.util.concurrent.locks.LockSupport.park(LockSupport.java:341)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(AbstractQueuedSynchronizer.java:506)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.unmanagedBlock(ForkJoinPool.java:3465)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.managedBlock(ForkJoinPool.java:3436)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1623)
+ java.base@17.0.9/java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:435)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor.takeTask(SingleThreadEventExecutor.java:244)
+ app//io.netty.util.concurrent.DefaultEventExecutor.run(DefaultEventExecutor.java:64)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)
+ app//io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+ app//io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+ java.base@17.0.9/java.lang.Thread.run(Thread.java:840)
+2025-02-10 21:19:52.180  WARN 26084 --- [Thread-15] o.a.c.loader.WebappClassLoaderBase       : The web application [api] appears to have started a thread named [lettuce-eventExecutorLoop-8-4] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base@17.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+ java.base@17.0.9/java.util.concurrent.locks.LockSupport.park(LockSupport.java:341)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(AbstractQueuedSynchronizer.java:506)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.unmanagedBlock(ForkJoinPool.java:3465)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.managedBlock(ForkJoinPool.java:3436)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1623)
+ java.base@17.0.9/java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:435)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor.takeTask(SingleThreadEventExecutor.java:244)
+ app//io.netty.util.concurrent.DefaultEventExecutor.run(DefaultEventExecutor.java:64)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)
+ app//io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+ app//io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+ java.base@17.0.9/java.lang.Thread.run(Thread.java:840)
+2025-02-10 21:19:52.180  WARN 26084 --- [Thread-15] o.a.c.loader.WebappClassLoaderBase       : The web application [api] appears to have started a thread named [lettuce-eventExecutorLoop-8-5] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base@17.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+ java.base@17.0.9/java.util.concurrent.locks.LockSupport.park(LockSupport.java:341)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(AbstractQueuedSynchronizer.java:506)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.unmanagedBlock(ForkJoinPool.java:3465)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.managedBlock(ForkJoinPool.java:3436)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1623)
+ java.base@17.0.9/java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:435)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor.takeTask(SingleThreadEventExecutor.java:244)
+ app//io.netty.util.concurrent.DefaultEventExecutor.run(DefaultEventExecutor.java:64)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)
+ app//io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+ app//io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+ java.base@17.0.9/java.lang.Thread.run(Thread.java:840)
+2025-02-10 21:19:52.181  WARN 26084 --- [Thread-15] o.a.c.loader.WebappClassLoaderBase       : The web application [api] appears to have started a thread named [lettuce-eventExecutorLoop-8-6] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base@17.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+ java.base@17.0.9/java.util.concurrent.locks.LockSupport.park(LockSupport.java:341)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(AbstractQueuedSynchronizer.java:506)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.unmanagedBlock(ForkJoinPool.java:3465)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.managedBlock(ForkJoinPool.java:3436)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1623)
+ java.base@17.0.9/java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:435)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor.takeTask(SingleThreadEventExecutor.java:244)
+ app//io.netty.util.concurrent.DefaultEventExecutor.run(DefaultEventExecutor.java:64)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)
+ app//io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+ app//io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+ java.base@17.0.9/java.lang.Thread.run(Thread.java:840)
+2025-02-10 21:19:52.181  WARN 26084 --- [Thread-15] o.a.c.loader.WebappClassLoaderBase       : The web application [api] appears to have started a thread named [lettuce-eventExecutorLoop-8-7] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base@17.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+ java.base@17.0.9/java.util.concurrent.locks.LockSupport.park(LockSupport.java:341)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(AbstractQueuedSynchronizer.java:506)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.unmanagedBlock(ForkJoinPool.java:3465)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.managedBlock(ForkJoinPool.java:3436)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1623)
+ java.base@17.0.9/java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:435)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor.takeTask(SingleThreadEventExecutor.java:244)
+ app//io.netty.util.concurrent.DefaultEventExecutor.run(DefaultEventExecutor.java:64)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)
+ app//io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+ app//io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+ java.base@17.0.9/java.lang.Thread.run(Thread.java:840)
+2025-02-10 21:19:52.182  WARN 26084 --- [Thread-15] o.a.c.loader.WebappClassLoaderBase       : The web application [api] appears to have started a thread named [lettuce-eventExecutorLoop-8-8] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base@17.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+ java.base@17.0.9/java.util.concurrent.locks.LockSupport.park(LockSupport.java:341)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(AbstractQueuedSynchronizer.java:506)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.unmanagedBlock(ForkJoinPool.java:3465)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.managedBlock(ForkJoinPool.java:3436)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1623)
+ java.base@17.0.9/java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:435)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor.takeTask(SingleThreadEventExecutor.java:244)
+ app//io.netty.util.concurrent.DefaultEventExecutor.run(DefaultEventExecutor.java:64)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)
+ app//io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+ app//io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+ java.base@17.0.9/java.lang.Thread.run(Thread.java:840)
+2025-02-10 21:19:52.182  WARN 26084 --- [Thread-15] o.a.c.loader.WebappClassLoaderBase       : The web application [api] appears to have started a thread named [lettuce-eventExecutorLoop-8-9] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base@17.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+ java.base@17.0.9/java.util.concurrent.locks.LockSupport.park(LockSupport.java:341)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(AbstractQueuedSynchronizer.java:506)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.unmanagedBlock(ForkJoinPool.java:3465)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.managedBlock(ForkJoinPool.java:3436)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1623)
+ java.base@17.0.9/java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:435)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor.takeTask(SingleThreadEventExecutor.java:244)
+ app//io.netty.util.concurrent.DefaultEventExecutor.run(DefaultEventExecutor.java:64)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)
+ app//io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+ app//io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+ java.base@17.0.9/java.lang.Thread.run(Thread.java:840)
+2025-02-10 21:19:52.182  WARN 26084 --- [Thread-15] o.a.c.loader.WebappClassLoaderBase       : The web application [api] appears to have started a thread named [lettuce-eventExecutorLoop-8-10] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base@17.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+ java.base@17.0.9/java.util.concurrent.locks.LockSupport.park(LockSupport.java:341)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(AbstractQueuedSynchronizer.java:506)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.unmanagedBlock(ForkJoinPool.java:3465)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.managedBlock(ForkJoinPool.java:3436)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1623)
+ java.base@17.0.9/java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:435)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor.takeTask(SingleThreadEventExecutor.java:244)
+ app//io.netty.util.concurrent.DefaultEventExecutor.run(DefaultEventExecutor.java:64)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)
+ app//io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+ app//io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+ java.base@17.0.9/java.lang.Thread.run(Thread.java:840)
+2025-02-10 21:19:52.183  WARN 26084 --- [Thread-15] o.a.c.loader.WebappClassLoaderBase       : The web application [api] appears to have started a thread named [lettuce-eventExecutorLoop-8-11] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base@17.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+ java.base@17.0.9/java.util.concurrent.locks.LockSupport.park(LockSupport.java:341)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(AbstractQueuedSynchronizer.java:506)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.unmanagedBlock(ForkJoinPool.java:3465)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.managedBlock(ForkJoinPool.java:3436)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1623)
+ java.base@17.0.9/java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:435)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor.takeTask(SingleThreadEventExecutor.java:244)
+ app//io.netty.util.concurrent.DefaultEventExecutor.run(DefaultEventExecutor.java:64)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)
+ app//io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+ app//io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+ java.base@17.0.9/java.lang.Thread.run(Thread.java:840)
+2025-02-10 21:19:52.183  WARN 26084 --- [Thread-15] o.a.c.loader.WebappClassLoaderBase       : The web application [api] appears to have started a thread named [lettuce-eventExecutorLoop-8-12] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base@17.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+ java.base@17.0.9/java.util.concurrent.locks.LockSupport.park(LockSupport.java:341)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(AbstractQueuedSynchronizer.java:506)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.unmanagedBlock(ForkJoinPool.java:3465)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.managedBlock(ForkJoinPool.java:3436)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1623)
+ java.base@17.0.9/java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:435)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor.takeTask(SingleThreadEventExecutor.java:244)
+ app//io.netty.util.concurrent.DefaultEventExecutor.run(DefaultEventExecutor.java:64)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)
+ app//io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+ app//io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+ java.base@17.0.9/java.lang.Thread.run(Thread.java:840)
+2025-02-10 21:19:52.183  WARN 26084 --- [Thread-15] o.a.c.loader.WebappClassLoaderBase       : The web application [api] appears to have started a thread named [lettuce-eventExecutorLoop-8-13] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base@17.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+ java.base@17.0.9/java.util.concurrent.locks.LockSupport.park(LockSupport.java:341)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(AbstractQueuedSynchronizer.java:506)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.unmanagedBlock(ForkJoinPool.java:3465)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.managedBlock(ForkJoinPool.java:3436)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1623)
+ java.base@17.0.9/java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:435)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor.takeTask(SingleThreadEventExecutor.java:244)
+ app//io.netty.util.concurrent.DefaultEventExecutor.run(DefaultEventExecutor.java:64)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)
+ app//io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+ app//io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+ java.base@17.0.9/java.lang.Thread.run(Thread.java:840)
+2025-02-10 21:19:52.184  WARN 26084 --- [Thread-15] o.a.c.loader.WebappClassLoaderBase       : The web application [api] appears to have started a thread named [lettuce-eventExecutorLoop-8-14] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base@17.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+ java.base@17.0.9/java.util.concurrent.locks.LockSupport.park(LockSupport.java:341)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(AbstractQueuedSynchronizer.java:506)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.unmanagedBlock(ForkJoinPool.java:3465)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.managedBlock(ForkJoinPool.java:3436)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1623)
+ java.base@17.0.9/java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:435)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor.takeTask(SingleThreadEventExecutor.java:244)
+ app//io.netty.util.concurrent.DefaultEventExecutor.run(DefaultEventExecutor.java:64)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)
+ app//io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+ app//io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+ java.base@17.0.9/java.lang.Thread.run(Thread.java:840)
+2025-02-10 21:19:52.184  WARN 26084 --- [Thread-15] o.a.c.loader.WebappClassLoaderBase       : The web application [api] appears to have started a thread named [lettuce-eventExecutorLoop-8-15] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base@17.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+ java.base@17.0.9/java.util.concurrent.locks.LockSupport.park(LockSupport.java:341)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(AbstractQueuedSynchronizer.java:506)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.unmanagedBlock(ForkJoinPool.java:3465)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.managedBlock(ForkJoinPool.java:3436)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1623)
+ java.base@17.0.9/java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:435)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor.takeTask(SingleThreadEventExecutor.java:244)
+ app//io.netty.util.concurrent.DefaultEventExecutor.run(DefaultEventExecutor.java:64)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)
+ app//io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+ app//io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+ java.base@17.0.9/java.lang.Thread.run(Thread.java:840)
+2025-02-10 21:19:52.184  WARN 26084 --- [Thread-15] o.a.c.loader.WebappClassLoaderBase       : The web application [api] appears to have started a thread named [lettuce-eventExecutorLoop-8-16] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base@17.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+ java.base@17.0.9/java.util.concurrent.locks.LockSupport.park(LockSupport.java:341)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(AbstractQueuedSynchronizer.java:506)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.unmanagedBlock(ForkJoinPool.java:3465)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.managedBlock(ForkJoinPool.java:3436)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1623)
+ java.base@17.0.9/java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:435)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor.takeTask(SingleThreadEventExecutor.java:244)
+ app//io.netty.util.concurrent.DefaultEventExecutor.run(DefaultEventExecutor.java:64)
+ app//io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)
+ app//io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+ app//io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+ java.base@17.0.9/java.lang.Thread.run(Thread.java:840)
+2025-02-10 21:19:52.185  WARN 26084 --- [Thread-15] o.a.c.loader.WebappClassLoaderBase       : The web application [api] appears to have started a thread named [logback-2] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base@17.0.9/jdk.internal.misc.Unsafe.park(Native Method)
+ java.base@17.0.9/java.util.concurrent.locks.LockSupport.park(LockSupport.java:341)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionNode.block(AbstractQueuedSynchronizer.java:506)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.unmanagedBlock(ForkJoinPool.java:3465)
+ java.base@17.0.9/java.util.concurrent.ForkJoinPool.managedBlock(ForkJoinPool.java:3436)
+ java.base@17.0.9/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1623)
+ java.base@17.0.9/java.util.concurrent.ScheduledThreadPoolExecutor$DelayedWorkQueue.take(ScheduledThreadPoolExecutor.java:1170)
+ java.base@17.0.9/java.util.concurrent.ScheduledThreadPoolExecutor$DelayedWorkQueue.take(ScheduledThreadPoolExecutor.java:899)
+ java.base@17.0.9/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1062)
+ java.base@17.0.9/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1122)
+ java.base@17.0.9/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+ java.base@17.0.9/java.lang.Thread.run(Thread.java:840)
+2025-02-10 21:19:52.306  INFO 26084 --- [Thread-15] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Shutdown initiated...
+2025-02-10 21:19:52.314  INFO 26084 --- [Thread-15] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Shutdown completed.
+2025-02-10 21:19:52.504  INFO 26084 --- [restartedMain] com.example.backend.BackendApplication   : Starting BackendApplication using Java 17.0.9 on Mogullzr with PID 26084 (F:\Project\Backend\backend\target\classes started by 89856 in F:\Project\Backend\backend)
+2025-02-10 21:19:52.504  INFO 26084 --- [restartedMain] com.example.backend.BackendApplication   : The following 1 profile is active: "local"
+2025-02-10 21:19:53.005  INFO 26084 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2025-02-10 21:19:53.005  INFO 26084 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-02-10 21:19:53.022  INFO 26084 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 16 ms. Found 0 Redis repository interfaces.
+2025-02-10 21:19:53.093  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'acAlgorithmProblemMapper' and 'com.example.backend.mapper.AcAlgorithmProblemMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.093  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'acMath408ProblemMapper' and 'com.example.backend.mapper.AcMath408ProblemMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.093  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'algorithmTestCaseMapper' and 'com.example.backend.mapper.AlgorithmTestCaseMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.093  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'competitionAcProblemsAlgorithmMapper' and 'com.example.backend.mapper.CompetitionAcProblemsAlgorithmMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.093  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'competitionsMapper' and 'com.example.backend.mapper.CompetitionsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.093  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'competitionsProblemsAlgorithmMapper' and 'com.example.backend.mapper.CompetitionsProblemsAlgorithmMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.093  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'competitionsProblemsMath408Mapper' and 'com.example.backend.mapper.CompetitionsProblemsMath408Mapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.093  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'competitionsUserMapper' and 'com.example.backend.mapper.CompetitionsUserMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.093  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'courseMapper' and 'com.example.backend.mapper.CourseMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.093  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'courseProblemsAcNumMapper' and 'com.example.backend.mapper.CourseProblemsAcNumMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.093  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'courseProblemsMapper' and 'com.example.backend.mapper.CourseProblemsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.093  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'courseProblemsTypeMapper' and 'com.example.backend.mapper.CourseProblemsTypeMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.093  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'courseProblemsUserAcMapper' and 'com.example.backend.mapper.CourseProblemsUserAcMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.093  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'courseUserAcProblemMapper' and 'com.example.backend.mapper.CourseUserAcProblemMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.093  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'courseUserAcStatusMapper' and 'com.example.backend.mapper.CourseUserAcStatusMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.093  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'languageCommandMapper' and 'com.example.backend.mapper.LanguageCommandMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.093  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'postsCommentMapper' and 'com.example.backend.mapper.PostsCommentMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.093  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'postsCommentThumbsMapper' and 'com.example.backend.mapper.PostsCommentThumbsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.094  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'postsMapper' and 'com.example.backend.mapper.PostsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.094  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'postsTagsMapper' and 'com.example.backend.mapper.PostsTagsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.094  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'postsThumbsMapper' and 'com.example.backend.mapper.PostsThumbsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.094  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemAlgorithmBankDetailedMapper' and 'com.example.backend.mapper.ProblemAlgorithmBankDetailedMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.094  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemAlgorithmBankMapper' and 'com.example.backend.mapper.ProblemAlgorithmBankMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.094  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemAlgorithmLimitMapper' and 'com.example.backend.mapper.ProblemAlgorithmLimitMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.094  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemAlgorithmTagsClassifyMapper' and 'com.example.backend.mapper.ProblemAlgorithmTagsClassifyMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.094  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemAlgorithmTagsClassifyRelationMapper' and 'com.example.backend.mapper.ProblemAlgorithmTagsClassifyRelationMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.094  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemAlgorithmTagsMapper' and 'com.example.backend.mapper.ProblemAlgorithmTagsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.094  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemAlgorithmTagsRelationMapper' and 'com.example.backend.mapper.ProblemAlgorithmTagsRelationMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.094  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemMath408BankMapper' and 'com.example.backend.mapper.ProblemMath408BankMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.094  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemMath408CorrectAnswersMapper' and 'com.example.backend.mapper.ProblemMath408CorrectAnswersMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.094  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemMath408OptionsMapper' and 'com.example.backend.mapper.ProblemMath408OptionsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.094  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemMath408TagsMapper' and 'com.example.backend.mapper.ProblemMath408TagsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.095  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemMath408TagsRelationMapper' and 'com.example.backend.mapper.ProblemMath408TagsRelationMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.095  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'publicChatMessagesMapper' and 'com.example.backend.mapper.PublicChatMessagesMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.095  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'publicChatRoomsMapper' and 'com.example.backend.mapper.PublicChatRoomsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.095  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'submissionAlgorithmDetailsMapper' and 'com.example.backend.mapper.SubmissionAlgorithmDetailsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.095  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'submissionAlgorithmRecordsMapper' and 'com.example.backend.mapper.SubmissionAlgorithmRecordsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.095  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'submissionsAlgorithmMapper' and 'com.example.backend.mapper.SubmissionsAlgorithmMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.095  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'userBackgroundPictureMapper' and 'com.example.backend.mapper.UserBackgroundPictureMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.095  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'userLastEnterMapper' and 'com.example.backend.mapper.UserLastEnterMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.095  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'userMapper' and 'com.example.backend.mapper.UserMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.095  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'websiteBackgroundPicturesMapper' and 'com.example.backend.mapper.WebsiteBackgroundPicturesMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:53.095  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : No MyBatis mapper was found in '[com.example.backend.mapper]' package. Please check your configuration.
+2025-02-10 21:19:53.245  INFO 26084 --- [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 7091 (http)
+2025-02-10 21:19:53.246  INFO 26084 --- [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-02-10 21:19:53.246  INFO 26084 --- [restartedMain] org.apache.catalina.core.StandardEngine  : Starting Servlet engine: [Apache Tomcat/9.0.68]
+2025-02-10 21:19:53.365  INFO 26084 --- [restartedMain] o.a.c.c.C.[Tomcat-2].[localhost].[/api]  : Initializing Spring embedded WebApplicationContext
+2025-02-10 21:19:53.365  INFO 26084 --- [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 854 ms
+2025-02-10 21:19:54.732  INFO 26084 --- [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2025-02-10 21:19:54.739  INFO 26084 --- [restartedMain] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2025-02-10 21:19:54.926  INFO 26084 --- [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 7091 (http) with context path '/api'
+2025-02-10 21:19:55.164  INFO 26084 --- [restartedMain] com.example.backend.BackendApplication   : Started BackendApplication in 2.738 seconds (JVM running for 17319.893)
+2025-02-10 21:19:55.166  INFO 26084 --- [scheduling-1] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Starting...
+2025-02-10 21:19:55.166  INFO 26084 --- [restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2025-02-10 21:19:55.181  INFO 26084 --- [scheduling-1] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Start completed.
+2025-02-10 21:19:56.364  INFO 26084 --- [File Watcher] rtingClassPathChangeChangedEventListener : Restarting due to 1 class path change (1 addition, 0 deletions, 0 modifications)
+2025-02-10 21:19:56.376  INFO 26084 --- [Thread-22] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]
+2025-02-10 21:19:56.384  INFO 26084 --- [Thread-22] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Shutdown initiated...
+2025-02-10 21:19:56.388  INFO 26084 --- [Thread-22] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Shutdown completed.
+2025-02-10 21:19:56.488  INFO 26084 --- [restartedMain] com.example.backend.BackendApplication   : Starting BackendApplication using Java 17.0.9 on Mogullzr with PID 26084 (F:\Project\Backend\backend\target\classes started by 89856 in F:\Project\Backend\backend)
+2025-02-10 21:19:56.488  INFO 26084 --- [restartedMain] com.example.backend.BackendApplication   : The following 1 profile is active: "local"
+2025-02-10 21:19:56.700 ERROR 26084 --- [scheduling-1] o.s.s.s.TaskUtils$LoggingErrorHandler    : Unexpected error occurred in scheduled task
+
+java.lang.ExceptionInInitializerError: null
+	at com.example.backend.utils.EmailSendUtil.sendTokenToAdminEmail(EmailSendUtil.java:94) ~[classes/:na]
+	at com.example.backend.utils.SendQQTokenMessageUtil.lambda$Token_Send$0(SendQQTokenMessageUtil.java:37) ~[classes/:na]
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511) ~[na:na]
+	at com.example.backend.utils.SendQQTokenMessageUtil.Token_Send(SendQQTokenMessageUtil.java:35) ~[classes/:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568) ~[na:na]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:84) ~[spring-context-5.3.23.jar:5.3.23]
+	at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnable.java:54) ~[spring-context-5.3.23.jar:5.3.23]
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539) ~[na:na]
+	at java.base/java.util.concurrent.FutureTask.runAndReset$$$capture(FutureTask.java:305) ~[na:na]
+	at java.base/java.util.concurrent.FutureTask.runAndReset(FutureTask.java) ~[na:na]
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:305) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
+Caused by: org.springframework.boot.context.properties.ConfigurationPropertiesBindException: Error creating bean with name 'spring.redis-org.springframework.boot.autoconfigure.data.redis.RedisProperties': Could not bind properties to 'RedisProperties' : prefix=spring.redis, ignoreInvalidFields=false, ignoreUnknownFields=true; nested exception is java.lang.IllegalStateException: org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext@5373abc4 has been closed already
+	at org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor.bind(ConfigurationPropertiesBindingPostProcessor.java:92) ~[spring-boot-2.6.13.jar:2.6.13]
+	at org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor.postProcessBeforeInitialization(ConfigurationPropertiesBindingPostProcessor.java:78) ~[spring-boot-2.6.13.jar:2.6.13]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.applyBeanPostProcessorsBeforeInitialization(AbstractAutowireCapableBeanFactory.java:440) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1796) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:620) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:542) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:335) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:333) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:208) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.config.DependencyDescriptor.resolveCandidate(DependencyDescriptor.java:276) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1391) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1311) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.ConstructorResolver.resolveAutowiredArgument(ConstructorResolver.java:887) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.ConstructorResolver.resolvePreparedArguments(ConstructorResolver.java:834) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.ConstructorResolver.autowireConstructor(ConstructorResolver.java:153) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.autowireConstructor(AbstractAutowireCapableBeanFactory.java:1372) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1211) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:582) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:542) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:335) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:333) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:208) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:410) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateUsingFactoryMethod(AbstractAutowireCapableBeanFactory.java:1352) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1195) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:582) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:542) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:335) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:333) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:208) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.config.DependencyDescriptor.resolveCandidate(DependencyDescriptor.java:276) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1391) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1311) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.ConstructorResolver.resolveAutowiredArgument(ConstructorResolver.java:887) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.ConstructorResolver.resolvePreparedArguments(ConstructorResolver.java:834) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:449) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateUsingFactoryMethod(AbstractAutowireCapableBeanFactory.java:1352) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1195) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:582) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:542) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:335) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:333) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:233) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveNamedBean(DefaultListableBeanFactory.java:1284) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveNamedBean(DefaultListableBeanFactory.java:1245) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveBean(DefaultListableBeanFactory.java:494) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.getBean(DefaultListableBeanFactory.java:349) ~[spring-beans-5.3.23.jar:5.3.23]
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.getBean(DefaultListableBeanFactory.java:342) ~[spring-beans-5.3.23.jar:5.3.23]
+	at cn.hutool.extra.spring.SpringUtil.getBean(SpringUtil.java:122) ~[hutool-all-5.8.16.jar:5.8.16]
+	at com.example.backend.utils.RedisUtils.<clinit>(RedisUtils.java:25) ~[classes/:na]
+	... 17 common frames omitted
+Caused by: java.lang.IllegalStateException: org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext@5373abc4 has been closed already
+	at org.springframework.context.support.AbstractApplicationContext.assertBeanFactoryActive(AbstractApplicationContext.java:1138) ~[spring-context-5.3.23.jar:5.3.23]
+	at org.springframework.context.support.AbstractApplicationContext.getBean(AbstractApplicationContext.java:1159) ~[spring-context-5.3.23.jar:5.3.23]
+	at org.springframework.boot.context.properties.BoundConfigurationProperties.get(BoundConfigurationProperties.java:78) ~[spring-boot-2.6.13.jar:2.6.13]
+	at org.springframework.boot.context.properties.ConfigurationPropertiesBinder.getHandler(ConfigurationPropertiesBinder.java:133) ~[spring-boot-2.6.13.jar:2.6.13]
+	at org.springframework.boot.context.properties.ConfigurationPropertiesBinder.getBindHandler(ConfigurationPropertiesBinder.java:114) ~[spring-boot-2.6.13.jar:2.6.13]
+	at org.springframework.boot.context.properties.ConfigurationPropertiesBinder.bind(ConfigurationPropertiesBinder.java:94) ~[spring-boot-2.6.13.jar:2.6.13]
+	at org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor.bind(ConfigurationPropertiesBindingPostProcessor.java:89) ~[spring-boot-2.6.13.jar:2.6.13]
+	... 70 common frames omitted
+
+2025-02-10 21:19:56.813  INFO 26084 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2025-02-10 21:19:56.813  INFO 26084 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-02-10 21:19:56.830  INFO 26084 --- [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 16 ms. Found 0 Redis repository interfaces.
+2025-02-10 21:19:56.876  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'acAlgorithmProblemMapper' and 'com.example.backend.mapper.AcAlgorithmProblemMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.876  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'acMath408ProblemMapper' and 'com.example.backend.mapper.AcMath408ProblemMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.876  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'algorithmTestCaseMapper' and 'com.example.backend.mapper.AlgorithmTestCaseMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.876  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'competitionAcProblemsAlgorithmMapper' and 'com.example.backend.mapper.CompetitionAcProblemsAlgorithmMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'competitionsMapper' and 'com.example.backend.mapper.CompetitionsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'competitionsProblemsAlgorithmMapper' and 'com.example.backend.mapper.CompetitionsProblemsAlgorithmMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'competitionsProblemsMath408Mapper' and 'com.example.backend.mapper.CompetitionsProblemsMath408Mapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'competitionsUserMapper' and 'com.example.backend.mapper.CompetitionsUserMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'courseMapper' and 'com.example.backend.mapper.CourseMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'courseProblemsAcNumMapper' and 'com.example.backend.mapper.CourseProblemsAcNumMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'courseProblemsMapper' and 'com.example.backend.mapper.CourseProblemsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'courseProblemsTypeMapper' and 'com.example.backend.mapper.CourseProblemsTypeMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'courseProblemsUserAcMapper' and 'com.example.backend.mapper.CourseProblemsUserAcMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'courseUserAcProblemMapper' and 'com.example.backend.mapper.CourseUserAcProblemMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'courseUserAcStatusMapper' and 'com.example.backend.mapper.CourseUserAcStatusMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'languageCommandMapper' and 'com.example.backend.mapper.LanguageCommandMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'postsCommentMapper' and 'com.example.backend.mapper.PostsCommentMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'postsCommentThumbsMapper' and 'com.example.backend.mapper.PostsCommentThumbsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'postsMapper' and 'com.example.backend.mapper.PostsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'postsTagsMapper' and 'com.example.backend.mapper.PostsTagsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'postsThumbsMapper' and 'com.example.backend.mapper.PostsThumbsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemAlgorithmBankDetailedMapper' and 'com.example.backend.mapper.ProblemAlgorithmBankDetailedMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemAlgorithmBankMapper' and 'com.example.backend.mapper.ProblemAlgorithmBankMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemAlgorithmLimitMapper' and 'com.example.backend.mapper.ProblemAlgorithmLimitMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemAlgorithmTagsClassifyMapper' and 'com.example.backend.mapper.ProblemAlgorithmTagsClassifyMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemAlgorithmTagsClassifyRelationMapper' and 'com.example.backend.mapper.ProblemAlgorithmTagsClassifyRelationMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemAlgorithmTagsMapper' and 'com.example.backend.mapper.ProblemAlgorithmTagsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemAlgorithmTagsRelationMapper' and 'com.example.backend.mapper.ProblemAlgorithmTagsRelationMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemMath408BankMapper' and 'com.example.backend.mapper.ProblemMath408BankMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemMath408CorrectAnswersMapper' and 'com.example.backend.mapper.ProblemMath408CorrectAnswersMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemMath408OptionsMapper' and 'com.example.backend.mapper.ProblemMath408OptionsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.877  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemMath408TagsMapper' and 'com.example.backend.mapper.ProblemMath408TagsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.878  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'problemMath408TagsRelationMapper' and 'com.example.backend.mapper.ProblemMath408TagsRelationMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.878  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'publicChatMessagesMapper' and 'com.example.backend.mapper.PublicChatMessagesMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.878  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'publicChatRoomsMapper' and 'com.example.backend.mapper.PublicChatRoomsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.878  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'submissionAlgorithmDetailsMapper' and 'com.example.backend.mapper.SubmissionAlgorithmDetailsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.878  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'submissionAlgorithmRecordsMapper' and 'com.example.backend.mapper.SubmissionAlgorithmRecordsMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.878  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'submissionsAlgorithmMapper' and 'com.example.backend.mapper.SubmissionsAlgorithmMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.878  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'userBackgroundPictureMapper' and 'com.example.backend.mapper.UserBackgroundPictureMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.878  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'userLastEnterMapper' and 'com.example.backend.mapper.UserLastEnterMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.878  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'userMapper' and 'com.example.backend.mapper.UserMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.878  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : Skipping MapperFactoryBean with name 'websiteBackgroundPicturesMapper' and 'com.example.backend.mapper.WebsiteBackgroundPicturesMapper' mapperInterface. Bean already defined with the same name!
+2025-02-10 21:19:56.878  WARN 26084 --- [restartedMain] o.m.s.mapper.ClassPathMapperScanner      : No MyBatis mapper was found in '[com.example.backend.mapper]' package. Please check your configuration.
+2025-02-10 21:19:56.971  INFO 26084 --- [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 7091 (http)
+2025-02-10 21:19:56.972  INFO 26084 --- [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-02-10 21:19:56.972  INFO 26084 --- [restartedMain] org.apache.catalina.core.StandardEngine  : Starting Servlet engine: [Apache Tomcat/9.0.68]
+2025-02-10 21:19:57.041  INFO 26084 --- [restartedMain] o.a.c.c.C.[Tomcat-2].[localhost].[/api]  : Initializing Spring embedded WebApplicationContext
+2025-02-10 21:19:57.041  INFO 26084 --- [restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 550 ms
+2025-02-10 21:19:58.394  INFO 26084 --- [restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2025-02-10 21:19:58.403  INFO 26084 --- [restartedMain] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2025-02-10 21:19:58.672  INFO 26084 --- [restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 7091 (http) with context path '/api'
+2025-02-10 21:19:58.936  INFO 26084 --- [restartedMain] com.example.backend.BackendApplication   : Started BackendApplication in 2.477 seconds (JVM running for 17323.665)
+2025-02-10 21:19:58.937  INFO 26084 --- [scheduling-1] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Starting...
+2025-02-10 21:19:58.938  INFO 26084 --- [restartedMain] .ConditionEvaluationDeltaLoggingListener : Condition evaluation unchanged
+2025-02-10 21:19:58.947  INFO 26084 --- [scheduling-1] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Start completed.
+2025-02-10 21:20:00.311 ERROR 26084 --- [scheduling-1] o.s.s.s.TaskUtils$LoggingErrorHandler    : Unexpected error occurred in scheduled task
+
+org.springframework.mail.MailParseException: Could not parse mail; nested exception is javax.mail.internet.AddressException: Illegal address in string `` ''
+	at org.springframework.mail.javamail.MimeMailMessage.setTo(MimeMailMessage.java:112) ~[spring-context-support-5.3.23.jar:5.3.23]
+	at org.springframework.mail.SimpleMailMessage.copyTo(SimpleMailMessage.java:204) ~[spring-context-support-5.3.23.jar:5.3.23]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.send(JavaMailSenderImpl.java:320) ~[spring-context-support-5.3.23.jar:5.3.23]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.send(JavaMailSenderImpl.java:312) ~[spring-context-support-5.3.23.jar:5.3.23]
+	at com.example.backend.utils.EmailSendUtil.sendTokenToAdminEmail(EmailSendUtil.java:91) ~[classes/:na]
+	at com.example.backend.utils.SendQQTokenMessageUtil.lambda$Token_Send$0(SendQQTokenMessageUtil.java:37) ~[classes/:na]
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511) ~[na:na]
+	at com.example.backend.utils.SendQQTokenMessageUtil.Token_Send(SendQQTokenMessageUtil.java:35) ~[classes/:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568) ~[na:na]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:84) ~[spring-context-5.3.23.jar:5.3.23]
+	at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnable.java:54) ~[spring-context-5.3.23.jar:5.3.23]
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539) ~[na:na]
+	at java.base/java.util.concurrent.FutureTask.runAndReset$$$capture(FutureTask.java:305) ~[na:na]
+	at java.base/java.util.concurrent.FutureTask.runAndReset(FutureTask.java) ~[na:na]
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:305) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
+Caused by: javax.mail.internet.AddressException: Illegal address
+	at org.springframework.mail.javamail.MimeMessageHelper.parseAddress(MimeMessageHelper.java:737) ~[spring-context-support-5.3.23.jar:5.3.23]
+	at org.springframework.mail.javamail.MimeMessageHelper.setTo(MimeMessageHelper.java:621) ~[spring-context-support-5.3.23.jar:5.3.23]
+	at org.springframework.mail.javamail.MimeMailMessage.setTo(MimeMailMessage.java:109) ~[spring-context-support-5.3.23.jar:5.3.23]
+	... 20 common frames omitted
+
+2025-02-10 21:20:02.121  INFO 26084 --- [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Shutdown initiated...
+2025-02-10 21:20:02.126  INFO 26084 --- [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Shutdown completed.

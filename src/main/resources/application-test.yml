@@ -140,3 +140,7 @@ ROLE_MAX:
   UUID: 9
 JUDGE_URL:
   URL: xxxxxx
+deepseek:
+  api:
+    url: https://api.deepseek.com/v1/chat/completions # 缓存DeepSeek的地址
+    key: xxxxxx # 缓存你自己的key
