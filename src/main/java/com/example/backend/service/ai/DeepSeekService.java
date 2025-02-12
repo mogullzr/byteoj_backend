@@ -1,5 +1,6 @@
 package com.example.backend.service.ai;
 
+import cn.hutool.log.Log;
 import com.example.backend.models.request.AI.DeepSeekMessage;
 import com.example.backend.models.request.AI.DeepSeekNetMessage;
 import com.example.backend.models.request.AI.DeepSeekNetRequest;
@@ -32,49 +33,60 @@ public class DeepSeekService {
 
     public Flux<DeepSeekNetMessage> deepSeekAsker(DeepSeekRequest deepSeekRequest) {
         DeepSeekNetRequest request = new DeepSeekNetRequest();
-        request.setModel("deepseek-chat");
-        request.setStream(true);
+        request.setModel("deepseek-ai/DeepSeek-R1-Distill-Llama-70B");
+        request.setStream(true); // 设置为 true，因为流式响应需要处理 [DONE]
+//        request.setMaxTokens(512);
+//        request.setTemperature(0.7);
+//        request.setTopP(0.7);
+//        request.setTopK(50);
+//        request.setFrequencyPenalty(0.5);
+//        request.setN(1);
+//        request.setResponseFormat(new DeepSeekNetRequest.ResponseFormat("text"));
+
         List<DeepSeekMessage> messageList = deepSeekRequest.getMessageList();
         List<DeepSeekNetRequest.Message> messageList1 = new ArrayList<>();
-        messageList.forEach((message)->{
+        messageList.forEach((message) -> {
             String role = message.getRole();
             String content = message.getContent();
             DeepSeekNetRequest.Message chat = new DeepSeekNetRequest.Message(role, content);
             messageList1.add(chat);
         });
         request.setMessages(messageList1);
+
         final int[] id = {1};
         return webClient.post()
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .retrieve()
-                .bodyToFlux(String.class)  // Retrieve raw response as String
+                .bodyToFlux(String.class)  // 以字符串形式接收响应
                 .flatMap(response -> {
-                    // If the response is exactly "[DONE]", return a "Conversation Ended" flag
+                    // 检查是否为结束标志 [DONE]
                     if ("[DONE]".equals(response.trim())) {
-                        return Flux.just(new DeepSeekNetMessage("[DONE]", id[0]));  // Send a message indicating conversation has ended
+                        return Flux.just(new DeepSeekNetMessage("[DONE]", id[0])); // 返回结束标志
                     }
 
                     try {
-                        // Attempt to parse the response as JSON
+                        // 尝试解析 JSON 响应
                         JsonNode jsonResponse = objectMapper.readTree(response);
-                        // Extract content field from each response chunk
+
+
+                        // 提取 content 字段
                         String content = jsonResponse.path("choices").get(0).path("delta").path("content").asText();
 
-                        // If response contains "[DONE]" within the content, return a "Conversation Ended" flag
+                        // 如果 content 包含 [DONE]，返回结束标志
                         if (content.contains("[DONE]")) {
                             return Flux.just(new DeepSeekNetMessage("[DONE]", id[0]));
                         }
 
-                        // Output each content fragment
+                        // 输出内容片段
                         System.out.print(content);
 
                         DeepSeekNetMessage deepSeekNetMessage = new DeepSeekNetMessage(content, id[0]);
                         id[0] += 1;
-                        return Flux.just(deepSeekNetMessage);  // Return each fragment as a separate message
+                        return Flux.just(deepSeekNetMessage); // 返回内容片段
                     } catch (IOException e) {
                         e.printStackTrace();
-                        return Flux.empty();  // In case of parsing error, return empty Flux
+                        return Flux.empty(); // 解析错误时返回空 Flux
                     }
                 });
     }

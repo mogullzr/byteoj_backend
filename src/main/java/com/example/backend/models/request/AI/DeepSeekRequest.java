@@ -15,7 +15,9 @@ public class DeepSeekRequest implements Serializable {
     private List<DeepSeekMessage> messageList;
 
     /**
-     * 问答模式,0:一般问答模式;
+     * 问答模式
+     * DeepSeek/V3 快速问答模式;
+     * DeepSeek/R1 比较慢
      */
-    private Integer status;
+    private String status;
 }
