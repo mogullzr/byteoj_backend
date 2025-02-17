@@ -507,6 +507,8 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts>
         postsVo.setReading(post.getReading());
         postsVo.setLocation(post.getLocation());
         postsVo.setUuid(post.getUuid());
+        postsVo.setStatus(post.getStatus());
+        postsVo.setUrl(post.getUrl());
 
         // 获取相关的帖子标签
         QueryWrapper<PostsTags> postsTagsQueryWrapper = new QueryWrapper<>();

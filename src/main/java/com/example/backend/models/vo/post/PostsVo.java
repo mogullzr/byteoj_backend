@@ -92,4 +92,14 @@ public class PostsVo implements Serializable {
      * 总面数
      */
     private Integer pages;
+
+    /**
+     * 帖子类型
+     */
+    private Integer status;
+
+    /**
+     * 应用url
+     */
+    private String url;
 }

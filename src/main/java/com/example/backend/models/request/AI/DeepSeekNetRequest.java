@@ -9,12 +9,5 @@ import java.util.List;
 public class DeepSeekNetRequest {
     private String model;
     private Boolean stream;
-    private List<Message> messages;
-
-    @AllArgsConstructor
-    @Data
-    public static class Message {
-        private String role;
-        private String content;
-    }
+    private List<DeepSeekMessage> messages;
 }

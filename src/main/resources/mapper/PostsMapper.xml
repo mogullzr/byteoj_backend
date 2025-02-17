@@ -17,12 +17,13 @@
             <result property="location" column="location" jdbcType="VARCHAR"/>
             <result property="problem_id" column="problem_id" jdbcType="BIGINT"/>
             <result property="status" column="status" jdbcType="INTEGER"/>
+            <result property="url" column="url" jdbcType="VARCHAR"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         post_id,title,content,
         uuid,thumbs_up,create_time,
         update_time,is_delete,reading,
-        location,problem_id,status
+        location,problem_id,status,url
     </sql>
 </mapper>
