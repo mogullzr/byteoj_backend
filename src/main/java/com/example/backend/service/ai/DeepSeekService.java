@@ -15,33 +15,49 @@ import reactor.core.publisher.Flux;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class DeepSeekService {
 
-    private final WebClient webClient;
+    private final Map<String, String> apiUrlMap = new HashMap<>();
+    private final Map<String, String> apiKeyMap = new HashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public DeepSeekService(@Value("${deepseek.api.url}") String apiUrl,
-                           @Value("${deepseek.api.key}") String apiKey) {
-        this.webClient = WebClient.builder()
-                .baseUrl(apiUrl)
-                .defaultHeader("Authorization", "Bearer " + apiKey)
-                .build();
+    public DeepSeekService(
+            @Value("${deepseek.api.v3-1.url}") String v3_1ApiUrl,
+            @Value("${deepseek.api.v3-1.key}") String v3_1ApiKey,
+            @Value("${deepseek.api.v3-2.url}") String v3_2ApiUrl,
+            @Value("${deepseek.api.v3-2.key}") String v3_2ApiKey
+    ) {
+        // 初始化 API URL 和 API Key 的映射
+        apiUrlMap.put("deepseek-chat", v3_1ApiUrl);
+        apiUrlMap.put("deepseek-ai/DeepSeek-V3", v3_2ApiUrl);
+        apiUrlMap.put("deepseek-ai/DeepSeek-R1-Distill-Llama-70B", v3_2ApiUrl);
+
+        apiKeyMap.put("deepseek-chat", v3_1ApiKey);
+        apiKeyMap.put("deepseek-ai/DeepSeek-V3", v3_2ApiKey);
+        apiKeyMap.put("deepseek-ai/DeepSeek-R1-Distill-Llama-70B", v3_2ApiKey);
     }
 
     public Flux<DeepSeekNetMessage> deepSeekAsker(DeepSeekRequest deepSeekRequest) {
+        // 根据 status 获取对应的 API URL 和 API Key
+        String status = deepSeekRequest.getStatus();
+        String apiUrl = apiUrlMap.getOrDefault(status, apiUrlMap.get("deepseek-chat")); // 默认使用 chat 的 URL
+        String apiKey = apiKeyMap.getOrDefault(status, apiKeyMap.get("deepseek-chat")); // 默认使用 chat 的 Key
+
+        // 创建 WebClient 实例
+        WebClient webClient = WebClient.builder()
+                .baseUrl(apiUrl)
+                .defaultHeader("Authorization", "Bearer " + apiKey)
+                .build();
+
+        // 构建请求体
         DeepSeekNetRequest request = new DeepSeekNetRequest();
-        request.setModel("deepseek-ai/DeepSeek-R1-Distill-Llama-70B");
+        request.setModel(status); // 使用 status 作为模型名称
         request.setStream(true); // 设置为 true，因为流式响应需要处理 [DONE]
-//        request.setMaxTokens(512);
-//        request.setTemperature(0.7);
-//        request.setTopP(0.7);
-//        request.setTopK(50);
-//        request.setFrequencyPenalty(0.5);
-//        request.setN(1);
-//        request.setResponseFormat(new DeepSeekNetRequest.ResponseFormat("text"));
 
         List<DeepSeekMessage> messageList = deepSeekRequest.getMessageList();
         List<DeepSeekNetRequest.Message> messageList1 = new ArrayList<>();
@@ -69,21 +85,38 @@ public class DeepSeekService {
                         // 尝试解析 JSON 响应
                         JsonNode jsonResponse = objectMapper.readTree(response);
 
-
                         // 提取 content 字段
                         String content = jsonResponse.path("choices").get(0).path("delta").path("content").asText();
+                        String reason_content = jsonResponse.path("choices").get(0).path("delta").path("reasoning_content").asText();
 
                         // 如果 content 包含 [DONE]，返回结束标志
                         if (content.contains("[DONE]")) {
                             return Flux.just(new DeepSeekNetMessage("[DONE]", id[0]));
                         }
 
-                        // 输出内容片段
-                        System.out.print(content);
+                        if (content.equals("null")) {
+                            // 输出内容片段
+                            System.out.print(reason_content);
 
-                        DeepSeekNetMessage deepSeekNetMessage = new DeepSeekNetMessage(content, id[0]);
-                        id[0] += 1;
-                        return Flux.just(deepSeekNetMessage); // 返回内容片段
+                            if (id[0] == 1) {
+                                DeepSeekNetMessage deepSeekNetMessage = new DeepSeekNetMessage("> " + reason_content, id[0]);
+                                id[0] += 1;
+                                return Flux.just(deepSeekNetMessage); // 返回内容片段
+                            }else {
+                                DeepSeekNetMessage deepSeekNetMessage = new DeepSeekNetMessage(reason_content, id[0]);
+                                id[0] += 1;
+                                return Flux.just(deepSeekNetMessage); // 返回内容片段
+                            }
+
+
+                        } else {
+                            // 输出内容片段
+                            System.out.print(content);
+
+                            DeepSeekNetMessage deepSeekNetMessage = new DeepSeekNetMessage(content, id[0]);
+                            id[0] += 1;
+                            return Flux.just(deepSeekNetMessage); // 返回内容片段
+                        }
                     } catch (IOException e) {
                         e.printStackTrace();
                         return Flux.empty(); // 解析错误时返回空 Flux
@@ -91,4 +124,3 @@ public class DeepSeekService {
                 });
     }
 }
-

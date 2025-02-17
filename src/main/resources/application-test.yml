@@ -142,5 +142,9 @@ JUDGE_URL:
   URL: xxxxxx
 deepseek:
   api:
-    url: https://api.deepseek.com/v1/chat/completions # 缓存DeepSeek的地址
-    key: xxxxxx # 缓存你自己的key
+    v3-1:
+      url: https://api.deepseek.com/chat/completions
+      key: # 换成自己的
+    v3-2:
+      url: https://api.siliconflow.cn/v1/chat/completions
+      key: # 换成自己的

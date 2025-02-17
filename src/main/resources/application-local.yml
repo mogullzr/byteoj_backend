@@ -2,7 +2,7 @@ hm:
   db:
     host: localhost
     name: root
-    table: trialoj
+    table: byteoj
     pwd: "142398749lzr"
   redis:
     host: 127.0.0.1

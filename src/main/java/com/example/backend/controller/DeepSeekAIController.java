@@ -1,5 +1,6 @@
 package com.example.backend.controller;
 
+import com.example.backend.common.AccessLimit;
 import com.example.backend.models.request.AI.DeepSeekRequest;
 import com.example.backend.service.ai.DeepSeekService;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ public class DeepSeekAIController {
     private DeepSeekService deepSeekService;
 
     // 定义SSE接口，用于逐句返回聊天内容
+    @AccessLimit(seconds = 5, maxCount = 10, needLogin = true)
     @RequestMapping("/ask")
     public SseEmitter deepSeekChat(@RequestBody DeepSeekRequest deepSeekRequest) {
         SseEmitter emitter = new SseEmitter();
@@ -42,4 +44,3 @@ public class DeepSeekAIController {
         return emitter;  // 返回SseEmitter，进行流式推送
     }
 }
-

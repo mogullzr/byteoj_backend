@@ -7,9 +7,15 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @Getter
 public class DeepSeekConfig {
-    @Value("${deepseek.api.url}")
-    private String apiUrl;
+    @Value("${deepseek.api.v3-1.url}")
+    private String v3_1ApiUrl;
 
-    @Value("${deepseek.api.key}")
-    private String apiKey;
+    @Value("${deepseek.api.v3-1.key}")
+    private String v3_1ApiKey;
+
+    @Value("${deepseek.api.v3-2.url}")
+    private String v3_2ApiUrl;
+
+    @Value("${deepseek.api.v3-2.key}")
+    private String v3_2ApiKey;
 }

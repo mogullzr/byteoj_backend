@@ -488,6 +488,13 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 
     @Override
     public List<Judge> problemAlgorithmJudge(JudgeRequest judgeRequest) {
+        if (judgeRequest.getCompetition_id() != null) {
+            QueryWrapper<CompetitionsProblemsAlgorithm> competitionsProblemsAlgorithmQueryWrapper = new QueryWrapper<>();
+            competitionsProblemsAlgorithmQueryWrapper.eq("idx", judgeRequest.getIndex());
+            competitionsProblemsAlgorithmQueryWrapper.eq("competition_id", judgeRequest.getCompetition_id());
+            CompetitionsProblemsAlgorithm competitionsProblemsAlgorithm = competitionsProblemsAlgorithmMapper.selectOne(competitionsProblemsAlgorithmQueryWrapper);
+            judgeRequest.setProblem_id(competitionsProblemsAlgorithm.getProblem_id());
+        }
         QueryWrapper<ProblemAlgorithmLimit> problemAlgorithmLimitQueryWrapper = new QueryWrapper<>();
         if (judgeRequest.getProblem_id() != null) {
             problemAlgorithmLimitQueryWrapper.eq("problem_id", judgeRequest.getProblem_id());
@@ -634,6 +641,13 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 
     @Override
     public Judge problemAlgorithmSubmit(JudgeRequest judgeRequest, Long uuid) {
+        if (judgeRequest.getCompetition_id() != null) {
+            QueryWrapper<CompetitionsProblemsAlgorithm> competitionsProblemsAlgorithmQueryWrapper = new QueryWrapper<>();
+            competitionsProblemsAlgorithmQueryWrapper.eq("idx", judgeRequest.getIndex());
+            competitionsProblemsAlgorithmQueryWrapper.eq("competition_id", judgeRequest.getCompetition_id());
+            CompetitionsProblemsAlgorithm competitionsProblemsAlgorithm = competitionsProblemsAlgorithmMapper.selectOne(competitionsProblemsAlgorithmQueryWrapper);
+            judgeRequest.setProblem_id(competitionsProblemsAlgorithm.getProblem_id());
+        }
         QueryWrapper<ProblemAlgorithmBank> queryWrapper = new QueryWrapper<>();
         ProblemAlgorithmBank problemAlgorithmBank;
         queryWrapper.eq("problem_id", judgeRequest.getProblem_id());
