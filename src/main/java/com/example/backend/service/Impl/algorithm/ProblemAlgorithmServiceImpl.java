@@ -142,7 +142,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
     }
 
     @Override
-    public List<ProblemAlgorithmBankVo> ListAlgorithmVoByPage(AlgorithmQueryRequest algorithmQueryRequest, Long uuid) {
+    public List<ProblemAlgorithmBankVo> ListAlgorithmVoByPage(AlgorithmQueryRequest algorithmQueryRequest, Long uuid, boolean isAdmin) {
         // 参数验证
         validatePagination(algorithmQueryRequest.getPageNum(), algorithmQueryRequest.getPageSize());
 
@@ -188,6 +188,11 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
             problemAlgorithmBankQueryWrapper.inSql("problem_id",
                     "SELECT DISTINCT problem_id FROM problem_algorithm_tags WHERE tag_id IN (" + tagsCondition + ")"
             );
+        }
+
+        // 普通用户进行逻辑删除排除
+        if (!isAdmin) {
+            problemAlgorithmBankQueryWrapper.eq("is_delete", 0);
         }
 
         // 执行分页查询
@@ -1066,6 +1071,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         problemAlgorithmBankVo.setTest_total(problemAlgorithmBank.getTest_total());
         problemAlgorithmBankVo.setAc_total(problemAlgorithmBank.getAc_total());
         problemAlgorithmBankVo.setUrl(problemAlgorithmBank.getUrl());
+        problemAlgorithmBankVo.setIs_delete(problemAlgorithmBank.getIs_delete());
 
         QueryWrapper<ProblemAlgorithmLimit> problemAlgorithmLimitQueryWrapper = new QueryWrapper<>();
         problemAlgorithmLimitQueryWrapper.eq("problem_id", problemAlgorithmBank.getProblem_id());
@@ -1414,9 +1420,11 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         QueryWrapper<ProblemAlgorithmTags> problemAlgorithmTagsQueryWrapper = new QueryWrapper<>();
         problemAlgorithmTagsQueryWrapper.eq("problem_id", problem_id);
         problemAlgorithmTagsQueryWrapper.eq("is_delete", 0);
-        ProblemAlgorithmTags problemAlgorithmTags = problemAlgorithmTagsMapper.selectOne(problemAlgorithmTagsQueryWrapper);
+        List<ProblemAlgorithmTags> problemAlgorithmTags = problemAlgorithmTagsMapper.selectList(problemAlgorithmTagsQueryWrapper);
         isExist.setIs_delete(1);
-        problemAlgorithmTagsMapper.update(problemAlgorithmTags, problemAlgorithmTagsQueryWrapper);
+        problemAlgorithmTags.forEach((tag)->{
+            problemAlgorithmTagsMapper.update(tag, problemAlgorithmTagsQueryWrapper);
+        });
 
         return true;
     }
@@ -1501,6 +1509,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         problemAlgorithmBank.setShort_name(problemAlgorithmRequest.getShort_name());
         problemAlgorithmBank.setAc_total(problem.getAc_total());
         problemAlgorithmBank.setTest_total(problem.getTest_total());
+        problemAlgorithmBank.setSource_name(problemAlgorithmRequest.getSource_name());
 
         problemAlgorithmBankMapper.update(problemAlgorithmBank, problemAlgorithmBankQueryWrapper);
 
@@ -1511,6 +1520,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 
         problemAlgorithmLimit.setProblem_id(problem_id);
         problemAlgorithmLimit.setCpu_limit(CPU_limit);
+        problemAlgorithmLimit.setMemory_limit(Memory_limit);
         problemAlgorithmLimit.setCreate_by_id(problem.getCreate_by_id());
         problemAlgorithmLimit.setCreate_by_name(problem.getCreate_by_name());
         problemAlgorithmLimit.setUpdate_by_id(update_id);
@@ -1521,25 +1531,27 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         // problem_algorithm_tags
         List<Integer> tagsList = problemAlgorithmRequest.getTags_list();
         int length = tagsList.size();
+        QueryWrapper<ProblemAlgorithmTags> problemAlgorithmTagsQueryWrapper = new QueryWrapper<>();
+        problemAlgorithmTagsQueryWrapper.eq("problem_id", problem_id);
+        problemAlgorithmTagsMapper.delete(problemAlgorithmTagsQueryWrapper);
 
         for (int item = 0; item < length; item++) {
-            ProblemAlgorithmTags problemAlgorithmTags = new ProblemAlgorithmTags();
             Integer tag_id = tagsList.get(item);
             QueryWrapper<ProblemAlgorithmTagsRelation> problemAlgorithmTagsRelationQueryWrapper = new QueryWrapper<>();
             problemAlgorithmTagsRelationQueryWrapper.eq("tag_id", tag_id);
-
             Long result = problemAlgorithmTagsRelationMapper.selectCount(problemAlgorithmTagsRelationQueryWrapper);
             if (result == 0) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "不存在这样的算法标签，请重新添加");
             }
+        }
+        for (int item = 0; item < length; item++) {
+            Integer tag_id = tagsList.get(item);
+            ProblemAlgorithmTags problemAlgorithmTags = new ProblemAlgorithmTags();
 
             problemAlgorithmTags.setProblem_id(problem_id);
             problemAlgorithmTags.setTag_id(tag_id);
 
-            QueryWrapper<ProblemAlgorithmTags> problemAlgorithmTagsQueryWrapper = new QueryWrapper<>();
-            problemAlgorithmTagsQueryWrapper.eq("problem_id", problem_id);
-
-            problemAlgorithmTagsMapper.update(problemAlgorithmTags, problemAlgorithmTagsQueryWrapper);
+            problemAlgorithmTagsMapper.insert(problemAlgorithmTags);
         }
         return true;
     }

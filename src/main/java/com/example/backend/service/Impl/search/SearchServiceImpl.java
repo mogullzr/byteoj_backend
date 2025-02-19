@@ -3,6 +3,7 @@ package com.example.backend.service.Impl.search;
 import com.example.backend.common.ErrorCode;
 import com.example.backend.common.SearchTypeEnum;
 import com.example.backend.exception.BusinessException;
+import com.example.backend.models.domain.user.User;
 import com.example.backend.models.request.problem.SearchRequest;
 import com.example.backend.models.vo.UserVo;
 import com.example.backend.models.vo.post.PostsVo;
@@ -12,6 +13,7 @@ import com.example.backend.models.vo.problem.SearchVo;
 import com.example.backend.registry.DataSourceRegistry;
 import com.example.backend.service.search.SearchService;
 import com.example.backend.service.source.*;
+import com.example.backend.service.user.UserService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -35,10 +37,9 @@ public class SearchServiceImpl implements SearchService {
     private DataSourceRegistry dataSourceRegistry;
 
     @Override
-    public SearchVo searchAll(SearchRequest searchRequest, Long uuid) {
+    public SearchVo searchAll(SearchRequest searchRequest, Long uuid, boolean isAdmin) {
         String category = searchRequest.getCategory();
         SearchTypeEnum searchTypeEnum = SearchTypeEnum.getEnumByValue(category);
-
         String keyword = searchRequest.getKeyword();
         Integer pageNum = searchRequest.getPageNum();
         Integer pageSize = searchRequest.getPageSize();
@@ -56,13 +57,13 @@ public class SearchServiceImpl implements SearchService {
         if (searchTypeEnum == null) {
             // 1.算法试题
 
-            List<ProblemAlgorithmBankVo> problemAlgorithmBankVoList = algorithmDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status);
+            List<ProblemAlgorithmBankVo> problemAlgorithmBankVoList = algorithmDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin);
 
             // 3.帖子
-            List<PostsVo> postsVoList = postsDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status);
+            List<PostsVo> postsVoList = postsDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin);
 
             // 4.用户
-            List<UserVo> userVoList = userDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status);
+            List<UserVo> userVoList = userDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin);
 
             // ......扩展
             // 最终聚合
@@ -72,7 +73,7 @@ public class SearchServiceImpl implements SearchService {
         } else {
             DataSource<?> dataSource = dataSourceRegistry.getDataSourceByCategory(category);
 
-            List<?> dataList = dataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status);
+            List<?> dataList = dataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin);
             searchVo.setDataList(dataList);
         }
 

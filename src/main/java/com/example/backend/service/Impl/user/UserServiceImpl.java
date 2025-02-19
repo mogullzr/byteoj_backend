@@ -301,6 +301,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         HttpSession session = httpServletRequest.getSession();
         session.setAttribute(USER_LOGIN_STATE, user);
         session.setMaxInactiveInterval(3600 * 24 * 2);
+        safetyUser.setSessionId(httpServletRequest.getRequestedSessionId());
         return safetyUser;
     }
 

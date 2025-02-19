@@ -21,7 +21,8 @@ public interface DataSource<T> {
      * @param difficulty 难度
      * @param uuid 用户ID
      * @param status 状态
+     * @param isAdmin 是否为管理员
      * @return 搜索到的数据
      */
-    List<T> doSearch(String keyword, List<Integer> tagsList, List<String> sourceList, String difficulty, Integer pageNum, Integer pageSize, Long uuid, Integer status);
+    List<T> doSearch(String keyword, List<Integer> tagsList, List<String> sourceList, String difficulty, Integer pageNum, Integer pageSize, Long uuid, Integer status, boolean isAdmin);
 }

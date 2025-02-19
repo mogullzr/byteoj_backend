@@ -13,8 +13,9 @@ public interface SearchService {
      *
      * @param searchRequest 前端搜索请求
      * @param uuid 用户ID
+     * @param isAdmin 是否为管理员
      * @return 搜索到的内容
      */
-    SearchVo searchAll(SearchRequest searchRequest, Long uuid);
+    SearchVo searchAll(SearchRequest searchRequest, Long uuid, boolean isAdmin);
 
 }

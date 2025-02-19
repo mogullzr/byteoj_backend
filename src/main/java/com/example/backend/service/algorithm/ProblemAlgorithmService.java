@@ -36,7 +36,15 @@ public interface ProblemAlgorithmService extends IService<ProblemAlgorithmBank> 
      */
     List<SubmissionsAlgorithmRecordsVo> problemAlgorithmRecordsAllByUuidByPage(Long uuid, Long PageNum);
 
-    List<ProblemAlgorithmBankVo> ListAlgorithmVoByPage(AlgorithmQueryRequest algorithmQueryRequest, Long uuid);
+    /**
+     * 分页搜索算法题目列表
+     *
+     * @param algorithmQueryRequest 搜索请求
+     * @param uuid 用户ID
+     * @param isAdmin 谁否为管理员
+     * @return 算法题目列表
+     */
+    List<ProblemAlgorithmBankVo> ListAlgorithmVoByPage(AlgorithmQueryRequest algorithmQueryRequest, Long uuid, boolean isAdmin);
 
     List<SubmissionsAlgorithmRecordsVo> problemAlgorithmRecordsAllByUuidByPage(Long uuid, Integer pageNum);
 

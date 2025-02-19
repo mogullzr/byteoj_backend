@@ -91,6 +91,10 @@ public class ProblemAlgorithmBankVo implements Serializable {
      */
     private Integer pages;
 
+    /**
+     * 逻辑删除
+     */
+    private Integer is_delete;
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 }

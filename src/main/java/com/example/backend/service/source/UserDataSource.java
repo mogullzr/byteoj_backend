@@ -33,7 +33,7 @@ public class UserDataSource implements DataSource<UserVo>{
     private UserService userService;
 
     @Override
-    public List<UserVo> doSearch(String keyword, List<Integer> tagsList, List<String> sourceList, String difficulty, Integer pageNum, Integer pageSize, Long uuid, Integer status) {
+    public List<UserVo> doSearch(String keyword, List<Integer> tagsList, List<String> sourceList, String difficulty, Integer pageNum, Integer pageSize, Long uuid, Integer status, boolean isAdmin) {
         UserSearchRequest userSearchRequest = new UserSearchRequest();
         userSearchRequest.setKeyword(keyword);
         userSearchRequest.setPageSize(pageSize);

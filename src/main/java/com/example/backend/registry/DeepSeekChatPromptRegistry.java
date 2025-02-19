@@ -1,12 +1,8 @@
 package com.example.backend.registry;
 
-import com.example.backend.common.SearchTypeEnum;
 import com.example.backend.service.ai.AIChatAlgorithmMode;
 import com.example.backend.service.ai.AIChatCommonMode;
 import com.example.backend.service.ai.AIChatMode;
-import com.example.backend.service.source.DataSource;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;

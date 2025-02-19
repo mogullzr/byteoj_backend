@@ -1,6 +1,7 @@
 package com.example.backend.controller;
 
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.backend.common.AccessLimit;
 import com.example.backend.common.BaseResponse;
 import com.example.backend.common.ResultUtils;
@@ -49,8 +50,8 @@ public class SearchController {
         if (loginUser != null) {
             uuid = loginUser.getUuid();
         }
-
-        SearchVo searchVos = searchService.searchAll(searchRequest, uuid);
+        boolean isAdmin = userService.isAdmin(httpServletRequest);
+        SearchVo searchVos = searchService.searchAll(searchRequest, uuid, isAdmin);
         return ResultUtils.success(searchVos);
     }
 }

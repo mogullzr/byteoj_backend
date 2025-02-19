@@ -25,7 +25,7 @@ public class AlgorithmDataSource implements DataSource<ProblemAlgorithmBankVo>{
     private ProblemAlgorithmService problemAlgorithmService;
 
     @Override
-    public List<ProblemAlgorithmBankVo> doSearch(String keyword, List<Integer> tagsList, List<String> sourceList, String difficulty, Integer pageNum, Integer pageSize, Long uuid, Integer status) {
+    public List<ProblemAlgorithmBankVo> doSearch(String keyword, List<Integer> tagsList, List<String> sourceList, String difficulty, Integer pageNum, Integer pageSize, Long uuid, Integer status, boolean isAdmin) {
         AlgorithmQueryRequest algorithmQueryRequest = new AlgorithmQueryRequest();
         algorithmQueryRequest.setKeyword(keyword);
         algorithmQueryRequest.setPageNum(pageNum);
@@ -34,6 +34,6 @@ public class AlgorithmDataSource implements DataSource<ProblemAlgorithmBankVo>{
         algorithmQueryRequest.setSourceList(sourceList);
         algorithmQueryRequest.setDifficulty(difficulty);
 
-        return problemAlgorithmService.ListAlgorithmVoByPage(algorithmQueryRequest, uuid);
+        return problemAlgorithmService.ListAlgorithmVoByPage(algorithmQueryRequest, uuid, isAdmin);
     }
 }

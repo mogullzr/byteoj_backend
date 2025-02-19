@@ -30,7 +30,7 @@ public class PostsDataSource implements DataSource<PostsVo>{
     private PostsService postsService;
 
     @Override
-    public List<PostsVo> doSearch(String keyword, List<Integer> tagsList, List<String> sourceList, String difficulty, Integer pageNum, Integer pageSize, Long uuid, Integer status) {
+    public List<PostsVo> doSearch(String keyword, List<Integer> tagsList, List<String> sourceList, String difficulty, Integer pageNum, Integer pageSize, Long uuid, Integer status, boolean isAdmin) {
         PostsQueryRequest postsQueryRequest = new PostsQueryRequest();
         postsQueryRequest.setKeyword(keyword);
         postsQueryRequest.setPageSize(pageSize);

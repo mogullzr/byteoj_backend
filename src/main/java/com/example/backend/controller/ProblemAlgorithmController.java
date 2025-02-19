@@ -69,7 +69,8 @@ public class ProblemAlgorithmController {
         if (loginUser != null) {
             uuid = loginUser.getUuid();
         }
-        List<ProblemAlgorithmBankVo> problemAlgorithmBankVos = problemAlgorithmService.ListAlgorithmVoByPage(algorithmQueryRequest, uuid);
+        boolean isAdmin = userService.isAdmin(httpServletRequest);
+        List<ProblemAlgorithmBankVo> problemAlgorithmBankVos = problemAlgorithmService.ListAlgorithmVoByPage(algorithmQueryRequest, uuid, isAdmin);
         return ResultUtils.success(problemAlgorithmBankVos);
     }
 
