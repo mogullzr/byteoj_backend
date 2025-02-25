@@ -33,6 +33,7 @@ import org.springframework.stereotype.Service;
 import com.example.backend.common.ErrorCode;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -490,7 +491,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     @Override
-    public String UserUploadPicture(String base64Image, Integer status,
+    public String UserUploadPicture(MultipartFile file, Integer status,
                                     HttpServletRequest httpServletRequest) throws IOException {
         // 获取当前登录用户信息
         Long uuid = -1L;
@@ -502,7 +503,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
 
         // 返回上传oss的url
-        String uploadOneFile = ossUtils.uploadOneFile(base64Image);
+        String uploadOneFile = ossUtils.uploadOneFile(file);
 
         // 获取当前用户
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();

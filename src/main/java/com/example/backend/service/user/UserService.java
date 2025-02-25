@@ -7,6 +7,7 @@ import com.example.backend.models.request.user.UserModifyRequest;
 import com.example.backend.models.request.user.UserRegisterRequest;
 import com.example.backend.models.request.user.UserSearchRequest;
 import com.example.backend.models.vo.UserVo;
+import org.springframework.web.multipart.MultipartFile;
 
 
 import javax.servlet.http.HttpServletRequest;
@@ -121,14 +122,14 @@ public interface UserService extends IService<User> {
 
 
     /**
-     * 山传图片到阿里云
+     * 上传图片到阿里云
      *
-     * @param base64Image 需要的图片base64
+     * @param file 需要的图片
      * @param status 0表示上传头像，1表示上传背景图片，2表示上传文章图片
      * @param httpServletRequest 前端发送信息·
      * @return 是否上传成功/返回上传之后的地址
      */
-    String UserUploadPicture(String base64Image, Integer status, HttpServletRequest httpServletRequest) throws IOException;
+    String UserUploadPicture(MultipartFile file, Integer status, HttpServletRequest httpServletRequest) throws IOException;
 
     /**
      * 用户用户uuid获取图片信息

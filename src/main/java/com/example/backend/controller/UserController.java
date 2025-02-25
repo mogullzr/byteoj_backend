@@ -24,6 +24,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -269,13 +270,13 @@ public class UserController {
         return ResultUtils.success(result);
     }
 
-    @AccessLimit(seconds=5, maxCount=10, needLogin=false)
+    @AccessLimit(seconds=5, maxCount=10, needLogin=true)
     @PostMapping("/upload")
-    private BaseResponse<String> userUploadPicture(@RequestBody String base64Image, Integer status, HttpServletRequest httpServletRequest) throws IOException {
+    private BaseResponse<String> userUploadPicture(@RequestParam("files[]") MultipartFile file, Integer status, HttpServletRequest httpServletRequest) throws IOException {
         if (httpServletRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
-        String result = userService.UserUploadPicture(base64Image, status, httpServletRequest);
+        String result = userService.UserUploadPicture(file, status, httpServletRequest);
         return ResultUtils.success(result);
     }
 

@@ -2,8 +2,11 @@ package com.example.backend.utils;
 
 import cn.hutool.core.codec.Base64;
 import cn.hutool.core.date.DateTime;
+import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
+import com.aliyun.oss.OSSException;
+import com.aliyun.oss.model.PutObjectRequest;
 import com.example.backend.common.ErrorCode;
 import com.example.backend.common.SystemConstants;
 import com.example.backend.exception.BusinessException;
@@ -11,6 +14,7 @@ import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.context.Theme;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.util.UUID;
@@ -75,6 +79,35 @@ public class OssUtils {
         }
     }
 
+    public String uploadOneFile(MultipartFile file) throws OSSException, ClientException {
+        // 创建OSSClient实例。
+        OSS ossClient = new OSSClientBuilder().build(endPoint, accessKeyId, secretAccessKey);
+
+        // 设置文件名
+        String fileName = new DateTime().toString("yyyy/MM/")
+                + UUID.randomUUID().toString().replace("-", "");
+
+        // 判断文件类型
+        String multiFileName = file.getOriginalFilename(); // 获取文件名
+        String fileExtension = multiFileName.substring(multiFileName.lastIndexOf(".") + 1); // 提取扩展名
+
+        fileName += "." + fileExtension;
+        try {
+            if(file.getSize() != 0){
+                // getInputStream()返回一个InputStream以从中读取文件的内容。通过此方法就可以获取到流
+                InputStream multipartFileInputStream = file.getInputStream();
+                PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, fileName, multipartFileInputStream);
+                ossClient.putObject(putObjectRequest);
+                return "http://" + bucketName + "." + endPoint + "/" + fileName;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }finally {
+            // 关闭流
+            ossClient.shutdown();
+        }
+        throw new BusinessException(ErrorCode.SYSTEM_ERROR, "出现了未知的错误！！！");
+    }
     /**
      * 当上传新图片的时候需要删除原来图片
      *
