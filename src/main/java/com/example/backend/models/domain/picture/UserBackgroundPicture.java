@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
+
 import java.io.Serializable;
 
 /**
@@ -11,6 +13,7 @@ import java.io.Serializable;
  * @TableName user_background_picture
  */
 @TableName(value ="user_background_picture")
+@Data
 public class UserBackgroundPicture implements Serializable {
     /**
      * ID
@@ -30,46 +33,4 @@ public class UserBackgroundPicture implements Serializable {
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
-
-    /**
-     * ID
-     */
-    public Long getId() {
-        return id;
-    }
-
-    /**
-     * ID
-     */
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    /**
-     * 用户ID
-     */
-    public Long getUuid() {
-        return uuid;
-    }
-
-    /**
-     * 用户ID
-     */
-    public void setUuid(Long uuid) {
-        this.uuid = uuid;
-    }
-
-    /**
-     * 图片地址
-     */
-    public String getPicture_address() {
-        return picture_address;
-    }
-
-    /**
-     * 图片地址
-     */
-    public void setPicture_address(String picture_address) {
-        this.picture_address = picture_address;
-    }
 }

@@ -68,37 +68,25 @@ public class UserController {
     private Long BOSS_UUID;
 
     // TODO 注意一下下面这一部分注释了
-//
-//    @PostMapping("/register")
-//    private BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
-//        if (userRegisterRequest == null){
-//            throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
-//        }
-//        String Account = userRegisterRequest.getAccount();
-//        String Email = userRegisterRequest.getEmail();
-//        String confirmNumber = userRegisterRequest.getConfirmNumber();
-//        String Password = userRegisterRequest.getPassword();
-//        String checkPassword = userRegisterRequest.getCheckPassword();
-//        Long result = userService.UserRegister(Account, Email, confirmNumber, Password, checkPassword);
-//        return ResultUtils.success(result);
-//    }
-    @PostMapping("/search/uuid")
-    @AccessLimit(seconds = 3, maxCount = 20, needLogin = true)
-    private BaseResponse<UserVo> userSearchByUuid(Long uuid, HttpServletRequest httpServletRequest) {
-        UserVo userVo = userService.UserSearchByUuid(uuid);
-        return ResultUtils.success(userVo);
-    }
+
     @PostMapping("/register")
     private BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
         if (userRegisterRequest == null){
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
         String Account = userRegisterRequest.getAccount();
+        String Email = userRegisterRequest.getEmail();
+        String confirmNumber = userRegisterRequest.getConfirmNumber();
         String Password = userRegisterRequest.getPassword();
         String checkPassword = userRegisterRequest.getCheckPassword();
-
-        Long result = userService.UserRegister(Account, Password, checkPassword);
+        Long result = userService.UserRegister(Account, Email, confirmNumber, Password, checkPassword);
         return ResultUtils.success(result);
+    }
+    @PostMapping("/search/uuid")
+    @AccessLimit(seconds = 3, maxCount = 20, needLogin = true)
+    private BaseResponse<UserVo> userSearchByUuid(Long uuid, HttpServletRequest httpServletRequest) {
+        UserVo userVo = userService.UserSearchByUuid(uuid);
+        return ResultUtils.success(userVo);
     }
     @AccessLimit(seconds=5, maxCount=20, needLogin=false)
     @PostMapping("/admin/login")

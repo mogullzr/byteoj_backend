@@ -64,9 +64,7 @@ public class OssUtils {
             InputStream inputStream = new ByteArrayInputStream(bytesFile);
             ossClient.putObject(bucketName, fileName, inputStream);
 
-//            String url = "http://" + bucketName + "." + endPoint + "/" + fileName;
-            // System.out.println(url);
-            return "https://aliyun.byteoj.com/" + fileName;
+            return "http://" + bucketName + "." + endPoint + "/" + fileName;
         } catch (Exception e) {
             e.printStackTrace();
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "上传失败");

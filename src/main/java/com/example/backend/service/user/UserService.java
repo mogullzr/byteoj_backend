@@ -42,14 +42,18 @@ public interface UserService extends IService<User> {
      */
     UserVo UserSearchByUuid(Long uuid);
 
+
     /**
+     * 普通用户注册
      *
-     * @param Account
-     * @param Password
-     * @param CheckPassword
-     * @return
+     * @param Account 账户
+     * @param Email QQ邮箱
+     * @param confirmNumber 邮箱确认密码
+     * @param Password 密码
+     * @param CheckPassword 确认密码
+     * @return 是否成功
      */
-    long UserRegister(String Account, String Password, String CheckPassword);
+    long UserRegister(String Account, String Email, String confirmNumber, String Password, String CheckPassword);
     /**
      * 管理员登录
      *
