@@ -37,6 +37,7 @@ public class FangshuaInterceptor extends HandlerInterceptorAdapter {
             Long maxCount = accessLimit.maxCount();
             boolean login = accessLimit.needLogin();
             String key =  request.getRequestURI() + getClientIp(request).replace(":", ".");
+//            String clientIp = getClientIp(request);
 //            getLocationInfo(request.getRemoteAddr());
             User user = userService.getLoginUser(request);
             // 如果需要登录
