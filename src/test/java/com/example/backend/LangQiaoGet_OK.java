@@ -10,7 +10,7 @@ import java.util.Date;
 
 import java.io.IOException;
 
-public class LangQiaoGet {
+public class LangQiaoGet_OK {
     public static void main(String[] args) throws IOException, ParseException {
         // 连接到目标网站并获取HTML文档
         Document doc = Jsoup.connect("https://www.lanqiao.cn/api/v2/contests/?sort=opentime&paginate=0&status=not_finished&game_type_code=2")
