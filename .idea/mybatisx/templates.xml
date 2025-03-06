@@ -68,24 +68,8 @@
             <option name="tableUIInfoList">
               <list>
                 <TableUIInfo>
-                  <option name="className" value="Banner" />
-                  <option name="tableName" value="banner" />
-                </TableUIInfo>
-                <TableUIInfo>
-                  <option name="className" value="Cart" />
-                  <option name="tableName" value="cart" />
-                </TableUIInfo>
-                <TableUIInfo>
-                  <option name="className" value="Goods" />
-                  <option name="tableName" value="goods" />
-                </TableUIInfo>
-                <TableUIInfo>
-                  <option name="className" value="OrderItem" />
-                  <option name="tableName" value="order_item" />
-                </TableUIInfo>
-                <TableUIInfo>
-                  <option name="className" value="Orders" />
-                  <option name="tableName" value="orders" />
+                  <option name="className" value="OjCompetition" />
+                  <option name="tableName" value="oj_competition" />
                 </TableUIInfo>
               </list>
             </option>

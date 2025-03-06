@@ -738,3 +738,23 @@ create table user_last_enter
         foreign key (uuid) references user (uuid)
 );
 
+-- auto-generated definition
+create table oj_competition
+(
+    id          bigint auto_increment comment 'ID'
+        primary key,
+    title       varchar(255)      not null comment '竞赛标题',
+    platform    varchar(255)      not null comment '举办平台',
+    pattern     int               not null comment '赛制类别,0表示ACM赛制,1表示OI赛制,2表示IOI赛制',
+    description varchar(255)      null comment '比赛相关信息',
+    url         varchar(255)      null comment '比赛链接',
+    joins       int               null comment '比赛参加人数',
+    start_time  datetime          not null comment '比赛开始时间',
+    end_time    datetime          not null comment '比赛结束时间',
+    update_time datetime          not null comment '信息更新时间',
+    picture     varchar(255)      not null comment '比赛海报',
+    is_delete   tinyint default 0 not null comment '逻辑删除',
+    constraint oj_competition_pk
+        unique (id)
+);
+
