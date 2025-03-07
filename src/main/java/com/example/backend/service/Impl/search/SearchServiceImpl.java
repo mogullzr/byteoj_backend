@@ -3,9 +3,11 @@ package com.example.backend.service.Impl.search;
 import com.example.backend.common.ErrorCode;
 import com.example.backend.common.SearchTypeEnum;
 import com.example.backend.exception.BusinessException;
+import com.example.backend.models.domain.spider.OjCompetition;
 import com.example.backend.models.domain.user.User;
 import com.example.backend.models.request.problem.SearchRequest;
 import com.example.backend.models.vo.UserVo;
+import com.example.backend.models.vo.crawler.OJCompetitionVo;
 import com.example.backend.models.vo.post.PostsVo;
 import com.example.backend.models.vo.problem.ProblemAlgorithmBankVo;
 import com.example.backend.models.vo.problem.ProblemMath408BankVo;
@@ -36,6 +38,9 @@ public class SearchServiceImpl implements SearchService {
     @Resource
     private DataSourceRegistry dataSourceRegistry;
 
+    @Resource
+    private OJCompetitionDataSource ojCompetitionDataSource;
+
     @Override
     public SearchVo searchAll(SearchRequest searchRequest, Long uuid, boolean isAdmin) {
         String category = searchRequest.getCategory();
@@ -65,14 +70,18 @@ public class SearchServiceImpl implements SearchService {
             // 4.用户
             List<UserVo> userVoList = userDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin);
 
+            // 5.oj信息
+            List<OJCompetitionVo> ojCompetitionList = ojCompetitionDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin);
+
             // ......扩展
             // 最终聚合
             searchVo.setProblemAlgorithmBankVoList(problemAlgorithmBankVoList);
             searchVo.setPostsVoList(postsVoList);
             searchVo.setUserVoList(userVoList);
+            searchVo.setOjCompetitionsList(ojCompetitionList);
+
         } else {
             DataSource<?> dataSource = dataSourceRegistry.getDataSourceByCategory(category);
-
             List<?> dataList = dataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin);
             searchVo.setDataList(dataList);
         }

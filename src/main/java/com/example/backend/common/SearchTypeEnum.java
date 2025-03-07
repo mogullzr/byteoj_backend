@@ -16,7 +16,8 @@ public enum SearchTypeEnum {
 
     POST("帖子", "post"),
 
-    USER("用户", "user");
+    USER("用户", "user"),
+    OJ("OJ", "oj");
 
     private final String text;
 

@@ -16,7 +16,7 @@ public interface CourseService extends IService<Course> {
     /**
      * 通过面数获取课程列表信息
      *
-     * @param PageNum 面数
+     * @param pageNum 面数
      * @return 课程列表
      */
     List<Course> courseSearchByPageNum(Integer pageNum);

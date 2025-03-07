@@ -1,6 +1,8 @@
 package com.example.backend.models.vo.problem;
 
+import com.example.backend.models.domain.spider.OjCompetition;
 import com.example.backend.models.vo.UserVo;
+import com.example.backend.models.vo.crawler.OJCompetitionVo;
 import com.example.backend.models.vo.post.PostsVo;
 import lombok.Data;
 import org.bouncycastle.math.ec.rfc8032.Ed448;
@@ -32,6 +34,10 @@ public class SearchVo implements Serializable {
      */
     private List<UserVo> userVoList;
 
+    /**
+     * OJ列表
+     */
+    private List<OJCompetitionVo> ojCompetitionsList;
     /**
      * 下面可随意扩展......
      */

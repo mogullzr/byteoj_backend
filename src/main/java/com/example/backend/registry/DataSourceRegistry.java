@@ -20,6 +20,9 @@ public class DataSourceRegistry {
     @Resource
     private UserDataSource userDataSource;
 
+    @Resource
+    private OJCompetitionDataSource ojCompetitionDataSource;
+
     private Map<String, DataSource<?>> typeDataSourceMap;
 
     @PostConstruct
@@ -28,6 +31,7 @@ public class DataSourceRegistry {
             put(SearchTypeEnum.ALGORITHM.getValue(), algorithmDataSource);
             put(SearchTypeEnum.POST.getValue(), postsDataSource);
             put(SearchTypeEnum.USER.getValue(), userDataSource);
+            put(SearchTypeEnum.OJ.getValue(), ojCompetitionDataSource);
         }};
     }
 
