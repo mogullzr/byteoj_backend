@@ -1,5 +1,6 @@
 package com.example.backend.utils;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.backend.mapper.OjCompetitionMapper;
 import com.example.backend.models.domain.spider.OjCompetition;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -33,9 +34,13 @@ public class OJCompetitionCrawlerUtils {
     @Resource
     private OjCompetitionMapper ojCompetitionMapper;
 
-    @Scheduled(fixedRate = 1000 * 60 * 60 * 24 * 7)
+    /**
+     * 每8个小时爬一次
+     * @throws IOException
+     * @throws ParseException
+     */
+    @Scheduled(fixedRate = 1000 * 60 * 60 * 8)
     public void OJCompetitionCrawler() throws IOException, ParseException {
-        List<OjCompetition> ojCompetitions = new ArrayList<>();
         // 1.Codeforces
         CodeForcesCrawler();
 
@@ -46,13 +51,13 @@ public class OJCompetitionCrawlerUtils {
         NowCoderCrawler();
         
         // 4.leetcode
-//        LeetCodeCrawler();
+        LeetCodeCrawler();
         
         // 5.jisuanke
-//        JiSuanKeCrawler();
+        JiSuanKeCrawler();
         
         // 6.lanqiao
-//        LangQiaoCrawler();
+        LanQiaoCrawler();
         
         // 7.CodeChef
         CodeChefCrawler();
@@ -103,7 +108,20 @@ public class OJCompetitionCrawlerUtils {
             ojCompetition.setPattern(0);
             ojCompetition.setJoins(joins);
 
+            // 查看之前是否插入过
+            ojCompetitionIsExist(ojCompetition);
+        }
+    }
+
+    private void ojCompetitionIsExist(OjCompetition ojCompetition) {
+        QueryWrapper<OjCompetition> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("title", ojCompetition.getTitle());
+        OjCompetition ojCompetitionSearch = ojCompetitionMapper.selectOne(queryWrapper);
+
+        if (ojCompetitionSearch == null){
             ojCompetitionMapper.insert(ojCompetition);
+        } else {
+            ojCompetitionMapper.update(ojCompetitionSearch, queryWrapper);
         }
     }
 
@@ -125,7 +143,7 @@ public class OJCompetitionCrawlerUtils {
         return String.format("%.1fh", hours);
     }
 
-    private void LangQiaoCrawler() throws ParseException, IOException {
+    private void LanQiaoCrawler() throws ParseException, IOException {
         // 连接到目标网站并获取HTML文档
         Document doc = Jsoup.connect("https://www.lanqiao.cn/api/v2/contests/?sort=opentime&paginate=0&status=not_finished&game_type_code=2")
                 .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36")
@@ -143,13 +161,11 @@ public class OJCompetitionCrawlerUtils {
             OjCompetition ojCompetition = new OjCompetition();
 
             // 提取字段
-            int id = contest.get("id").asInt();
             String name = contest.get("name").asText();
             String openAt = contest.get("open_at").asText();
             String endAt = contest.get("end_at").asText();
-            String url = contest.get("html_url").asText();
+            String url = "https://www.lanqiao.cn/oj-contest/" + contest.get("html_url").asText();
             int usersCount = contest.get("users_count").asInt();
-            int difficulty = contest.get("difficulty").asInt();
             int gameTypeCode = contest.get("game_type_code").asInt();
 
             // 定义输入格式
@@ -182,13 +198,149 @@ public class OJCompetitionCrawlerUtils {
             ojCompetition.setPlatform("蓝桥杯");
             ojCompetition.setUpdate_time(new Date());
             ojCompetition.setPattern(gameTypeCode == 2 ? 0 : 2);
+
+            // 查看之前是否插入过
+            ojCompetitionIsExist(ojCompetition);
         }
     }
 
-    private void JiSuanKeCrawler() {
+    private void JiSuanKeCrawler() throws IOException {
+        // 连接到目标网站并获取HTML文档
+        Document doc = Jsoup.connect("https://www.jisuanke.com/api/contests?page=1&hasParticipated=0")
+                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3")
+                .header("Referer", "https://www.jisuanke.com/contests")
+                .header("Cookie", "XSRF-TOKEN=P6WmnfAqKv4s8S46qIqeAlDqMASPVohx; JESONG_USER_ID=01000000012825053748204996651256; medium_arr=%5B%5D; medium_play=%5B%5D; medium_play_end=%5B%5D; visitor_once=%5B%5D; visitor_medium=%5B%5D; askMode=1; jesong_lastServiceUser=EASYLIAOU3I4eklDbXliY3VkVysyaFV0VllZdz09; acw_tc=25274014384e9992d1fca1e5898a3c57804a1111f26ae525914ef33b5eab3a19; Hm_lvt_183e07aa097a1758fd6d45349e74c327=1740537480,1740901834; HMACCOUNT=3D9E0218E5314E61; Hm_lpvt_183e07aa097a1758fd6d45349e74c327=1740901873; s=eyJpdiI6IlhVQXdPdHAwcGRoWTJLYk51Nm1OUFE9PSIsInZhbHVlIjoieUhOSEJnZVhjNkdsM0RkUktaRENGVWtocE4wN010YUp6cWdITUZJd2RpTnE3QTZPaHJud2trQmhlNjRhdGVhYjliQ2pERC9qbUoxc1R4Vy9KME1HdUVIVldGTlMxZGExdjJ0TUpQSjE4TWdHMXA1cytrTE1oZmVqN0k2ZUJGaE0iLCJtYWMiOiIwM2I0Njc2NjAzZTljZjZlNWJmZDAxNGFlMzRmMTRkODljNzc3MWMwZjFmMTdkYmE5ZmJkOGNiNzY2MjE4YjZiIn0%3D")
+                .ignoreContentType(true) // 忽略内容类型检查
+                .get();
+        String jsonData = String.valueOf(doc.text());
+        try {
+            // 使用 Jackson 解析 JSON 数据
+            ObjectMapper objectMapper = new ObjectMapper();
+            Map<String, Object> data = objectMapper.readValue(jsonData, Map.class);
+
+            // 提取 "promoting" 部分
+            List<Map<String, Object>> promotingContests = (List<Map<String, Object>>) data.get("promoting");
+
+            // 遍历每个竞赛信息
+            for (Map<String, Object> contest : promotingContests) {
+                OjCompetition ojCompetition = new OjCompetition();
+
+                // 提取所需字段
+                String title = (String) contest.get("title");
+                String startTime = (String) contest.get("startTime");
+                int durationMinutes = (int) contest.get("duration") * 60;
+                String endTime = addSecondsToDateTime(startTime, durationMinutes);
+                String rule = (String) contest.get("rule");
+                String contest_url = "https://www.jisuanke.com/contests/" + contest.get("contestId");
+
+                // 提取两个时间
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                LocalDateTime startDateTime = LocalDateTime.parse(startTime, formatter);
+                LocalDateTime endDateTime = LocalDateTime.parse(endTime, formatter);
+                Date startDate = java.sql.Timestamp.valueOf(startDateTime);
+                Date endDate = java.sql.Timestamp.valueOf(endDateTime);
+
+
+                ojCompetition.setTitle(title);
+                ojCompetition.setStart_time(startDate);
+                ojCompetition.setEnd_time(endDate);
+                ojCompetition.setPlatform("jisuanke");
+                ojCompetition.setUrl(contest_url);
+                ojCompetition.setUpdate_time(new Date());
+                ojCompetition.setPicture("https://mogullzr001.oss-cn-beijing.aliyuncs.com/typora_img/202503072158374.jpg");
+                if (Objects.equals(rule, "ACM")) {
+                    ojCompetition.setPattern(0);
+                } else if (Objects.equals(rule, "OI")) {
+                    ojCompetition.setPattern(1);
+                } else if (Objects.equals(rule, "IOI")) {
+                    ojCompetition.setPattern(2);
+                }
+
+                // 查看之前是否插入过
+                ojCompetitionIsExist(ojCompetition);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    private void LeetCodeCrawler() {
+    private void LeetCodeCrawler() throws IOException {
+        // 设置请求头
+        String url = "https://leetcode.cn/graphql";
+        String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36";
+        String referer = "https://leetcode.cn/contest/";
+        String contentType = "application/json";
+
+        // 设置请求参数
+        String query = "{\n  contestUpcomingContests {\n    containsPremium\n    title\n    cardImg\n    titleSlug\n    description\n    startTime\n    duration\n    originStartTime\n    isVirtual\n    isLightCardFontColor\n    company {\n      watermark\n      __typename\n    }\n    __typename\n  }\n}\n";
+        String jsonParams = "{\"operationName\":null,\"variables\":{},\"query\":\"" + query.replace("\n", "\\n") + "\"}";
+
+        // 发送 POST 请求
+        Document doc = Jsoup.connect(url)
+                .userAgent(userAgent)
+                .header("Referer", referer)
+                .header("Content-Type", contentType)
+                .ignoreContentType(true) // 忽略内容类型检查
+                .requestBody(jsonParams)
+                .post();
+
+        // 获取 JSON 数据
+        String jsonData = doc.text();
+
+        try {
+            // 使用 Jackson 解析 JSON 数据
+            org.codehaus.jackson.map.ObjectMapper objectMapper = new org.codehaus.jackson.map.ObjectMapper();
+            Map<String, Object> data = objectMapper.readValue(jsonData, Map.class);
+
+            // 提取 "contestUpcomingContests" 部分
+            List<Map<String, Object>> contests = (List<Map<String, Object>>) ((Map<String, Object>) data.get("data")).get("contestUpcomingContests");
+
+            // 遍历每个竞赛信息
+            for (Map<String, Object> contest : contests) {
+                OjCompetition ojCompetition = new OjCompetition();
+
+                // 提取所需字段
+                String title = (String) contest.get("title");
+                int startTime = (int) contest.get("startTime");
+                int duration = (int) contest.get("duration");
+                String picture = (String) contest.get("cardImg");
+                String contest_url = "https://leetcode.cn/contest/" + contest.get("titleSlug");
+
+                // 转换时间戳为北京时间
+                String StartTime = convertTimestampToBeijingTime(startTime);
+                String EndTime = addSecondsToDateTime(StartTime, duration);
+
+                // 提取两个时间
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                LocalDateTime startDateTime = LocalDateTime.parse(StartTime, formatter);
+                LocalDateTime endDateTime = LocalDateTime.parse(EndTime, formatter);
+                Date startDate = java.sql.Timestamp.valueOf(startDateTime);
+                Date endDate = java.sql.Timestamp.valueOf(endDateTime);
+
+                ojCompetition.setTitle(title);
+                ojCompetition.setStart_time(startDate);
+                ojCompetition.setEnd_time(endDate);
+                ojCompetition.setPattern(0);
+                ojCompetition.setPicture(picture);
+                ojCompetition.setPlatform("LeetCode");
+                ojCompetition.setUpdate_time(new Date());
+                ojCompetition.setUrl(contest_url);
+
+                // 查看之前是否插入过
+                ojCompetitionIsExist(ojCompetition);
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 将时间戳转换为北京时间
+    private static String convertTimestampToBeijingTime(int timestamp) {
+        java.util.Date date = new java.util.Date((long) timestamp * 1000);
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        sdf.setTimeZone(java.util.TimeZone.getTimeZone("GMT+8")); // 设置为北京时间
+        return sdf.format(date);
     }
 
     private void NowCoderCrawler() throws IOException {
@@ -247,23 +399,9 @@ public class OJCompetitionCrawlerUtils {
                 ojCompetition.setPattern(0);
             }
             ojCompetition.setPlatform("牛客");
-
-            ojCompetitionMapper.insert(ojCompetition);
+            // 查看之前是否插入过
+            ojCompetitionIsExist(ojCompetition);
         }
-    }
-
-    private double convertDurationToHours(String durationText) {
-        if (durationText.contains("小时") && durationText.contains("分钟")) {
-            int hours = Integer.parseInt(Arrays.toString(new String[]{durationText.split("小时")[0]}).replace("[", "").replace("]", "").trim());
-            int minutes = Integer.parseInt(Arrays.toString(new String[]{durationText.split("小时")[1]}).replace("[", "").replace("]", "").replace("分钟", "").trim());
-            return hours + (minutes / 60.0);
-        } else if (durationText.contains("小时")) {
-            return Double.parseDouble(durationText.replace("小时", "").trim());
-        } else if (durationText.contains("分钟")) {
-            int minutes = Integer.parseInt(durationText.replace("分钟", "").trim());
-            return minutes / 60.0;
-        }
-        return 0;
     }
 
     private void AcwingCrawler() throws IOException {
@@ -317,6 +455,8 @@ public class OJCompetitionCrawlerUtils {
                 ojCompetition.setPlatform("Acwing");
                 ojCompetition.setUpdate_time(new Date());
 
+                // 查看之前是否插入过
+                ojCompetitionIsExist(ojCompetition);
                 ojCompetitionMapper.insert(ojCompetition);
             }
         }
@@ -368,21 +508,20 @@ public class OJCompetitionCrawlerUtils {
             }
         }
 
-        // 输出结果
+        // 插入
         for (ContestInfo info : contestInfoList) {
             OjCompetition ojCompetition = new OjCompetition();
             ojCompetition.setStart_time(info.getDate1());
             ojCompetition.setEnd_time(info.getDate2());
             ojCompetition.setTitle(info.getName());
             ojCompetition.setPlatform("Codeforces");
-            ojCompetition.setPicture("https://codeforces.com/codeforces.org/s/42751/images/codeforces-sponsored-by-ton.png");
+            ojCompetition.setPicture("https://mogullzr001.oss-cn-beijing.aliyuncs.com/typora_img/202503072214966.png");
             ojCompetition.setPattern(0);
-            ojCompetition.setUrl("https://codeforces.com/contestRegistrants/" + info.getId());
+            ojCompetition.setUrl("https://codeforces.com/contest/" + info.getId());
             ojCompetition.setUpdate_time(new Date());
 
-            System.out.println(ojCompetition);
-            ojCompetitionMapper.insert(ojCompetition);
-
+            // 查看之前是否插入过
+            ojCompetitionIsExist(ojCompetition);
         }
     }
 

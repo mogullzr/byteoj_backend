@@ -37,10 +37,6 @@ public class OjCompetition implements Serializable {
      */
     private Integer pattern;
 
-    /**
-     * 比赛相关信息
-     */
-    private String description;
 
     /**
      * 比赛链接
