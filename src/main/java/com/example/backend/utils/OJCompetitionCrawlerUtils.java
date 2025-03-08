@@ -121,7 +121,7 @@ public class OJCompetitionCrawlerUtils {
         if (ojCompetitionSearch == null){
             ojCompetitionMapper.insert(ojCompetition);
         } else {
-            ojCompetitionMapper.update(ojCompetitionSearch, queryWrapper);
+            ojCompetitionMapper.update(ojCompetition, queryWrapper);
         }
     }
 
@@ -164,7 +164,7 @@ public class OJCompetitionCrawlerUtils {
             String name = contest.get("name").asText();
             String openAt = contest.get("open_at").asText();
             String endAt = contest.get("end_at").asText();
-            String url = "https://www.lanqiao.cn/oj-contest/" + contest.get("html_url").asText();
+            String url = "https://www.lanqiao.cn/oj-contest/" + contest.get("html_url").asText().substring(contest.get("html_url").asText().indexOf("contests/") + "contests/".length(), contest.get("html_url").asText().indexOf("/challenges"));
             int usersCount = contest.get("users_count").asInt();
             int gameTypeCode = contest.get("game_type_code").asInt();
 
@@ -231,7 +231,7 @@ public class OJCompetitionCrawlerUtils {
                 int durationMinutes = (int) contest.get("duration") * 60;
                 String endTime = addSecondsToDateTime(startTime, durationMinutes);
                 String rule = (String) contest.get("rule");
-                String contest_url = "https://www.jisuanke.com/contests/" + contest.get("contestId");
+                String contest_url = "https://www.jisuanke.com/contest/" + contest.get("contestId");
 
                 // 提取两个时间
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");

@@ -43,7 +43,7 @@ public class SearchController {
      * @return 返回搜索结果
      */
     @PostMapping("/all/vo")
-//    @AccessLimit(seconds = 1, maxCount = 10, needLogin = false)
+    @AccessLimit(seconds = 1, maxCount = 10, needLogin = false)
     public BaseResponse<SearchVo> SearchAll(@RequestBody SearchRequest searchRequest, HttpServletRequest httpServletRequest) {
         User loginUser = userService.getLoginUser(httpServletRequest);
         Long uuid = -1L;
