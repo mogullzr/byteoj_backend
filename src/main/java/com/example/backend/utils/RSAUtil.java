@@ -13,6 +13,7 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * 备注，解密前台公钥加密的数据，请调用decryptWithPrivate方法
@@ -150,7 +151,18 @@ public class RSAUtil {
      * @return 公钥
      */
     public static String getPublicKey() {
-        return rsaMap.get(PUBLIC_KEY);
+        String original = rsaMap.get(PUBLIC_KEY);
+        String toInsert = "Mogul/";
+        // 创建 Random 对象
+        Random random = new Random();
+
+        // 生成随机位置（0 到 original.length() 之间）
+        int position = random.nextInt(original.length() + 1);
+
+        // 使用 StringBuilder 插入字符串
+        StringBuilder builder = new StringBuilder(original);
+        builder.insert(position, toInsert);
+        return builder.toString();
     }
  
     /**
