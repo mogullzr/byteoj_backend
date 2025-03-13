@@ -48,19 +48,19 @@ public class OJCompetitionCrawlerUtils {
 
         // 2.Acwing
         AcwingCrawler();
-        
+
         // 3.nowCoder
         NowCoderCrawler();
-        
+
         // 4.leetcode
         LeetCodeCrawler();
-        
+
         // 5.jisuanke
         JiSuanKeCrawler();
-        
+
         // 6.lanqiao
         LanQiaoCrawler();
-        
+
         // 7.CodeChef
         CodeChefCrawler();
     }
@@ -500,15 +500,18 @@ public class OJCompetitionCrawlerUtils {
                 String endTime = addSecondsToDateTime(startTime, durationSeconds); // 返回格式为 "yyyy-MM-dd HH:mm:ss"
 
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+                // 解析时间字符串为 LocalDateTime
                 LocalDateTime startDateTime = LocalDateTime.parse(startTime, formatter);
                 LocalDateTime endDateTime = LocalDateTime.parse(endTime, formatter);
 
-                // 将 LocalDateTime 转换为带时区的 ZonedDateTime（假设本地时区为 Asia/Shanghai）
-                ZonedDateTime startZonedDateTime = startDateTime.atZone(ZoneId.of("Asia/Shanghai"));
-                ZonedDateTime endZonedDateTime = endDateTime.atZone(ZoneId.of("Asia/Shanghai"));
+                // 在原来的时间基础上加上8小时
+                LocalDateTime startDateTimePlus8 = startDateTime.plusHours(8);
+                LocalDateTime endDateTimePlus8 = endDateTime.plusHours(8);
 
-                Date startDate = java.sql.Timestamp.valueOf(startDateTime);
-                Date endDate = java.sql.Timestamp.valueOf(endDateTime);
+                // 转换为 java.sql.Timestamp
+                Date startDate = java.sql.Timestamp.valueOf(startDateTimePlus8);
+                Date endDate = java.sql.Timestamp.valueOf(endDateTimePlus8);
 
                 // 存储结果
                 contestInfoList.add(new ContestInfo(name, startDate, endDate, id));
