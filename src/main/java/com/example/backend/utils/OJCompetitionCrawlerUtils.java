@@ -25,6 +25,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -500,6 +502,11 @@ public class OJCompetitionCrawlerUtils {
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
                 LocalDateTime startDateTime = LocalDateTime.parse(startTime, formatter);
                 LocalDateTime endDateTime = LocalDateTime.parse(endTime, formatter);
+
+                // 将 LocalDateTime 转换为带时区的 ZonedDateTime（假设本地时区为 Asia/Shanghai）
+                ZonedDateTime startZonedDateTime = startDateTime.atZone(ZoneId.of("Asia/Shanghai"));
+                ZonedDateTime endZonedDateTime = endDateTime.atZone(ZoneId.of("Asia/Shanghai"));
+
                 Date startDate = java.sql.Timestamp.valueOf(startDateTime);
                 Date endDate = java.sql.Timestamp.valueOf(endDateTime);
 
