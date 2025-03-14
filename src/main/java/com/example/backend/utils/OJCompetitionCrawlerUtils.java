@@ -556,18 +556,6 @@ public class OJCompetitionCrawlerUtils {
     }
 
     /**
-     * 将秒数转换为持续时间（小时和分钟）
-     *
-     * @param seconds 秒数
-     * @return 持续时间字符串
-     */
-    private static String convertSecondsToDuration(long seconds) {
-        long hours = seconds / 3600;
-        long minutes = (seconds % 3600) / 60;
-        return hours + "小时" + minutes + "分钟";
-    }
-
-    /**
      * 用于存储竞赛信息的内部类
      */
     private static class ContestInfo {

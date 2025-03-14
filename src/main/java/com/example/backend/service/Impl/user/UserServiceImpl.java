@@ -611,6 +611,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             simple_user.setPhone(user.getPhone());
             simple_user.setRating(user.getRating());
             simple_user.setRole(user.getRole());
+            simple_user.setEmail(user.getEmail());
             userVoList.add(simple_user);
         }
         return userVoList;
