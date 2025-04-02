@@ -75,8 +75,6 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
     @Resource
     private UserMapper userMapper;
 
-    @Resource
-    private UserService userService;
 
     /**
      * 盐值，混淆密码,不懂的去了解MD5加密方式
@@ -452,18 +450,21 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
         if (competition == null) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "信息错误");
         } else {
-            QueryWrapper<CompetitionsProblemsAlgorithm> competitionsProblemsAlgorithmMapperQueryWrapper = new QueryWrapper<>();
-            QueryWrapper<CompetitionsProblemsMath408> competitionsProblemsMath408QueryWrapper = new QueryWrapper<>();
-            QueryWrapper<CompetitionsUser> competitionsUserQueryWrapper = new QueryWrapper<>();
+//            QueryWrapper<CompetitionsProblemsAlgorithm> competitionsProblemsAlgorithmMapperQueryWrapper = new QueryWrapper<>();
+//            QueryWrapper<CompetitionsProblemsMath408> competitionsProblemsMath408QueryWrapper = new QueryWrapper<>();
+//            QueryWrapper<CompetitionsUser> competitionsUserQueryWrapper = new QueryWrapper<>();
 
-            competitionsProblemsAlgorithmMapperQueryWrapper.eq("competition_id", competition_id);
-            competitionsProblemsMath408QueryWrapper.eq("competition_id", competition_id);
-            competitionsUserQueryWrapper.eq("competition_id", competition_id);
+//            competitionsProblemsAlgorithmMapperQueryWrapper.eq("competition_id", competition_id);
+//            competitionsProblemsMath408QueryWrapper.eq("competition_id", competition_id);
+//            competitionsUserQueryWrapper.eq("competition_id", competition_id);
 
-            competitionsProblemsAlgorithmMapper.delete(competitionsProblemsAlgorithmMapperQueryWrapper);
-            competitionsProblemsMath408Mapper.delete(competitionsProblemsMath408QueryWrapper);
-            competitionsUserMapper.delete(competitionsUserQueryWrapper);
-            competitionsMapper.delete(competitionsQueryWrapper);
+//            competitionsProblemsAlgorithmMapper.delete(competitionsProblemsAlgorithmMapperQueryWrapper);
+//            competitionsProblemsMath408Mapper.delete(competitionsProblemsMath408QueryWrapper);
+//            competitionsUserMapper.delete(competitionsUserQueryWrapper);
+//            competitionsMapper.delete(competitionsQueryWrapper);
+            Competitions competitions = competitionsMapper.selectOne(competitionsQueryWrapper);
+            competitions.setIs_delete((competitions.getIs_delete() + 1) % 2);
+            competitionsMapper.update(competitions,competitionsQueryWrapper);
             return true;
         }
     }
@@ -792,6 +793,7 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
         competitionInfoVo.setAvatar(competition.getAvatar());
         competitionInfoVo.setDescription(competition.getDescription());
         competitionInfoVo.setJoins(competition.getJoins());
+        competitionInfoVo.setIs_delete(competition.getIs_delete());
 
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("uuid", competition.getCreated_by());

@@ -71,4 +71,9 @@ public class CompetitionInfoVo implements Serializable {
      * 是否为竞赛创建者,0表示是，1表示不是
      */
     private Integer isCreated;
+
+    /**
+     * 是否删除
+     */
+    private Integer is_delete;
 }
