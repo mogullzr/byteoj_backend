@@ -17,7 +17,11 @@ public enum SearchTypeEnum {
     POST("帖子", "post"),
 
     USER("用户", "user"),
+
+    BOSS_AUTH_SEARCH("BOSS管理员权限查询", "boss_auth_search"),
+
     OJ("OJ", "oj");
+
 
     private final String text;
 

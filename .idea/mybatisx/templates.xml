@@ -68,8 +68,32 @@
             <option name="tableUIInfoList">
               <list>
                 <TableUIInfo>
-                  <option name="className" value="OjCompetition" />
-                  <option name="tableName" value="oj_competition" />
+                  <option name="className" value="UserRoleRelation" />
+                  <option name="tableName" value="user_role_relation" />
+                </TableUIInfo>
+                <TableUIInfo>
+                  <option name="className" value="UserRoleAuth" />
+                  <option name="tableName" value="user_role_auth" />
+                </TableUIInfo>
+                <TableUIInfo>
+                  <option name="className" value="UserRole" />
+                  <option name="tableName" value="user_role" />
+                </TableUIInfo>
+                <TableUIInfo>
+                  <option name="className" value="UserAuth" />
+                  <option name="tableName" value="user_auth" />
+                </TableUIInfo>
+                <TableUIInfo>
+                  <option name="className" value="UserApiType" />
+                  <option name="tableName" value="user_api_type" />
+                </TableUIInfo>
+                <TableUIInfo>
+                  <option name="className" value="UserApiAuth" />
+                  <option name="tableName" value="user_api_auth" />
+                </TableUIInfo>
+                <TableUIInfo>
+                  <option name="className" value="UserApi" />
+                  <option name="tableName" value="user_api" />
                 </TableUIInfo>
               </list>
             </option>

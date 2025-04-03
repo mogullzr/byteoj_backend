@@ -35,9 +35,15 @@ public class SearchVo implements Serializable {
     private List<UserVo> userVoList;
 
     /**
+     * 权限ID列表
+     */
+    private List<UserVo> userAuthVoList;
+
+    /**
      * OJ列表
      */
     private List<OJCompetitionVo> ojCompetitionsList;
+
     /**
      * 下面可随意扩展......
      */

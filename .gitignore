@@ -5,6 +5,7 @@ application.yml
 application-dev.yml
 application-local.yml
 target/
+test.sql
 # User-specific stuff
 .idea/**/workspace.xml
 .idea/**/tasks.xml

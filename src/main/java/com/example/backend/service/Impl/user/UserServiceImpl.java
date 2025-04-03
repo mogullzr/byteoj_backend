@@ -11,26 +11,28 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.backend.common.EmailConstant;
 import com.example.backend.constant.UserConstant;
 import com.example.backend.exception.BusinessException;
-import com.example.backend.mapper.UserBackgroundPictureMapper;
-import com.example.backend.mapper.UserMapper;
-import com.example.backend.mapper.WebsiteBackgroundPicturesMapper;
+import com.example.backend.mapper.*;
 import com.example.backend.models.domain.picture.UserBackgroundPicture;
 import com.example.backend.models.domain.picture.WebsiteBackgroundPictures;
+import com.example.backend.models.domain.user.*;
 import com.example.backend.models.request.AdminRegisterRequest;
-import com.example.backend.models.request.user.UserRegisterRequest;
-import com.example.backend.models.request.user.UserSearchRequest;
+import com.example.backend.models.request.user.*;
+import com.example.backend.models.vo.UserRolesInfoVo;
+import com.example.backend.models.vo.UserRolesVo;
 import com.example.backend.models.vo.UserVo;
+import com.example.backend.service.user.UserRoleAuthService;
+import com.example.backend.service.user.UserRoleRelationService;
 import com.example.backend.service.user.UserService;
-import com.example.backend.models.domain.user.User;
-import com.example.backend.models.request.user.UserModifyRequest;
 import com.example.backend.utils.EmailSendUtil;
 import com.example.backend.utils.OssUtils;
 import com.example.backend.utils.RedisUtils;
+import io.swagger.models.auth.In;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import com.example.backend.common.ErrorCode;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,6 +44,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.example.backend.constant.UserConstant.ADMIN_ROLE;
 import static com.example.backend.constant.UserConstant.USER_LOGIN_STATE;
@@ -65,8 +68,27 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Resource
     private UserBackgroundPictureMapper userBackgroundPictureMapper;
+
+    @Resource
+    private UserAuthMapper userAuthMapper;
+
+    @Resource
+    private UserRoleMapper userRoleMapper;
+
+    @Resource
+    private UserRoleRelationMapper userRoleRelationMapper;
+
+    @Resource
+    private UserRoleAuthMapper userRoleAuthMapper;
+
     @Resource
     private UserService userService;
+
+    @Resource
+    private UserRoleRelationService userRoleRelationService;
+
+    @Resource
+    private UserRoleAuthService userRoleAuthService;
 
     @Resource
     private EmailSendUtil emailSendUtil;
@@ -644,7 +666,236 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     @Override
-    public boolean bossAdminAddAdmin(AdminRegisterRequest adminRegisterRequest) {
+    public boolean bossAdminAuthorize(List<String> authorNameList, Long uuid) {
+        // 1.查询当前这些ID是否存在，不存在则直接抛出异常
+        QueryWrapper<UserRole> userRoleQueryWrapper = new QueryWrapper<>();
+        List<UserRole> userRoles = userRoleMapper.selectList(userRoleQueryWrapper);
+        if (userRoles == null || userRoles.size() == authorNameList.size() || userRoles.isEmpty()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "你在干嘛呢，哎哟，参数有问题！！！");
+        }
+
+        // 2.1.设置用户与角色表关系，先删除
+        QueryWrapper<UserRoleRelation> userRoleRelationQueryWrapper = new QueryWrapper<>();
+        QueryWrapper<UserRole> roleQueryWrapper = new QueryWrapper<>();
+
+        List<UserRoleRelation> userRoleRelations = new ArrayList<>();
+        userRoleRelationQueryWrapper.eq("uuid",uuid);
+
+        userRoleRelationMapper.delete(userRoleRelationQueryWrapper);
+
+        authorNameList.forEach((authorName)-> {
+            roleQueryWrapper.in("description", authorName);
+        });
+
+        List<UserRole> userRoleList = userRoleMapper.selectList(roleQueryWrapper);
+        // 2.2. 转换为Map便于查找
+        Map<String, List<UserRole>> userRoleMap = userRoleList.stream()
+                .collect(Collectors.groupingBy(UserRole::getDescription));
+
+        authorNameList.forEach((authorName)->{
+            UserRole userRole = userRoleMap.get(authorName).get(0);
+            UserRoleRelation userRoleRelation = new UserRoleRelation();
+
+            userRoleRelation.setUuid(uuid);
+            userRoleRelation.setRole_id(userRole.getId());
+
+            userRoleRelation.setCreate_time(new Date());
+            userRoleRelation.setUpdate_time(new Date());
+            userRoleRelations.add(userRoleRelation);
+        });
+
+        return userRoleRelationService.saveBatch(userRoleRelations);
+    }
+
+    @Override
+    public List<UserVo> listUserAuthVoByPage(UserAuthSearchRequest userAuthSearchRequest) {
+        // 1. 获取用户基本信息
+        UserSearchRequest userSearchRequest = new UserSearchRequest();
+        userSearchRequest.setPageNum(userAuthSearchRequest.getPageNum());
+        userSearchRequest.setPageSize(userAuthSearchRequest.getPageSize());
+        List<UserVo> userVoList = listUserVoByPage(userSearchRequest);
+
+        // 2. 提取所有UUID
+        List<Long> uuidList = userVoList.stream()
+                .map(UserVo::getUuid)
+                .collect(Collectors.toList());
+
+        // 3. 批量查询角色关系（避免使用or()）
+        if (!uuidList.isEmpty()) {
+            QueryWrapper<UserRoleRelation> wrapper = new QueryWrapper<>();
+            wrapper.in("uuid", uuidList); // 使用IN查询更高效
+            List<UserRoleRelation> userRoleRelations = userRoleRelationMapper.selectList(wrapper);
+
+            // 4. 转换为Map便于查找
+            Map<Long, List<UserRoleRelation>> roleRelationMap = userRoleRelations.stream()
+                    .collect(Collectors.groupingBy(UserRoleRelation::getUuid));
+
+            // 5. 合并数据
+            userVoList.forEach(userVo -> {
+                List<UserRoleRelation> relations = roleRelationMap.get(userVo.getUuid());
+                if (relations != null) {
+                    // 这里可以根据需要封装角色信息
+                    List<Integer> roleIds = relations.stream()
+                            .map(UserRoleRelation::getRole_id)
+                            .collect(Collectors.toList());
+                    userVo.setRole_id_list(roleIds); // 假设UserVo有setRoleIds方法
+                }
+            });
+        }
+        return userVoList;
+    }
+
+    @Override
+    public boolean bossAdminSetRoles(UserRoleCreateRequest userRoleCreateRequest) {
+        // 0.查看请求信息是否为空
+        String roleName = userRoleCreateRequest.getRole_name();
+        List<String> authNameList = userRoleCreateRequest.getAuth_name_list();
+        // 1.查询对应权限名称是否存在，存在则抛出异常
+        QueryWrapper<UserRole> userRoleAuthQueryWrapper = new QueryWrapper<>();
+        userRoleAuthQueryWrapper.eq("role", roleName);
+        Long count = userRoleMapper.selectCount(userRoleAuthQueryWrapper);
+        if (count != 0L){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "角色不可重复创建");
+        }
+
+        // 2.创建角色信息
+        UserRole userRole = new UserRole();
+        userRole.setRole(roleName);
+        userRole.setCreate_time(new Date());
+        userRole.setUpdate_time(new Date());
+        userRole.setDescription(roleName);
+
+        userRoleMapper.insert(userRole);
+
+        // 3.创建角色与权限对应关系
+        QueryWrapper<UserAuth> userAuthQueryWrapper = new QueryWrapper<>();
+        authNameList.forEach((authName)->{
+            userAuthQueryWrapper.in("name",authName);
+        });
+
+        List<UserAuth> userAuthList = userAuthMapper.selectList(userAuthQueryWrapper);
+        Map<String, List<UserAuth>> userAuthRelations = userAuthList.stream()
+                .collect(Collectors.groupingBy(UserAuth::getName));
+
+        // 4.设置新角色和权限之间映射关系
+        List<UserRoleAuth> userRoleAuthList = new ArrayList<>();
+
+        authNameList.forEach((authName)->{
+            UserRoleAuth userRoleAuth = new UserRoleAuth();
+            userRoleAuth.setRole_id(userRole.getId());
+            userRoleAuth.setAuth_id(userAuthRelations.get(authName).get(0).getId());
+            userRoleAuth.setCreate_time(new Date());
+            userRoleAuth.setUpdate_time(new Date());
+
+            userRoleAuthList.add(userRoleAuth);
+        });
+
+        return userRoleAuthService.saveBatch(userRoleAuthList);
+    }
+    @Override
+    public UserRolesInfoVo bossAdminGetRoles(UserRolesSearchRequest userRolesSearchRequest) {
+        String keyword = userRolesSearchRequest.getKeyword();
+        Integer pageSize = userRolesSearchRequest.getPageSize();
+        Integer pageNum = userRolesSearchRequest.getPageNum();
+
+        // 参数校验
+        if (pageNum == null || pageSize == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "分页参数不能为空");
+        }
+
+        // 1. 分页查询角色信息
+        Page<UserRole> page = new Page<>(pageNum, pageSize);
+        QueryWrapper<UserRole> queryWrapper = new QueryWrapper<>();
+
+        // 添加关键词搜索条件
+        if (StringUtils.isNotBlank(keyword)) {
+            queryWrapper.like("role", keyword)
+                    .or()
+                    .like("description", keyword);
+        }
+
+        // 执行分页查询
+        Page<UserRole> rolePage = userRoleMapper.selectPage(page, queryWrapper);
+        List<UserRole> roles = rolePage.getRecords();
+
+        // 如果查询结果为空，返回空对象而不是null
+        if (CollectionUtils.isEmpty(roles)) {
+            UserRolesInfoVo emptyResult = new UserRolesInfoVo();
+            emptyResult.setUserRolesVo(Collections.emptyList());
+            emptyResult.setRolesList(Collections.emptyList());
+            return emptyResult;
+        }
+
+        // 2. 获取角色ID列表
+        List<Integer> roleIds = roles.stream()
+                .map(UserRole::getId)
+                .collect(Collectors.toList());
+
+        // 3. 查询这些角色的权限关联关系
+        QueryWrapper<UserRoleAuth> roleAuthQuery = new QueryWrapper<>();
+        roleAuthQuery.in("role_id", roleIds);
+        List<UserRoleAuth> roleAuths = userRoleAuthMapper.selectList(roleAuthQuery);
+
+        // 4. 获取所有权限ID
+        List<Integer> authIds = Collections.emptyList();
+        if (!CollectionUtils.isEmpty(roleAuths)) {
+            authIds = roleAuths.stream()
+                    .map(UserRoleAuth::getAuth_id)
+                    .distinct()
+                    .collect(Collectors.toList());
+        }
+
+        // 5. 查询权限详细信息
+        Map<Integer, String> authIdToNameMap;
+        if (!CollectionUtils.isEmpty(authIds)) {
+            QueryWrapper<UserAuth> authQuery = new QueryWrapper<>();
+            authQuery.in("id", authIds);
+            List<UserAuth> auths = userAuthMapper.selectList(authQuery);
+
+            authIdToNameMap = auths.stream()
+                    .collect(Collectors.toMap(
+                            UserAuth::getId,
+                            UserAuth::getName
+                    ));
+        } else {
+            authIdToNameMap = Collections.emptyMap();
+        }
+
+        // 6. 构建角色ID到权限名称列表的映射
+        Map<Integer, List<String>> roleAuthMap = new HashMap<>();
+        if (!CollectionUtils.isEmpty(roleAuths)) {
+            roleAuths.forEach(relation -> {
+                Integer roleId = relation.getRole_id();
+                String authName = authIdToNameMap.get(relation.getAuth_id());
+                if (authName != null) {
+                    roleAuthMap.computeIfAbsent(roleId, k -> new ArrayList<>()).add(authName);
+                }
+            });
+        }
+
+        // 7. 构建UserRolesVo列表
+        List<UserRolesVo> userRolesVos = roles.stream()
+                .map(role -> {
+                    UserRolesVo vo = new UserRolesVo();
+                    vo.setRole_name(role.getDescription()); // 使用角色名
+                    vo.setAuth_list(roleAuthMap.getOrDefault(role.getId(), Collections.emptyList()));
+                    return vo;
+                })
+                .collect(Collectors.toList());
+
+        // 8. 构建角色名称列表
+        List<String> rolesList = roles.stream()
+                .map(UserRole::getDescription)
+                .collect(Collectors.toList());
+
+        // 9. 构建最终返回对象
+        UserRolesInfoVo result = new UserRolesInfoVo();
+        result.setUserRolesVo(userRolesVos); // 设置整个列表
+        result.setRolesList(rolesList);
+
+        return result;
+    }
+   public boolean bossAdminAddAdmin(AdminRegisterRequest adminRegisterRequest) {
         String Account = adminRegisterRequest.getAccount();
         String Email = adminRegisterRequest.getEmail();
         String Password = adminRegisterRequest.getPassword();
@@ -787,7 +1038,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
 
-        if (!keyword.isEmpty()) {
+        if (keyword != null && !keyword.isEmpty()) {
             queryWrapper.like("username", keyword);
         }
 

@@ -3,9 +3,9 @@ package com.example.backend.service.user;
 import com.example.backend.models.domain.user.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.backend.models.request.AdminRegisterRequest;
-import com.example.backend.models.request.user.UserModifyRequest;
-import com.example.backend.models.request.user.UserRegisterRequest;
-import com.example.backend.models.request.user.UserSearchRequest;
+import com.example.backend.models.request.user.*;
+import com.example.backend.models.vo.UserRolesInfoVo;
+import com.example.backend.models.vo.UserRolesVo;
 import com.example.backend.models.vo.UserVo;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -196,6 +196,40 @@ public interface UserService extends IService<User> {
      * @return 取消封禁用户
      */
     boolean adminCancelBanUser(Long uuid);
+
+    /**
+     * BOSS管理员分配管理员权限
+     *
+     * @param authorNameList 授权列表
+     * @param uuid 用户ID
+     * @return 是否授权成功
+     */
+    boolean bossAdminAuthorize(List<String> authorNameList, Long uuid);
+
+    /**
+     * 分页查询用户、管理员的权限信息
+     *
+     * @param userAuthSearchRequest 搜索请求
+     * @return 分页搜索管理员权限
+     */
+    List<UserVo> listUserAuthVoByPage(UserAuthSearchRequest userAuthSearchRequest);
+
+
+    /**
+     * BOSS管理员创建管理员
+     *
+     * @param userRoleCreateRequest 创建角色请求
+     * @return 是否设置成功
+     */
+    boolean bossAdminSetRoles(UserRoleCreateRequest userRoleCreateRequest);
+
+    /**
+     * BOSS管理员创建管理员
+     *
+     * @param userRolesSearchRequest 搜索请求
+     * @return 查询到的信息
+     */
+    UserRolesInfoVo bossAdminGetRoles(UserRolesSearchRequest userRolesSearchRequest);
 
     /**
      * BOSS管理员进行

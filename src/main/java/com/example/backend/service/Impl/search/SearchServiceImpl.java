@@ -70,7 +70,10 @@ public class SearchServiceImpl implements SearchService {
             // 4.用户
             List<UserVo> userVoList = userDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin);
 
-            // 5.oj信息
+            // 5.BOSS管理员权限查询
+            List<UserVo> userAuthVoList = userDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin);
+
+            // 6.oj信息
             List<OJCompetitionVo> ojCompetitionList = ojCompetitionDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin);
 
             // ......扩展
@@ -78,6 +81,7 @@ public class SearchServiceImpl implements SearchService {
             searchVo.setProblemAlgorithmBankVoList(problemAlgorithmBankVoList);
             searchVo.setPostsVoList(postsVoList);
             searchVo.setUserVoList(userVoList);
+            searchVo.setUserAuthVoList(userAuthVoList);
             searchVo.setOjCompetitionsList(ojCompetitionList);
 
         } else {

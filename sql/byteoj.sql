@@ -758,3 +758,405 @@ create table oj_competition
         unique (id)
 );
 
+-- auto-generated definition
+create table user_role
+(
+    id          int auto_increment comment 'id'
+        primary key,
+    role        varchar(64)                        not null comment '角色',
+    description varchar(256)                       null comment '描述',
+    create_time datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    update_time datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    is_delete   tinyint  default 0                 not null comment '是否删除'
+)
+    comment '角色表' collate = utf8mb4_unicode_ci;
+
+INSERT INTO byteoj.user_role (id, role, description, create_time, update_time, is_delete) VALUES (1, 'admin', 'boss管理员', '2025-04-02 21:47:42', '2025-04-02 23:47:00', 0);
+INSERT INTO byteoj.user_role (id, role, description, create_time, update_time, is_delete) VALUES (2, 'userAdmin', '用户管理员', '2025-04-02 21:47:42', '2025-04-03 13:07:38', 0);
+INSERT INTO byteoj.user_role (id, role, description, create_time, update_time, is_delete) VALUES (3, 'problemAlgorithmAdmin', '算法题目管理员', '2025-04-02 23:47:00', '2025-04-02 23:48:01', 0);
+INSERT INTO byteoj.user_role (id, role, description, create_time, update_time, is_delete) VALUES (4, 'problemMath408Admin', '数学408题目管理员', '2025-04-02 23:48:01', '2025-04-02 23:48:01', 0);
+INSERT INTO byteoj.user_role (id, role, description, create_time, update_time, is_delete) VALUES (5, 'competitionAdmin', '竞赛管理员', '2025-04-02 23:48:58', '2025-04-02 23:48:58', 0);
+INSERT INTO byteoj.user_role (id, role, description, create_time, update_time, is_delete) VALUES (6, 'postAdmin', '帖子管理员', '2025-04-02 23:49:12', '2025-04-02 23:49:12', 0);
+INSERT INTO byteoj.user_role (id, role, description, create_time, update_time, is_delete) VALUES (7, 'courseAdmin', '课程管理员', '2025-04-02 23:49:26', '2025-04-02 23:49:26', 0);
+INSERT INTO byteoj.user_role (id, role, description, create_time, update_time, is_delete) VALUES (8, 'weChatAdmin', '聊天室管理员', '2025-04-02 23:49:47', '2025-04-02 23:49:47', 0);
+INSERT INTO byteoj.user_role (id, role, description, create_time, update_time, is_delete) VALUES (9, 'recordAdmin', '提交记录管理员', '2025-04-02 23:50:12', '2025-04-02 23:50:12', 0);
+INSERT INTO byteoj.user_role (id, role, description, create_time, update_time, is_delete) VALUES (10, 'pictureAdmin', '图片管理员', '2025-04-02 23:50:33', '2025-04-02 23:50:33', 0);
+INSERT INTO byteoj.user_role (id, role, description, create_time, update_time, is_delete) VALUES (11, 'videoAdmin', '视频管理员', '2025-04-02 23:50:47', '2025-04-02 23:50:47', 0);
+INSERT INTO byteoj.user_role (id, role, description, create_time, update_time, is_delete) VALUES (12, 'user', '用户', '2025-04-03 13:07:38', '2025-04-03 13:07:38', 0);
+INSERT INTO byteoj.user_role (id, role, description, create_time, update_time, is_delete) VALUES (13, '自定义管理员', '自定义管理员', '2025-04-03 21:39:11', '2025-04-03 21:39:11', 0);
+
+-- auto-generated definition
+create table user_role_relation
+(
+    id          int auto_increment comment 'id'
+        primary key,
+    uuid        bigint                             not null comment '用户id',
+    role_id     int                                not null comment '角色id',
+    create_time datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    update_time datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    is_delete   tinyint  default 0                 not null comment '是否删除'
+)
+    comment '用户角色关联表' collate = utf8mb4_unicode_ci;
+
+create index idx_role_id
+    on user_role_relation (role_id);
+
+create index idx_user_id
+    on user_role_relation (uuid);
+
+INSERT INTO byteoj.user_role_relation (id, uuid, role_id, create_time, update_time, is_delete) VALUES (15, 38, 22, '2025-04-03 14:59:09', '2025-04-03 14:59:09', 0);
+INSERT INTO byteoj.user_role_relation (id, uuid, role_id, create_time, update_time, is_delete) VALUES (16, 9, 1, '2025-04-03 21:35:01', '2025-04-03 21:35:01', 0);
+
+
+-- auto-generated definition
+create table user_role_auth
+(
+    id          int auto_increment comment 'id'
+        primary key,
+    role_id     int                                not null comment '角色id',
+    auth_id     int                                not null comment '权限id',
+    create_time datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    update_time datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    is_delete   tinyint  default 0                 not null comment '是否删除'
+)
+    comment '用户角色关联表' collate = utf8mb4_unicode_ci;
+
+create index idx_auth_id
+    on user_role_auth (auth_id);
+
+create index idx_role_id
+    on user_role_auth (role_id);
+
+INSERT INTO byteoj.user_role_auth (id, role_id, auth_id, create_time, update_time, is_delete) VALUES (1, 1, 1, '2025-04-03 00:54:11', '2025-04-03 00:54:11', 0);
+INSERT INTO byteoj.user_role_auth (id, role_id, auth_id, create_time, update_time, is_delete) VALUES (2, 2, 2, '2025-04-03 00:54:34', '2025-04-03 13:02:50', 0);
+INSERT INTO byteoj.user_role_auth (id, role_id, auth_id, create_time, update_time, is_delete) VALUES (3, 3, 3, '2025-04-03 00:54:35', '2025-04-03 13:02:50', 0);
+INSERT INTO byteoj.user_role_auth (id, role_id, auth_id, create_time, update_time, is_delete) VALUES (4, 3, 4, '2025-04-03 00:54:35', '2025-04-03 13:02:50', 0);
+INSERT INTO byteoj.user_role_auth (id, role_id, auth_id, create_time, update_time, is_delete) VALUES (5, 4, 5, '2025-04-03 00:54:35', '2025-04-03 13:02:50', 0);
+INSERT INTO byteoj.user_role_auth (id, role_id, auth_id, create_time, update_time, is_delete) VALUES (6, 4, 6, '2025-04-03 00:54:35', '2025-04-03 13:02:50', 0);
+INSERT INTO byteoj.user_role_auth (id, role_id, auth_id, create_time, update_time, is_delete) VALUES (7, 5, 7, '2025-04-03 00:54:35', '2025-04-03 13:02:50', 0);
+INSERT INTO byteoj.user_role_auth (id, role_id, auth_id, create_time, update_time, is_delete) VALUES (8, 5, 8, '2025-04-03 00:54:35', '2025-04-03 13:02:50', 0);
+INSERT INTO byteoj.user_role_auth (id, role_id, auth_id, create_time, update_time, is_delete) VALUES (9, 6, 9, '2025-04-03 00:54:35', '2025-04-03 13:02:50', 0);
+INSERT INTO byteoj.user_role_auth (id, role_id, auth_id, create_time, update_time, is_delete) VALUES (10, 6, 10, '2025-04-03 00:54:35', '2025-04-03 13:02:50', 0);
+INSERT INTO byteoj.user_role_auth (id, role_id, auth_id, create_time, update_time, is_delete) VALUES (11, 7, 11, '2025-04-03 00:54:35', '2025-04-03 13:02:50', 0);
+INSERT INTO byteoj.user_role_auth (id, role_id, auth_id, create_time, update_time, is_delete) VALUES (12, 7, 12, '2025-04-03 00:54:35', '2025-04-03 13:02:50', 0);
+INSERT INTO byteoj.user_role_auth (id, role_id, auth_id, create_time, update_time, is_delete) VALUES (13, 8, 13, '2025-04-03 00:54:35', '2025-04-03 13:02:50', 0);
+INSERT INTO byteoj.user_role_auth (id, role_id, auth_id, create_time, update_time, is_delete) VALUES (14, 8, 14, '2025-04-03 00:54:35', '2025-04-03 13:02:50', 0);
+INSERT INTO byteoj.user_role_auth (id, role_id, auth_id, create_time, update_time, is_delete) VALUES (15, 8, 15, '2025-04-03 00:54:35', '2025-04-03 13:02:50', 0);
+INSERT INTO byteoj.user_role_auth (id, role_id, auth_id, create_time, update_time, is_delete) VALUES (16, 9, 16, '2025-04-03 00:54:35', '2025-04-03 13:02:50', 0);
+INSERT INTO byteoj.user_role_auth (id, role_id, auth_id, create_time, update_time, is_delete) VALUES (17, 9, 17, '2025-04-03 00:54:35', '2025-04-03 13:02:50', 0);
+INSERT INTO byteoj.user_role_auth (id, role_id, auth_id, create_time, update_time, is_delete) VALUES (18, 9, 18, '2025-04-03 00:54:35', '2025-04-03 13:02:50', 0);
+INSERT INTO byteoj.user_role_auth (id, role_id, auth_id, create_time, update_time, is_delete) VALUES (19, 10, 19, '2025-04-03 00:54:35', '2025-04-03 13:02:50', 0);
+INSERT INTO byteoj.user_role_auth (id, role_id, auth_id, create_time, update_time, is_delete) VALUES (20, 10, 20, '2025-04-03 00:54:35', '2025-04-03 13:02:50', 0);
+INSERT INTO byteoj.user_role_auth (id, role_id, auth_id, create_time, update_time, is_delete) VALUES (21, 11, 21, '2025-04-03 00:54:35', '2025-04-03 13:02:50', 0);
+INSERT INTO byteoj.user_role_auth (id, role_id, auth_id, create_time, update_time, is_delete) VALUES (22, 12, 22, '2025-04-03 00:54:35', '2025-04-03 13:02:50', 0);
+INSERT INTO byteoj.user_role_auth (id, role_id, auth_id, create_time, update_time, is_delete) VALUES (24, 13, 4, '2025-04-03 21:39:11', '2025-04-03 21:39:11', 0);
+
+-- auto-generated definition
+create table user_auth
+(
+    id          int auto_increment comment 'id'
+        primary key,
+    name        varchar(256)                       null comment '权限名称',
+    create_time datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    update_time datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    is_delete   tinyint  default 0                 not null comment '是否删除'
+)
+    comment '权限表' collate = utf8mb4_unicode_ci;
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (1, '管理员管理', '2025-04-02 21:47:42', '2025-04-03 00:24:47', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (2, '用户管理', '2025-04-02 21:47:42', '2025-04-03 00:24:47', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (3, '算法试题创建', '2025-04-02 21:47:42', '2025-04-03 00:24:47', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (4, '算法试题管理', '2025-04-03 00:24:47', '2025-04-03 00:24:47', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (5, '数学408试题创建', '2025-04-03 00:24:47', '2025-04-03 00:24:47', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (6, '数学408试题管理', '2025-04-03 00:24:47', '2025-04-03 00:24:47', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (7, '管理员级别比赛创建', '2025-04-03 00:24:47', '2025-04-03 00:39:44', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (8, '管理员级别比赛管理', '2025-04-03 00:24:57', '2025-04-03 00:39:44', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (9, '帖子信息管理', '2025-04-03 00:25:48', '2025-04-03 00:25:48', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (10, '评论信息管理', '2025-04-03 00:25:48', '2025-04-03 00:25:48', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (11, '专题创建', '2025-04-03 00:26:45', '2025-04-03 00:26:45', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (12, '专题信息管理', '2025-04-03 00:26:45', '2025-04-03 00:26:45', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (13, '聊天室管理', '2025-04-03 00:26:45', '2025-04-03 00:27:31', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (14, '聊天信息管理', '2025-04-03 00:27:31', '2025-04-03 00:27:31', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (15, '私人聊天记录管理', '2025-04-03 00:27:31', '2025-04-03 00:27:31', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (16, '算法提交记录管理', '2025-04-03 00:27:48', '2025-04-03 00:27:48', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (17, '数学提交记录管理', '2025-04-03 00:28:13', '2025-04-03 00:28:13', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (18, '计算机408提交记录管理', '2025-04-03 00:28:13', '2025-04-03 00:29:02', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (19, '用户图片管理', '2025-04-03 00:29:02', '2025-04-03 00:29:02', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (20, '全局图片管理', '2025-04-03 00:29:02', '2025-04-03 00:29:02', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (21, '视频信息管理', '2025-04-03 00:29:16', '2025-04-03 00:29:16', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (22, '普通用户', '2025-04-03 00:33:30', '2025-04-03 00:52:43', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (1, '管理员管理', '2025-04-02 21:47:42', '2025-04-03 00:24:47', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (2, '用户管理', '2025-04-02 21:47:42', '2025-04-03 00:24:47', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (3, '算法试题创建', '2025-04-02 21:47:42', '2025-04-03 00:24:47', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (4, '算法试题管理', '2025-04-03 00:24:47', '2025-04-03 00:24:47', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (5, '数学408试题创建', '2025-04-03 00:24:47', '2025-04-03 00:24:47', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (6, '数学408试题管理', '2025-04-03 00:24:47', '2025-04-03 00:24:47', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (7, '管理员级别比赛创建', '2025-04-03 00:24:47', '2025-04-03 00:39:44', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (8, '管理员级别比赛管理', '2025-04-03 00:24:57', '2025-04-03 00:39:44', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (9, '帖子信息管理', '2025-04-03 00:25:48', '2025-04-03 00:25:48', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (10, '评论信息管理', '2025-04-03 00:25:48', '2025-04-03 00:25:48', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (11, '专题创建', '2025-04-03 00:26:45', '2025-04-03 00:26:45', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (12, '专题信息管理', '2025-04-03 00:26:45', '2025-04-03 00:26:45', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (13, '聊天室管理', '2025-04-03 00:26:45', '2025-04-03 00:27:31', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (14, '聊天信息管理', '2025-04-03 00:27:31', '2025-04-03 00:27:31', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (15, '私人聊天记录管理', '2025-04-03 00:27:31', '2025-04-03 00:27:31', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (16, '算法提交记录管理', '2025-04-03 00:27:48', '2025-04-03 00:27:48', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (17, '数学提交记录管理', '2025-04-03 00:28:13', '2025-04-03 00:28:13', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (18, '计算机408提交记录管理', '2025-04-03 00:28:13', '2025-04-03 00:29:02', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (19, '用户图片管理', '2025-04-03 00:29:02', '2025-04-03 00:29:02', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (20, '全局图片管理', '2025-04-03 00:29:02', '2025-04-03 00:29:02', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (21, '视频信息管理', '2025-04-03 00:29:16', '2025-04-03 00:29:16', 0);
+INSERT INTO byteoj.user_auth (id, name, create_time, update_time, is_delete) VALUES (22, '普通用户', '2025-04-03 00:33:30', '2025-04-03 00:52:43', 0);
+
+-- auto-generated definition
+create table user_api_auth
+(
+    id          int auto_increment comment 'id'
+        primary key,
+    api_id      int                                not null comment 'API id',
+    auth_id     int                                not null comment '权限id',
+    create_time datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    update_time datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    is_delete   tinyint  default 0                 not null comment '是否删除'
+)
+    comment '权限API关联表' collate = utf8mb4_unicode_ci;
+
+create index idx_api_id
+    on user_api_auth (api_id);
+
+create index idx_auth_id
+    on user_api_auth (auth_id);
+
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (1, 1, 1, '2025-04-03 00:30:47', '2025-04-03 00:30:47', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (2, 2, 1, '2025-04-03 00:30:47', '2025-04-03 00:31:11', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (3, 3, 1, '2025-04-03 00:30:47', '2025-04-03 00:31:11', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (4, 4, 1, '2025-04-03 00:30:47', '2025-04-03 00:31:11', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (5, 5, 2, '2025-04-03 00:30:47', '2025-04-03 00:32:31', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (6, 6, 2, '2025-04-03 00:30:47', '2025-04-03 00:32:31', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (7, 7, 2, '2025-04-03 00:30:47', '2025-04-03 00:32:31', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (8, 8, 2, '2025-04-03 00:30:47', '2025-04-03 00:32:31', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (9, 28, 3, '2025-04-03 00:30:47', '2025-04-03 00:36:03', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (10, 36, 3, '2025-04-03 00:30:47', '2025-04-03 00:36:03', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (11, 29, 4, '2025-04-03 00:30:47', '2025-04-03 00:38:09', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (12, 30, 4, '2025-04-03 00:30:47', '2025-04-03 00:38:09', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (13, 31, 4, '2025-04-03 00:30:47', '2025-04-03 00:38:09', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (14, 32, 4, '2025-04-03 00:30:47', '2025-04-03 00:38:09', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (15, 33, 4, '2025-04-03 00:30:47', '2025-04-03 00:38:09', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (16, 34, 4, '2025-04-03 00:30:47', '2025-04-03 00:38:09', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (17, 69, 11, '2025-04-03 00:30:47', '2025-04-03 00:42:29', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (18, 70, 12, '2025-04-03 00:30:47', '2025-04-03 00:45:22', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (19, 71, 12, '2025-04-03 00:30:47', '2025-04-03 00:45:22', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (20, 72, 12, '2025-04-03 00:30:47', '2025-04-03 00:45:22', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (21, 10, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (22, 11, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (23, 12, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (24, 13, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (25, 14, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (26, 15, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (27, 16, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (28, 17, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (29, 18, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (30, 19, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (31, 20, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (32, 21, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (33, 22, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (34, 23, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (35, 24, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (36, 25, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (37, 26, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (38, 27, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (39, 35, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (40, 36, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (41, 37, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (42, 38, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (43, 39, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (44, 40, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (45, 41, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (46, 42, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (47, 43, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (48, 44, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (49, 45, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (50, 46, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (51, 47, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (52, 48, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (53, 49, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (54, 50, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (55, 51, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (56, 52, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (57, 53, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (58, 54, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (59, 55, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (60, 56, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (61, 57, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (62, 58, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (63, 59, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (64, 60, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (65, 61, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (66, 62, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (67, 63, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (68, 64, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (69, 65, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (70, 66, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (71, 67, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (72, 68, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (73, 73, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (74, 74, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (75, 75, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (76, 76, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (77, 79, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (78, 80, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (79, 81, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (80, 82, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (81, 83, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (82, 84, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (83, 85, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (84, 86, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (85, 87, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (86, 88, 22, '2025-04-03 00:51:24', '2025-04-03 00:51:24', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (87, 89, 1, '2025-04-03 21:29:41', '2025-04-03 21:29:41', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (88, 90, 1, '2025-04-03 21:29:41', '2025-04-03 21:29:41', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (89, 95, 1, '2025-04-03 21:29:41', '2025-04-03 21:29:41', 0);
+INSERT INTO byteoj.user_api_auth (id, api_id, auth_id, create_time, update_time, is_delete) VALUES (90, 96, 1, '2025-04-03 21:29:41', '2025-04-03 21:29:41', 0);
+
+-- auto-generated definition
+create table user_api_auth
+(
+    id          int auto_increment comment 'id'
+        primary key,
+    api_id      int                                not null comment 'API id',
+    auth_id     int                                not null comment '权限id',
+    create_time datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    update_time datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    is_delete   tinyint  default 0                 not null comment '是否删除'
+)
+    comment '权限API关联表' collate = utf8mb4_unicode_ci;
+
+create index idx_api_id
+    on user_api_auth (api_id);
+
+create index idx_auth_id
+    on user_api_auth (auth_id);
+
+-- auto-generated definition
+create table user_api
+(
+    id          int auto_increment comment 'id'
+        primary key,
+    path        varchar(512)                       not null comment 'API路径',
+    description varchar(256)                       null comment '描述',
+    api_type    int                                not null comment 'API认证类型',
+    create_time datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    update_time datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    is_delete   tinyint  default 0                 not null comment '是否删除',
+    constraint path
+        unique (path)
+)
+    comment 'API表' collate = utf8mb4_unicode_ci;
+
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (1, '/api/user/BOSS/add', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (2, '/api/user/BOSS/cancel', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (3, '/api/user/BOSS/get', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (4, '/api/user/BOSS/set', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (5, '/api/user/admin/ban', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (6, '/api/user/admin/cancel', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (7, '/api/user/admin/get', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (8, '/api/user/admin/getPage', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (9, '/api/user/admin/login', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (10, '/api/user/current', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (11, '/api/user/email/send', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (12, '/api/user/getBack', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (13, '/api/user/login', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (14, '/api/user/login/email', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (15, '/api/user/logout', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (16, '/api/user/modify', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (17, '/api/user/picture/get', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (18, '/api/user/picture/user/delete', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (19, '/api/user/picture/user/get/', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (20, '/api/user/picture/user/set', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (21, '/api/user/register', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (22, '/api/user/search', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (23, '/api/user/search/uuid', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (24, '/api/user/upload', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (25, '/api/search/all/vo', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (26, '/api/webSocket/getAllMessage', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (27, '/api/getPublicKey', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (28, '/api/problem/algorithm/admin/add', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (29, '/api/problem/algorithm/admin/delete', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (30, '/api/problem/algorithm/admin/modify', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (31, '/api/problem/algorithm/admin/testCase/add', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (32, '/api/problem/algorithm/admin/testCase/get', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (33, '/api/problem/algorithm/admin/testCaseFile/add', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (34, '/api/problem/algorithm/admin/testCaseFile/get', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (35, '/api/problem/algorithm/get/tags', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (36, '/api/problem/algorithm/get/tagsPlusCategory', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (37, '/api/problem/algorithm/judge/submit', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (38, '/api/problem/algorithm/judge/test', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (39, '/api/problem/algorithm/record/add', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (40, '/api/problem/algorithm/records', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (41, '/api/problem/algorithm/records/page/sum', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (42, '/api/problem/algorithm/records/recordId', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (43, '/api/problem/algorithm/records/user/page', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (44, '/api/problem/algorithm/records/user/sum', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (45, '/api/problem/algorithm/search', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (46, '/api/problem/algorithm/search/difficulty/sum', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (47, '/api/problem/algorithm/search/problem', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (48, '/api/problem/algorithm/search/problemId', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (49, '/api/problem/algorithm/search/problemLast', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (50, '/api/problem/algorithm/search/problems', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (51, '/api/problem/algorithm/search/user/daily', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (52, '/api/problem/algorithm/set/problemLast', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (53, '/api/posts/add', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (54, '/api/posts/delete', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (55, '/api/posts/modify', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (56, '/api/posts/post/answer/problemId', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (57, '/api/posts/post/comment/add', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (58, '/api/posts/post/comment/delete', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (59, '/api/posts/post/comment/thumbs', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (60, '/api/posts/post/thumbStatus', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (61, '/api/posts/post/thumbs', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (62, '/api/posts/search', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (63, '/api/posts/search/comment', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (64, '/api/posts/search/page', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (65, '/api/posts/search/postsId', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (66, '/api/posts/top', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (67, '/api/posts/top/cancel', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (68, '/api/ai/ask', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (69, '/api/course/admin/add', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (70, '/api/course/admin/delete', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (71, '/api/course/admin/problem/set', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (72, '/api/course/admin/user/set', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (73, '/api/course/search/courseId', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (74, '/api/course/search/pageNum', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (75, '/api/course/search/problems', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (76, '/api/course/search/rank', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (77, '/api/competition/admin/algorithm/add', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (78, '/api/competition/admin/delete', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (79, '/api/competition/get/rank/excel', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (80, '/api/competition/join', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (81, '/api/competition/join/cancel', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (82, '/api/competition/search/competitionId', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (83, '/api/competition/search/page', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (84, '/api/competition/search/rank/pageNum', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (85, '/api/competition/search/records/pageNum', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (86, '/api/competition/search/top', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (87, '/api/competition/user/add', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (88, '/api/competition/user/modify', null, 1, '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (89, '/api/user/BOSS/authorize', null, 1, '2025-04-03 13:54:14', '2025-04-03 13:54:14', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (90, '/api/user/BOSS/auth/get', null, 1, '2025-04-03 13:54:14', '2025-04-03 13:54:14', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (95, '/api/user/BOSS/role/set', null, 1, '2025-04-03 21:28:22', '2025-04-03 21:28:22', 0);
+INSERT INTO byteoj.user_api (id, path, description, api_type, create_time, update_time, is_delete) VALUES (96, '/api/user/BOSS/role/get', null, 1, '2025-04-03 21:28:22', '2025-04-03 21:28:22', 0);
+
+-- auto-generated definition
+create table user_api_type
+(
+    id          int auto_increment comment 'id'
+        primary key,
+    name        varchar(64)                        not null comment '认证的类型',
+    create_time datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    update_time datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    is_delete   tinyint  default 0                 not null comment '是否删除'
+)
+    comment 'API认证类型表' collate = utf8mb4_unicode_ci;
+
+INSERT INTO byteoj.user_api_type (id, name, create_time, update_time, is_delete) VALUES (1, 'role', '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api_type (id, name, create_time, update_time, is_delete) VALUES (2, 'activity', '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);
+INSERT INTO byteoj.user_api_type (id, name, create_time, update_time, is_delete) VALUES (3, 'competition', '2025-04-02 21:47:42', '2025-04-02 21:47:42', 0);

@@ -11,6 +11,8 @@ import com.example.backend.models.domain.picture.WebsiteBackgroundPictures;
 import com.example.backend.models.domain.user.User;
 import com.example.backend.models.request.*;
 import com.example.backend.models.request.user.*;
+import com.example.backend.models.vo.UserRolesInfoVo;
+import com.example.backend.models.vo.UserRolesVo;
 import com.example.backend.models.vo.UserVo;
 import com.example.backend.service.user.UserService;
 import com.example.backend.utils.EmailSendUtil;
@@ -29,6 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import javax.swing.*;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -408,6 +411,41 @@ public class UserController {
             throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "没有管理员权限");
         }
         boolean result = userService.adminCancelBanUser(uuid);
+        return ResultUtils.success(result);
+    }
+
+    @PostMapping("/BOSS/authorize")
+    private BaseResponse<Boolean> bossAdminAuthorize(@RequestBody List<String> authorNameList, HttpServletRequest httpServletRequest) {
+        if (httpServletRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数信息错误");
+        }
+        User loginUser = userService.getLoginUser(httpServletRequest);
+//        if (loginUser == null) {
+//            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录");
+//        }
+//         Long uuid = loginUser.getUuid();
+
+        boolean result = userService.bossAdminAuthorize(authorNameList, 9L);
+        return ResultUtils.success(result);
+    }
+
+    @PostMapping("/BOSS/role/set")
+    private BaseResponse<Boolean> bossAdminSetRoles(@RequestBody UserRoleCreateRequest userRoleCreateRequest, HttpServletRequest httpServletRequest) {
+        if (httpServletRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "存在参数错误");
+        }
+
+        boolean result = userService.bossAdminSetRoles(userRoleCreateRequest);
+        return ResultUtils.success(result);
+    }
+
+    @PostMapping("/BOSS/role/get")
+    private BaseResponse<UserRolesInfoVo> ListUserRolesVoByPage(@RequestBody UserRolesSearchRequest userRolesSearchRequest, HttpServletRequest httpServletRequest) {
+        if (httpServletRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "存在参数错误");
+        }
+
+        UserRolesInfoVo result = userService.bossAdminGetRoles(userRolesSearchRequest);
         return ResultUtils.success(result);
     }
 

@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 用户返回信息表
@@ -120,4 +121,10 @@ public class UserVo implements Serializable {
      * 总面数
      */
     private Integer pages;
+
+    /**
+     * 权限ID列表
+     */
+    private List<Integer> role_id_list;
+
 }
