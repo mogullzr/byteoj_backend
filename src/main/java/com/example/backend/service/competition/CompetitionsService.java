@@ -3,6 +3,7 @@ package com.example.backend.service.competition;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.backend.models.domain.competiton.Competitions;
 import com.example.backend.models.request.CompetitionAddRequest;
+import com.example.backend.models.request.competition.CompetitionRankRequest;
 import com.example.backend.models.vo.UserVo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import com.example.backend.models.vo.competition.CompetitionInfoVo;
@@ -44,9 +45,10 @@ public interface CompetitionsService extends IService<Competitions> {
      *
      * @param competition_id 比赛ID
      * @param PageNum 面数
+     * @param uuid 用户ID
      * @return 竞赛排名信息
      */
-    CompetitionRankVo competitionSearchRank(Long competition_id, Integer PageNum);
+    CompetitionRankVo competitionSearchRank(Long competition_id, Integer PageNum, Long uuid);
 
 
     /**
@@ -119,4 +121,13 @@ public interface CompetitionsService extends IService<Competitions> {
      * @return 竞赛分数榜单前十
      */
     List<UserVo> competitionSearchRankTop10();
+
+
+    /**
+     * 条件搜索竞赛用户信息
+     *
+     * @param competitionRankRequest 排名搜索请求
+     * @return 排名搜索
+     */
+    List<UserVo> competitionSearchRank(CompetitionRankRequest competitionRankRequest);
 }

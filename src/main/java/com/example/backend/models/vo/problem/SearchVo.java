@@ -45,6 +45,11 @@ public class SearchVo implements Serializable {
     private List<OJCompetitionVo> ojCompetitionsList;
 
     /**
+     * 巅峰Rating排行榜
+     */
+    private List<UserVo> competitionUser;
+
+    /**
      * 下面可随意扩展......
      */
 

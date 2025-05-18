@@ -24,6 +24,9 @@ public class DataSourceRegistry {
     private UserAuthDataSource userAuthDataSource;
 
     @Resource
+    private CompetitionRankSource competitionRankSource;
+
+    @Resource
     private OJCompetitionDataSource ojCompetitionDataSource;
 
     private Map<String, DataSource<?>> typeDataSourceMap;
@@ -36,6 +39,7 @@ public class DataSourceRegistry {
             put(SearchTypeEnum.USER.getValue(), userDataSource);
             put(SearchTypeEnum.BOSS_AUTH_SEARCH.getValue(),userAuthDataSource);
             put(SearchTypeEnum.OJ.getValue(), ojCompetitionDataSource);
+            put(SearchTypeEnum.COMPETITION_USERS.getValue(), competitionRankSource);
         }};
     }
 

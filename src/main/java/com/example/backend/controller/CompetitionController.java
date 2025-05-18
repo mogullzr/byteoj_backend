@@ -82,8 +82,9 @@ public class CompetitionController {
         if (httpServletRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
+        Long uuid = userService.getLoginUser(httpServletRequest).getUuid();
 
-        CompetitionRankVo result = competitionsService.competitionSearchRank(competition_id, PageNum);
+        CompetitionRankVo result = competitionsService.competitionSearchRank(competition_id, PageNum, uuid);
         return ResultUtils.success(result);
     }
     @AccessLimit(seconds = 3, maxCount = 30, needLogin = true)
@@ -207,4 +208,5 @@ public class CompetitionController {
         competitionsService.competitionAdminGetRankExcel(competition_id, uuid, httpServletResponse);
         return null;
     }
+
 }

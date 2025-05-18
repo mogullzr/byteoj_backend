@@ -323,6 +323,19 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "不存在这样的记录");
         }
 
+        if (competition_id != -1) {
+            QueryWrapper<Competitions> competitionsQueryWrapper = new QueryWrapper<>();
+            competitionsQueryWrapper.eq("competition_id", competition_id);
+            Competitions competitions = competitionsMapper.selectOne(competitionsQueryWrapper);
+            if (competitions == null) {
+                throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "竞赛不存在！！！");
+            }
+
+            Date currentDate = new Date();
+            if (!Objects.equals(submissionsAlgorithm.getUuid(), uuid) && !isAdmin && competitions.getEnd_time().after(currentDate)) {
+                throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "对不起，你没有查看该记录的权限");
+            }
+        }
 
         // 2.查询细节记录
         QueryWrapper<SubmissionAlgorithmRecords> submissionAlgorithmDetailsQueryWrapper = new QueryWrapper<>();
@@ -646,26 +659,67 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 
     @Override
     public Judge problemAlgorithmSubmit(JudgeRequest judgeRequest, Long uuid) {
-        if (judgeRequest.getCompetition_id() != null) {
+        QueryWrapper<ProblemAlgorithmBank> queryWrapper = new QueryWrapper<>();
+        ProblemAlgorithmBank problemAlgorithmBank;
+        if (judgeRequest.getProblem_id() != null) {
+            queryWrapper.eq("problem_id", judgeRequest.getProblem_id());
+            queryWrapper.eq("is_delete", 0);
+            problemAlgorithmBank = problemAlgorithmBankMapper.selectOne(queryWrapper);
+            if (problemAlgorithmBank == null) {
+                throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "题目不存在");
+            }
+        } else {
             QueryWrapper<CompetitionsProblemsAlgorithm> competitionsProblemsAlgorithmQueryWrapper = new QueryWrapper<>();
             competitionsProblemsAlgorithmQueryWrapper.eq("idx", judgeRequest.getIndex());
             competitionsProblemsAlgorithmQueryWrapper.eq("competition_id", judgeRequest.getCompetition_id());
+
             CompetitionsProblemsAlgorithm competitionsProblemsAlgorithm = competitionsProblemsAlgorithmMapper.selectOne(competitionsProblemsAlgorithmQueryWrapper);
-            judgeRequest.setProblem_id(competitionsProblemsAlgorithm.getProblem_id());
+            if (competitionsProblemsAlgorithm == null) {
+                throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "题目不存在");
+            }
+            queryWrapper.eq("problem_id", competitionsProblemsAlgorithm.getProblem_id());
+            problemAlgorithmBank = problemAlgorithmBankMapper.selectOne(queryWrapper);
         }
-        QueryWrapper<ProblemAlgorithmBank> queryWrapper = new QueryWrapper<>();
-        ProblemAlgorithmBank problemAlgorithmBank;
-        queryWrapper.eq("problem_id", judgeRequest.getProblem_id());
-        queryWrapper.eq("is_delete", 0);
-        problemAlgorithmBank = problemAlgorithmBankMapper.selectOne(queryWrapper);
-        if (problemAlgorithmBank == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "题目不存在");
-        }
+
+        QueryWrapper<CompetitionsProblemsAlgorithm> competitionsProblemsAlgorithmQueryWrapper = new QueryWrapper<>();
+        CompetitionsProblemsAlgorithm competitionsProblemsAlgorithm = new CompetitionsProblemsAlgorithm();
+
+        QueryWrapper<CompetitionsUser> competitionsUserQueryWrapper = new QueryWrapper<>();
+        CompetitionsUser competitionsUser = new CompetitionsUser();
 
         if (problemAlgorithmBank.getIs_delete() == 1) {
             if (judgeRequest.getCompetition_id() == null) {
                 throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "对不起，你没有这道题目的提交权限");
             }
+        }
+        QueryWrapper<Competitions> competitionsQueryWrapper = new QueryWrapper<>();
+        competitionsQueryWrapper.eq("competition_id", judgeRequest.getCompetition_id());
+        Competitions competitions = new Competitions();
+
+        if (judgeRequest.getCompetition_id() != null) {
+            // 1.未报名比赛表示比赛的试题还不允许随意提交
+            competitionsUserQueryWrapper.eq("uuid", uuid);
+            competitionsUserQueryWrapper.eq("competition_id", judgeRequest.getCompetition_id());
+            competitionsUser = competitionsUserMapper.selectOne(competitionsUserQueryWrapper);
+            if (competitionsUser == null || competitionsUser.getIs_participant() == 1) {
+                throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "对不起，你还没有报名比赛，不允许提交代码");
+            }
+
+            // 2.未到达比赛开始时间不允许随意提交
+            competitions = competitionsMapper.selectOne(competitionsQueryWrapper);
+            if (competitions == null) {
+                throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "不存在这样的比赛");
+            }
+            Date currentDate = new Date();
+            if (currentDate.before(competitions.getStart_time())) {
+                throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "对不起，比赛时间还没到，不允许提交代码");
+            }
+        }
+
+        if (judgeRequest.getIndex() != null && judgeRequest.getCompetition_id() != null) {
+            competitionsProblemsAlgorithmQueryWrapper.eq("competition_id", judgeRequest.getCompetition_id());
+            competitionsProblemsAlgorithmQueryWrapper.eq("idx",judgeRequest.getIndex());
+            competitionsProblemsAlgorithm = competitionsProblemsAlgorithmMapper.selectOne(competitionsProblemsAlgorithmQueryWrapper);
         }
 
         QueryWrapper<ProblemAlgorithmLimit> problemAlgorithmLimitQueryWrapper = new QueryWrapper<>();
@@ -707,7 +761,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "对不起，这道题目的测试样例还没有添加，请即使联系管理员进行查询");
         }
 
-        
+
         List<Integer> time_used_list = new ArrayList<>();
         List<Integer> memory_used_list = new ArrayList<>();
         List<String> result_list = new ArrayList<>();
@@ -726,7 +780,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         // 文件句柄
         String fileId = null;
 
-        if (!language.equals("python")) {
+         if (!language.equals("python")) {
             HashMap<String, Object> paramMap = new HashMap<>();
             paramMap.put("language", language);
             paramMap.put("code", source_code);
@@ -909,6 +963,17 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
             submissionsAlgorithm.setCompetition_id(judgeRequest.getCompetition_id());
         }
 
+        // 观察当前时间和竞赛结束时间判断是否进入排行榜显示
+        Date currentDate = new Date();
+        if (judgeRequest.getCompetition_id() != null && currentDate.before(competitions.getEnd_time())) {
+            problemAlgorithmBank.setTest_total(problemAlgorithmBank.getTest_total() + 1);
+        }
+
+        // 为之后插入ac状态做准备
+        QueryWrapper<CompetitionAcProblemsAlgorithm> competitionAcProblemsAlgorithmQueryWrapper = new QueryWrapper<>();
+        competitionAcProblemsAlgorithmQueryWrapper.eq("competition_id", judgeRequest.getCompetition_id());
+        competitionAcProblemsAlgorithmQueryWrapper.eq("uuid", uuid);
+        competitionAcProblemsAlgorithmQueryWrapper.eq("idx", judgeRequest.getIndex());
 
         // 只要提交了，那么总的尝试次数就得 + 1
         problemAlgorithmBank.setTest_total(problemAlgorithmBank.getTest_total() + 1);
@@ -939,6 +1004,54 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
             lastJudge.setStatus("Accepted");
             submissionsAlgorithm.setResults("Accepted");
             problemAlgorithmBank.setAc_total(problemAlgorithmBank.getAc_total() + 1);
+            // AC之后计算罚时
+            Date localDate = competitions.getStart_time();
+
+            if (judgeRequest.getCompetition_id() != null) {
+                CompetitionAcProblemsAlgorithm competitionAcProblemsAlgorithm = competitionAcProblemsAlgorithmMapper.selectOne(competitionAcProblemsAlgorithmQueryWrapper);
+                if (competitionAcProblemsAlgorithm == null) {
+                    competitionAcProblemsAlgorithm = new CompetitionAcProblemsAlgorithm();
+                    competitionAcProblemsAlgorithm.setCompetition_id(judgeRequest.getCompetition_id());
+                    competitionAcProblemsAlgorithm.setUuid(uuid);
+                    competitionAcProblemsAlgorithm.setIdx(judgeRequest.getIndex());
+
+                    competitionAcProblemsAlgorithm.setTest_num(0L);
+
+                    // 比赛状态下，反复AC是不可以添加AC次数的
+                    // 观察当前时间和竞赛结束时间判断是否进入排行榜显示
+                    if (currentDate.before(competitions.getEnd_time())) {
+                        competitionAcProblemsAlgorithm.setStatus(0);
+                        competitionAcProblemsAlgorithm.setAfter_status(0);
+                        competitionsProblemsAlgorithm.setAc_total(competitionsProblemsAlgorithm.getAc_total() + 1);
+                        competitionsProblemsAlgorithm.setTest_total(competitionsProblemsAlgorithm.getTest_total() + 1);
+                        competitionsUser.setAc_num(competitionsUser.getAc_num() + 1);
+                        competitionsUser.setTime_penalty((long) ((currentDate.getTime() - localDate.getTime()) / 1000 + competitionAcProblemsAlgorithm.getTest_num() + competitionsUser.getTime_penalty()));
+                    } else {
+                        competitionAcProblemsAlgorithm.setStatus(1);
+                        competitionAcProblemsAlgorithm.setAfter_status(0);
+                    }
+
+                    competitionAcProblemsAlgorithmMapper.insert(competitionAcProblemsAlgorithm);
+                    competitionsUserMapper.update(competitionsUser, competitionsUserQueryWrapper);
+                } else if (competitionAcProblemsAlgorithm.getStatus() == 1 && competitionAcProblemsAlgorithm.getAfter_status() == 1) {
+                    if (currentDate.before(competitions.getEnd_time())) {
+                        competitionAcProblemsAlgorithm.setStatus(0);
+                        competitionAcProblemsAlgorithm.setAfter_status(0);
+                        competitionsProblemsAlgorithm.setAc_total(competitionsProblemsAlgorithm.getAc_total() + 1);
+                        competitionsProblemsAlgorithm.setTest_total(competitionsProblemsAlgorithm.getTest_total() + 1);
+                        competitionsUser.setTime_penalty((long) ((currentDate.getTime() - localDate.getTime()) / 1000 + competitionAcProblemsAlgorithm.getTest_num() + competitionsUser.getTime_penalty()));
+                    } else {
+                        competitionAcProblemsAlgorithm.setAfter_status(0);
+                    }
+
+
+                    competitionAcProblemsAlgorithmMapper.update(competitionAcProblemsAlgorithm, competitionAcProblemsAlgorithmQueryWrapper);
+                    if (currentDate.before(competitions.getEnd_time())) {
+                        competitionsUser.setAc_num(competitionsUser.getAc_num() + 1);
+                    }
+                    competitionsUserMapper.update(competitionsUser, competitionsUserQueryWrapper);
+                }
+            }
         } else {
             QueryWrapper<AcAlgorithmProblem> acAlgorithmProblemQueryWrapper = new QueryWrapper<>();
             acAlgorithmProblemQueryWrapper.eq("user_id", uuid);
@@ -967,10 +1080,42 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
             } else {
                 submissionsAlgorithm.setResults("Compile Error");
             }
+
+            if (judgeRequest.getCompetition_id() != null) {
+                CompetitionAcProblemsAlgorithm competitionAcProblemsAlgorithm = competitionAcProblemsAlgorithmMapper.selectOne(competitionAcProblemsAlgorithmQueryWrapper);
+                if (competitionAcProblemsAlgorithm == null) {
+                    competitionAcProblemsAlgorithm = new CompetitionAcProblemsAlgorithm();
+                    competitionAcProblemsAlgorithm.setCompetition_id(judgeRequest.getCompetition_id());
+                    competitionAcProblemsAlgorithm.setUuid(uuid);
+                    competitionAcProblemsAlgorithm.setIdx(judgeRequest.getIndex());
+
+                    // 观察当前时间和竞赛结束时间判断是否进入排行榜显示
+                    if (currentDate.before(competitions.getEnd_time())) {
+                        competitionAcProblemsAlgorithm.setStatus(1);
+                        competitionAcProblemsAlgorithm.setAfter_status(1);
+                        competitionAcProblemsAlgorithm.setTest_num(1L);
+                        competitionsProblemsAlgorithm.setTest_total(competitionsProblemsAlgorithm.getTest_total() + 1);
+                    } else {
+                        competitionAcProblemsAlgorithm.setStatus(1);
+                        competitionAcProblemsAlgorithm.setAfter_status(1);
+                    }
+                    competitionAcProblemsAlgorithmMapper.insert(competitionAcProblemsAlgorithm);
+                } else if (competitionAcProblemsAlgorithm.getStatus() == 1 || competitionAcProblemsAlgorithm.getAfter_status() == 1){
+                    // 观察当前时间和竞赛结束时间判断是否进入排行榜显示
+                    if (currentDate.before(competitions.getEnd_time())) {
+                        competitionAcProblemsAlgorithm.setTest_num(competitionAcProblemsAlgorithm.getTest_num() + 1);
+                        competitionsProblemsAlgorithm.setTest_total(competitionsProblemsAlgorithm.getTest_total() + 1);
+                        competitionAcProblemsAlgorithmMapper.update(competitionAcProblemsAlgorithm, competitionAcProblemsAlgorithmQueryWrapper);
+                    }
+                }
+            }
         }
 
         // 将题目信息进行更新
         problemAlgorithmBankMapper.update(problemAlgorithmBank, queryWrapper);
+        if (judgeRequest.getCompetition_id() != null && judgeRequest.getIndex() != null) {
+            competitionsProblemsAlgorithmMapper.update(competitionsProblemsAlgorithm, competitionsProblemsAlgorithmQueryWrapper);
+        }
         submissionsAlgorithmMapper.insert(submissionsAlgorithm);
         Long submission_id = submissionsAlgorithm.getSubmission_id();
 

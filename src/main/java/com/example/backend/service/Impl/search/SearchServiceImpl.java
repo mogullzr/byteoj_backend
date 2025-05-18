@@ -41,6 +41,9 @@ public class SearchServiceImpl implements SearchService {
     @Resource
     private OJCompetitionDataSource ojCompetitionDataSource;
 
+    @Resource
+    private CompetitionRankSource competitionRankSource;
+
     @Override
     public SearchVo searchAll(SearchRequest searchRequest, Long uuid, boolean isAdmin) {
         String category = searchRequest.getCategory();
@@ -76,6 +79,9 @@ public class SearchServiceImpl implements SearchService {
             // 6.oj信息
             List<OJCompetitionVo> ojCompetitionList = ojCompetitionDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin);
 
+            // 7.巅峰Rating排行榜单
+            List<UserVo> competitionUserVos = competitionRankSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin);
+
             // ......扩展
             // 最终聚合
             searchVo.setProblemAlgorithmBankVoList(problemAlgorithmBankVoList);
@@ -83,6 +89,7 @@ public class SearchServiceImpl implements SearchService {
             searchVo.setUserVoList(userVoList);
             searchVo.setUserAuthVoList(userAuthVoList);
             searchVo.setOjCompetitionsList(ojCompetitionList);
+            searchVo.setCompetitionUser(competitionUserVos);
 
         } else {
             DataSource<?> dataSource = dataSourceRegistry.getDataSourceByCategory(category);

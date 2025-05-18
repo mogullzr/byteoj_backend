@@ -1,13 +1,23 @@
 package com.example.backend.interceptor;
 
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.example.backend.mapper.UserApiAuthMapper;
+import com.example.backend.mapper.UserApiMapper;
+import com.example.backend.mapper.UserRoleAuthMapper;
+import com.example.backend.mapper.UserRoleRelationMapper;
+import com.example.backend.models.domain.user.*;
 import com.example.backend.utils.RedisUtils;
 import org.lionsoul.ip2region.xdb.Searcher;
+
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
 import com.example.backend.common.AccessLimit;
 import com.example.backend.common.ErrorCode;
 import com.example.backend.exception.BusinessException;
-import com.example.backend.models.domain.user.User;
 import com.example.backend.service.user.UserService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
@@ -21,7 +31,19 @@ import javax.servlet.http.HttpServletResponse;
 public class FangshuaInterceptor extends HandlerInterceptorAdapter {
 
     @Resource
-    UserService userService;
+    private UserService userService;
+    @Resource
+    private UserRoleRelationMapper userRoleRelationMapper;
+
+    @Resource
+    private UserApiAuthMapper userApiAuthMapper;
+
+    @Resource
+    private UserRoleAuthMapper userRoleAuthMapper;
+
+    @Resource
+    private UserApiMapper userApiMapper;
+
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         //判断请求是否属于方法的请求
@@ -36,7 +58,8 @@ public class FangshuaInterceptor extends HandlerInterceptorAdapter {
             int seconds = accessLimit.seconds();
             Long maxCount = accessLimit.maxCount();
             boolean login = accessLimit.needLogin();
-            String key =  request.getRequestURI() + getClientIp(request).replace(":", ".");
+            String url = request.getRequestURI();
+            String key =  url + getClientIp(request).replace(":", ".");
 //            String clientIp = getClientIp(request);
 //            getLocationInfo(request.getRemoteAddr());
             User user = userService.getLoginUser(request);
@@ -44,6 +67,8 @@ public class FangshuaInterceptor extends HandlerInterceptorAdapter {
             if (login) {
                 if (user == null) {
                     throw new BusinessException(ErrorCode.PARAMS_ERROR, "你还没有登录呢！");
+                } else if (!isPermissionAssigned(user, url)){
+                    throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "谁给你的权利访问我的呀？？");
                 }
             }
 
@@ -84,6 +109,46 @@ public class FangshuaInterceptor extends HandlerInterceptorAdapter {
         return true;
     }
 
+    /**
+     * 检测当前接口是否符合权限分配情况
+     *
+     * @param user 用户信息
+     * @param url 请求地址
+     * @return 是否符合权限分配情况
+     */
+    private Boolean isPermissionAssigned(User user, String url) {
+        Long uuid = user.getUuid();
+        // 1.查找当前用户拥有的所有role角色
+        QueryWrapper<UserRoleRelation> userRoleRelationQueryWrapper = new QueryWrapper<>();
+        userRoleRelationQueryWrapper.eq("uuid",uuid);
+        List<UserRoleRelation> userRoleRelations = userRoleRelationMapper.selectList(userRoleRelationQueryWrapper);
+
+        // 2.查找对应的url所分属的role角色
+        QueryWrapper<UserApi> userApiQueryWrapper = new QueryWrapper<>();
+        QueryWrapper<UserApiAuth> userApiAuthQueryWrapper = new QueryWrapper<>();
+        QueryWrapper<UserRoleAuth> userRoleAuthQueryWrapper = new QueryWrapper<>();
+
+        userApiQueryWrapper.eq("path",url);
+        List<UserApi> userApis = userApiMapper.selectList(userApiQueryWrapper);
+        for (UserApi userApi : userApis) {
+            userApiAuthQueryWrapper.in("api_id", userApi.getId());
+        }
+        List<UserApiAuth> userApiAuths = userApiAuthMapper.selectList(userApiAuthQueryWrapper);
+        for (UserApiAuth userApiAuth : userApiAuths) {
+            userRoleAuthQueryWrapper.in("auth_id", userApiAuth.getAuth_id());
+        }
+        List<UserRoleAuth> userRoleAuthList = userRoleAuthMapper.selectList(userRoleAuthQueryWrapper);
+
+        // 提取所有 UserRoleAuth 的 roleId
+        Set<Integer> authRoleIds = userRoleAuthList.stream()
+                .map(UserRoleAuth::getRole_id)
+                .collect(Collectors.toSet());
+
+        // 检查 UserRoleRelation 是否有相同的 roleId
+
+        return userRoleRelations.stream()
+                .anyMatch(relation -> authRoleIds.contains(relation.getRole_id()));
+    }
     /**
      * 获取客户端的真实IP地址
      *
@@ -136,7 +201,7 @@ public class FangshuaInterceptor extends HandlerInterceptorAdapter {
             long sTime = System.nanoTime();
             String region = searcher.search(ip);
             long cost = TimeUnit.NANOSECONDS.toMicros((long) (System.nanoTime() - sTime));
-            System.out.printf("{region: %s, ioCount: %d, took: %d μs}\n", region, searcher.getIOCount(), cost);
+            System.out.printf("{region: %s, ioCount: %d,  took: %d μs}\n", region, searcher.getIOCount(), cost);
         } catch (Exception e) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "查找失败");
         }

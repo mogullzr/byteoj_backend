@@ -16,6 +16,7 @@ import com.example.backend.models.domain.competiton.*;
 import com.example.backend.models.domain.user.User;
 import com.example.backend.models.request.CompetitionAddRequest;
 import com.example.backend.models.request.CompetitionProblems;
+import com.example.backend.models.request.competition.CompetitionRankRequest;
 import com.example.backend.models.vo.UserVo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import com.example.backend.models.vo.competition.CompetitionInfoVo;
@@ -23,11 +24,9 @@ import com.example.backend.models.vo.competition.CompetitionProblemInfo;
 import com.example.backend.models.vo.competition.CompetitionRankDetailVo;
 import com.example.backend.models.vo.competition.CompetitionRankVo;
 import com.example.backend.service.competition.CompetitionsService;
-import com.example.backend.service.user.UserService;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
@@ -110,7 +109,7 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
     }
 
     @Override
-    public CompetitionRankVo competitionSearchRank(Long competition_id, Integer PageNum) {
+    public CompetitionRankVo competitionSearchRank(Long competition_id, Integer PageNum, Long uuid) {
         CompetitionRankVo competitionRankVo = new CompetitionRankVo();
         List<CompetitionRankDetailVo> rank_user_list = new ArrayList<>();
         List<CompetitionProblemInfo> problem_list = new ArrayList<>();
@@ -137,6 +136,14 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
             problem_list.add(competitionsProblemsAlgorithm);
         });
 
+        // 2.0 寻找出当前用户的信息
+        List<CompetitionsUser> competitionsUsers = new ArrayList<>();
+        QueryWrapper<CompetitionsUser> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("uuid",uuid);
+        queryWrapper.eq("competition_id", competition_id);
+        CompetitionsUser competitionsUser = competitionsUserMapper.selectOne(queryWrapper);
+
+//        competitionsUsers.add(competitionsUser);
         // 2.在competitions_user中根据ac_num，score进行降序排序
         Page<CompetitionsUser> competitionsUserPage = new Page<>(PageNum, 20);
         QueryWrapper<CompetitionsUser> competitionsUserQueryWrapper = new QueryWrapper<>();
@@ -150,7 +157,7 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
         }
 
         competitionsUserQueryWrapper.orderByAsc("time_penalty");
-        List<CompetitionsUser> competitionsUsers = competitionsUserMapper.selectPage(competitionsUserPage, competitionsUserQueryWrapper).getRecords();
+        competitionsUsers.addAll(competitionsUserMapper.selectPage(competitionsUserPage, competitionsUserQueryWrapper).getRecords());
 
         // 3.拿到前20名的用户信息,开始搜索20名用户的各个题目的最终ac记录和最终wrong记录
         competitionsUsers.forEach((user)->{
@@ -706,20 +713,41 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
     @Override
     public List<UserVo> competitionSearchRankTop10() {
         Page<User> page = new Page<>(1, 10);
+        return getUserVoList(page, null);
+    }
+
+    @Override
+    public List<UserVo> competitionSearchRank(CompetitionRankRequest competitionRankRequest) {
+        Page<User> page = new Page<>(competitionRankRequest.getCurrent(), competitionRankRequest.getSize());
+        return getUserVoList(page, competitionRankRequest.getKeyword());
+    }
+
+    private List<UserVo> getUserVoList(Page<User> page, String keyword) {
         QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
         userQueryWrapper.orderByDesc("rating");
-
-        List<User> records = userMapper.selectPage(page, userQueryWrapper).getRecords();
+        if (keyword != null && !Objects.equals(keyword, "")) {
+            userQueryWrapper.or().like("username", keyword);
+            userQueryWrapper.or().like("school", keyword);
+        }
+        Page<User> page1 = userMapper.selectPage(page, userQueryWrapper);
+        List<User> records = page1.getRecords();
         List<UserVo> userVos = new ArrayList<>();
 
+        boolean flag = false;
         for (User record : records) {
+
             UserVo safetyUser = new UserVo();
             Integer rating = record.getRating();
 
+            if (!flag) {
+                safetyUser.setPages((int) page1.getPages());
+            }
             safetyUser.setUsername(record.getUsername());
             safetyUser.setRating(rating);
             safetyUser.setUuid(record.getUuid());
             safetyUser.setRated(getRating(record));
+            safetyUser.setSchool(record.getSchool());
+            safetyUser.setAvatar(record.getAvatar());
             userVos.add(safetyUser);
         }
         return userVos;

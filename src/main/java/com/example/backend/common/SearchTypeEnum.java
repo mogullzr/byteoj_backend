@@ -20,9 +20,9 @@ public enum SearchTypeEnum {
 
     BOSS_AUTH_SEARCH("BOSS管理员权限查询", "boss_auth_search"),
 
-    OJ("OJ", "oj");
+    OJ("OJ", "oj"),
 
-
+    COMPETITION_USERS("巅峰Rating排行榜", "competition_user");
     private final String text;
 
     private final String value;
