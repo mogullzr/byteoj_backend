@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.backend.mapper.CourseMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.backend.models.domain.course.Course">
+            <id property="course_id" column="course_id" jdbcType="BIGINT"/>
+            <result property="course_title" column="course_title" jdbcType="VARCHAR"/>
+            <result property="course_title_description" column="course_title_description" jdbcType="VARCHAR"/>
+            <result property="create_name" column="create_name" jdbcType="VARCHAR"/>
+            <result property="avatar" column="avatar" jdbcType="VARCHAR"/>
+            <result property="num" column="num" jdbcType="BIGINT"/>
+            <result property="start_time" column="start_time" jdbcType="TIMESTAMP"/>
+            <result property="end_time" column="end_time" jdbcType="TIMESTAMP"/>
+            <result property="is_delete" column="is_delete" jdbcType="INTEGER"/>
+            <result property="create_time" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="course_description" column="course_description" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        course_id,course_title,course_title_description,
+        create_name,avatar,num,
+        start_time,end_time,is_delete,
+        create_time,course_description
+    </sql>
+</mapper>
