@@ -3,6 +3,7 @@ package com.example.backend.models.vo.problem;
 import com.example.backend.models.domain.spider.OjCompetition;
 import com.example.backend.models.vo.UserVo;
 import com.example.backend.models.vo.crawler.OJCompetitionVo;
+import com.example.backend.models.vo.log.LogVo;
 import com.example.backend.models.vo.post.PostsVo;
 import lombok.Data;
 import org.bouncycastle.math.ec.rfc8032.Ed448;
@@ -52,7 +53,7 @@ public class SearchVo implements Serializable {
     /**
      * 下面可随意扩展......
      */
-
+    private List<LogVo> logVoList;
     /**
      * 通用数据源
      */

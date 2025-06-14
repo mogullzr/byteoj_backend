@@ -10,6 +10,8 @@ import com.example.backend.models.domain.user.*;
 import com.example.backend.utils.RedisUtils;
 import org.lionsoul.ip2region.xdb.Searcher;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -116,8 +118,18 @@ public class FangshuaInterceptor extends HandlerInterceptorAdapter {
      * @param url 请求地址
      * @return 是否符合权限分配情况
      */
-    private Boolean isPermissionAssigned(User user, String url) {
+    private Boolean isPermissionAssigned(User user, String url) throws URISyntaxException {
         Long uuid = user.getUuid();
+
+        // 0.处理url，将参数部分删除
+        URI uri = new URI(url);
+        url =  new URI(
+                uri.getScheme(),
+                uri.getAuthority(),
+                uri.getPath(),
+                null, // 设置为 null 表示移除查询参数
+                uri.getFragment()
+        ).toString();
         // 1.查找当前用户拥有的所有role角色
         QueryWrapper<UserRoleRelation> userRoleRelationQueryWrapper = new QueryWrapper<>();
         userRoleRelationQueryWrapper.eq("uuid",uuid);

@@ -1,4 +1,6 @@
 spring:
+  aop:
+    proxy-target-class: true
   jackson:
     time-zone: Asia/Shanghai
   mail:
@@ -92,6 +94,7 @@ server:
 #    session:
 #      cookie:
 #        domain: localhost
+
 mybatis-plus:
   configuration:
     #    会默认将下滑线转换成驼峰式
@@ -162,3 +165,24 @@ deepseek:
       model: ${hm.deepseek.api.r1_1.model}
       url: ${hm.deepseek.api.r1_1.url}
       key: ${hm.deepseek.api.r1_1.key}
+domain:
+  url_1: https://www.byteoj.com/ # 自己的域名地址，替换一下
+avatar:
+  default: ${avatar.default}
+log:
+  log_anaylsis:
+    uuid: "uuid"
+    operation_total: "operation_total"
+    exception_total: "exception_total"
+    new_user_total: "new_user_total"
+    user_total: "user_total"
+    start_time: "start_time"
+    end_time: "end_time"
+    avg_response_time: "avg_response_time"
+    operator_id: "operator_id"
+    operator_total: "operator_total"
+    browse_total: "browse_total"
+    active_total: "active_total"
+    create_date: "create_date"
+  log_info:
+    operation_time: "operation_time"

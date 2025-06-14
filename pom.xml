@@ -224,6 +224,16 @@
             <artifactId>thumbnailator</artifactId>
             <version>0.4.19</version>
         </dependency>
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-spring</artifactId>
+            <version>4.44.0</version>
+        </dependency>
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-provider-jdbc-template</artifactId>
+            <version>4.44.0</version>
+        </dependency>
     </dependencies>
     <dependencyManagement>
         <dependencies>
@@ -244,6 +254,10 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
                 <configuration>
+                    <parameters>true</parameters>
+                    <compilerArgs>
+                        <arg>-parameters</arg>  <!-- Java 8+ 参数名保留 -->
+                    </compilerArgs>
                     <source>11</source>
                     <target>11</target>
                     <encoding>UTF-8</encoding>

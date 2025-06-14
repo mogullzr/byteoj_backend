@@ -8,6 +8,7 @@ import com.example.backend.models.domain.user.User;
 import com.example.backend.models.request.problem.SearchRequest;
 import com.example.backend.models.vo.UserVo;
 import com.example.backend.models.vo.crawler.OJCompetitionVo;
+import com.example.backend.models.vo.log.LogVo;
 import com.example.backend.models.vo.post.PostsVo;
 import com.example.backend.models.vo.problem.ProblemAlgorithmBankVo;
 import com.example.backend.models.vo.problem.ProblemMath408BankVo;
@@ -44,6 +45,9 @@ public class SearchServiceImpl implements SearchService {
     @Resource
     private CompetitionRankSource competitionRankSource;
 
+    @Resource
+    private LogDataSource logDataSource;
+
     @Override
     public SearchVo searchAll(SearchRequest searchRequest, Long uuid, boolean isAdmin) {
         String category = searchRequest.getCategory();
@@ -56,6 +60,14 @@ public class SearchServiceImpl implements SearchService {
         String difficulty = searchRequest.getDifficulty();
         Integer status = searchRequest.getStatus();
 
+        // 日志专属
+        String module = searchRequest.getModule();
+        List<Integer> code = searchRequest.getCode();
+        List<String> type = searchRequest.getType();
+        Integer is_date_order = searchRequest.getIs_date_order();
+        Integer startMilliSeconds = searchRequest.getStartMilliSeconds();
+        Integer endMilliSeconds = searchRequest.getEndMilliSeconds();
+
         SearchVo searchVo = new SearchVo();
 
         if (StringUtils.isBlank(category)) {
@@ -64,23 +76,25 @@ public class SearchServiceImpl implements SearchService {
 
         if (searchTypeEnum == null) {
             // 1.算法试题
-
-            List<ProblemAlgorithmBankVo> problemAlgorithmBankVoList = algorithmDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin);
+            List<ProblemAlgorithmBankVo> problemAlgorithmBankVoList = algorithmDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin, module, code, is_date_order, startMilliSeconds, endMilliSeconds);
 
             // 3.帖子
-            List<PostsVo> postsVoList = postsDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin);
+            List<PostsVo> postsVoList = postsDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin, module, code, is_date_order, startMilliSeconds, endMilliSeconds);
 
             // 4.用户
-            List<UserVo> userVoList = userDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin);
+            List<UserVo> userVoList = userDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin, module, code, is_date_order, startMilliSeconds, endMilliSeconds);
 
             // 5.BOSS管理员权限查询
-            List<UserVo> userAuthVoList = userDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin);
+            List<UserVo> userAuthVoList = userDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin, module, code, is_date_order, startMilliSeconds, endMilliSeconds);
 
             // 6.oj信息
-            List<OJCompetitionVo> ojCompetitionList = ojCompetitionDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin);
+            List<OJCompetitionVo> ojCompetitionList = ojCompetitionDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin, module, code, is_date_order, startMilliSeconds, endMilliSeconds);
 
             // 7.巅峰Rating排行榜单
-            List<UserVo> competitionUserVos = competitionRankSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin);
+            List<UserVo> competitionUserVos = competitionRankSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin, module, code, is_date_order, startMilliSeconds, endMilliSeconds);
+
+            // 8.日志多条件搜索
+            List<LogVo> logVos = logDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin, module, code, is_date_order, startMilliSeconds, endMilliSeconds);
 
             // ......扩展
             // 最终聚合
@@ -90,13 +104,12 @@ public class SearchServiceImpl implements SearchService {
             searchVo.setUserAuthVoList(userAuthVoList);
             searchVo.setOjCompetitionsList(ojCompetitionList);
             searchVo.setCompetitionUser(competitionUserVos);
-
+            searchVo.setLogVoList(logVos);
         } else {
             DataSource<?> dataSource = dataSourceRegistry.getDataSourceByCategory(category);
-            List<?> dataList = dataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin);
+            List<?> dataList = dataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin, module, code, is_date_order, startMilliSeconds, endMilliSeconds);
             searchVo.setDataList(dataList);
         }
-
         return searchVo;
     }
 }

@@ -305,7 +305,7 @@ public class UserController {
     }
 
     @AccessLimit(seconds=5, maxCount=30, needLogin=true)
-    @GetMapping("/picture/user/get/")
+    @GetMapping("/picture/user/get")
     private BaseResponse<String> userGetPictureByUser(HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");

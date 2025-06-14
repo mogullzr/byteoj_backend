@@ -14,7 +14,7 @@ public class OJCompetitionDataSource implements DataSource<OJCompetitionVo>{
         private OJCompetitionService ojCompetitionService;
 
         @Override
-        public List<OJCompetitionVo> doSearch(String keyword, List<Integer> tagsList, List<String> sourceList, String difficulty, Integer pageNum, Integer pageSize, Long uuid, Integer status, boolean isAdmin) {
+        public List<OJCompetitionVo> doSearch(String keyword, List<Integer> tagsList, List<String> sourceList, String difficulty, Integer pageNum, Integer pageSize, Long uuid, Integer status, boolean isAdmin, String module, List<Integer> code, Integer is_date_order, Integer StartMilliSeconds, Integer EndMilliSeconds) {
             AlgorithmQueryRequest algorithmQueryRequest = new AlgorithmQueryRequest();
             algorithmQueryRequest.setKeyword(keyword);
             algorithmQueryRequest.setPageNum(pageNum);

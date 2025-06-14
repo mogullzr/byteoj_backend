@@ -3,9 +3,10 @@ package com.example.backend.exception;
 import com.example.backend.common.BaseResponse;
 import com.example.backend.common.ErrorCode;
 import com.example.backend.common.ResultUtils;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * 全局异常处理器
@@ -14,18 +15,16 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  *  @website https://mogullzr.github.io/
  */
 @RestControllerAdvice
-@Slf4j
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(BusinessException.class)
-    public BaseResponse businessExceptionHandler(BusinessException e) {
-        log.error("BusinessException",e);
-        return ResultUtils.error(e.getCode(), e.getMessage());
-    }
+    @ExceptionHandler(Exception.class)
+    public BaseResponse handleException(Exception ex, HttpServletRequest request) {
+        // 将原始异常存入请求属性
+        request.setAttribute("loggedException", ex);
 
-    @ExceptionHandler(RuntimeException.class)
-    public BaseResponse runtimeExceptionHandler(RuntimeException e) {
-        log.error("RuntimeException", e);
-        return ResultUtils.error(ErrorCode.SYSTEM_ERROR, "系统错误");
+        if (ex instanceof BusinessException) {
+            return ResultUtils.error(((BusinessException) ex).getCode(), ex.getMessage());
+        }
+        return ResultUtils.error(ErrorCode.SYSTEM_ERROR);
     }
 }

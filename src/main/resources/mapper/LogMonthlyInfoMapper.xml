@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.backend.mapper.LogMonthlyInfoMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.backend.models.domain.log.LogMonthlyInfo">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="create_date" column="create_date" jdbcType="BIGINT"/>
+            <result property="operation_total" column="operation_total" jdbcType="INTEGER"/>
+            <result property="exception_total" column="exception_total" jdbcType="INTEGER"/>
+            <result property="user_total" column="user_total" jdbcType="BIGINT"/>
+            <result property="new_user_total" column="new_user_total" jdbcType="BIGINT"/>
+            <result property="start_time" column="start_time" jdbcType="BIGINT"/>
+            <result property="end_time" column="end_time" jdbcType="BIGINT"/>
+            <result property="avg_response_time" column="avg_response_time" jdbcType="BIGINT"/>
+            <result property="operator_id" column="operator_id" jdbcType="BIGINT"/>
+            <result property="operator_total" column="operator_total" jdbcType="BIGINT"/>
+            <result property="browse_total" column="browse_total" jdbcType="BIGINT"/>
+            <result property="active_total" column="active_total" jdbcType="BIGINT"/>
+            <result property="is_delete" column="is_delete" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,create_date,operation_total,
+        exception_total,user_total,start_time,
+        end_time,avg_response_time,operator_id,
+        operator_total,browse_total,active_total,is_delete
+    </sql>
+</mapper>

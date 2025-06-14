@@ -231,7 +231,7 @@ public class RedisUtils {
      * @param key 键
      * @return 值
      */
-    private static String get(String key) {
+    public static String get(String key) {
         return key == null ? null : stringRedisTemplate.opsForValue().get(key);
     }
 

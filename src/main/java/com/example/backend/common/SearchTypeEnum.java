@@ -22,7 +22,9 @@ public enum SearchTypeEnum {
 
     OJ("OJ", "oj"),
 
-    COMPETITION_USERS("巅峰Rating排行榜", "competition_user");
+    COMPETITION_USERS("巅峰Rating排行榜", "competition_user"),
+
+    LOG_INFO("日志信息", "log");
     private final String text;
 
     private final String value;

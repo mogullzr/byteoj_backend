@@ -10,6 +10,7 @@ import com.example.backend.exception.BusinessException;
 import com.example.backend.mapper.ProblemAlgorithmBankMapper;
 import com.example.backend.mapper.ProblemAlgorithmTagsMapper;
 import com.example.backend.mapper.SubmissionsAlgorithmMapper;
+import com.example.backend.models.domain.algorithm.ProblemDailyInfo;
 import com.example.backend.models.domain.algorithm.UserLastEnter;
 import com.example.backend.models.domain.algorithm.submission.SubmissionsAlgorithm;
 import com.example.backend.models.domain.judge.Judge;
@@ -19,6 +20,7 @@ import com.example.backend.models.request.problem.AlgorithmQueryRequest;
 import com.example.backend.models.request.problem.ProblemAlgorithmRequest;
 import com.example.backend.models.request.problem.ProblemAlgorithmTestCaseRequest;
 import com.example.backend.models.vo.AliyunVodVo;
+import com.example.backend.models.vo.ProblemDailyVo;
 import com.example.backend.models.vo.competition.CompetitionProblemsVo;
 import com.example.backend.models.vo.problem.ProblemAlgorithmBankVo;
 import com.example.backend.models.vo.problem.ProblemDailyNumVo;
@@ -47,8 +49,10 @@ import java.util.List;
 public class ProblemAlgorithmController {
     @Resource
     ProblemAlgorithmBankMapper problemAlgorithmBankMapper;
+
     @Resource
     private ProblemAlgorithmService problemAlgorithmService;
+
 
     @Resource
     private ProblemAlgorithmTagsMapper problemAlgorithmTagsMapper;
@@ -458,6 +462,26 @@ public class ProblemAlgorithmController {
         Long uuid = loginUser.getUuid();
 
         boolean result = problemAlgorithmService.problemAlgorithmSetUserLast(userLastEnter, uuid);
+        return ResultUtils.success(result);
+    }
+
+    @AccessLimit(seconds = 3, maxCount = 20, needLogin = true)
+    @PostMapping("/get/daily")
+    private BaseResponse<List<ProblemDailyVo>> problemDailyGet(HttpServletRequest httpServletRequest){
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        Long uuid = loginUser.getUuid();
+
+        List<ProblemDailyVo> result = problemAlgorithmService.problemDailyGet(uuid);
+        return ResultUtils.success(result);
+    }
+
+    @AccessLimit(seconds = 3, maxCount = 20, needLogin = true)
+    @PostMapping("/set/daily")
+    private BaseResponse<Boolean> problemDailySet(Long problem_id, HttpServletRequest httpServletRequest){
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        Long uuid = loginUser.getUuid();
+
+        Boolean result = problemAlgorithmService.problemDailySet(problem_id, uuid);
         return ResultUtils.success(result);
     }
 }

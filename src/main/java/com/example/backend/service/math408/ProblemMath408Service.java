@@ -11,7 +11,6 @@ import java.util.List;
 
 public interface ProblemMath408Service extends IService<ProblemMath408Bank> {
 
-
     /**\
      * math题目搜索
      *

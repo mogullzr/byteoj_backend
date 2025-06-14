@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.backend.mapper.LogOperationMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.backend.models.domain.log.LogOperation">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="module" column="module" jdbcType="VARCHAR"/>
+            <result property="description" column="description" jdbcType="VARCHAR"/>
+            <result property="type" column="type" jdbcType="VARCHAR"/>
+            <result property="request_param" column="request_param" jdbcType="VARCHAR"/>
+            <result property="response_param" column="response_param" jdbcType="VARCHAR"/>
+            <result property="code" column="code" jdbcType="INTEGER"/>
+            <result property="operator_id" column="operator_id" jdbcType="BIGINT"/>
+            <result property="method" column="method" jdbcType="VARCHAR"/>
+            <result property="url" column="url" jdbcType="VARCHAR"/>
+            <result property="ip" column="ip" jdbcType="VARCHAR"/>
+            <result property="browser" column="browser" jdbcType="VARCHAR"/>
+            <result property="operation_time" column="operation_time" jdbcType="BIGINT"/>
+            <result property="os" column="os" jdbcType="VARCHAR"/>
+            <result property="create_time" column="create_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,module,description,
+        type,request_param,response_param,
+        code,operator_id,method,
+        url,ip,browser,
+        operation_time,os,create_time
+    </sql>
+</mapper>

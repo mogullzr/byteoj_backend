@@ -17,7 +17,7 @@ public class UserAuthDataSource implements DataSource<UserVo>{
     private UserService userService;
 
     @Override
-    public List<UserVo> doSearch(String keyword, List<Integer> tagsList, List<String> sourceList, String difficulty, Integer pageNum, Integer pageSize, Long uuid, Integer status, boolean isAdmin) {
+    public List<UserVo> doSearch(String keyword, List<Integer> tagsList, List<String> sourceList, String difficulty, Integer pageNum, Integer pageSize, Long uuid, Integer status, boolean isAdmin, String module, List<Integer> code, Integer is_date_order, Integer StartMilliSeconds, Integer EndMilliSeconds) {
         UserAuthSearchRequest userAuthSearchRequest = new UserAuthSearchRequest();
         userAuthSearchRequest.setKeyword(keyword);
         userAuthSearchRequest.setPageNum(pageNum);

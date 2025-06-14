@@ -2,16 +2,10 @@ package com.example.backend;
 
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.scheduling.annotation.EnableScheduling;
-
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.Stack;
 
 @SpringBootApplication
 @EnableAspectJAutoProxy
@@ -19,6 +13,6 @@ import java.util.Stack;
 @MapperScan("com.example.backend.mapper")
 public class BackendApplication {
     public static void main(String[] args) {
-        SpringApplication.run(BackendApplication.class, args);
+        ConfigurableApplicationContext ctx = SpringApplication.run(BackendApplication.class, args);
     }
 }

@@ -1,6 +1,7 @@
 package com.example.backend.service.algorithm;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.example.backend.models.domain.algorithm.ProblemDailyInfo;
 import com.example.backend.models.domain.algorithm.UserLastEnter;
 import com.example.backend.models.domain.algorithm.probleminfo.ProblemAlgorithmBank;
 import com.example.backend.models.domain.judge.Judge;
@@ -9,6 +10,7 @@ import com.example.backend.models.request.problem.AlgorithmQueryRequest;
 import com.example.backend.models.request.problem.ProblemAlgorithmRequest;
 import com.example.backend.models.request.problem.ProblemAlgorithmTestCaseRequest;
 import com.example.backend.models.vo.AliyunVodVo;
+import com.example.backend.models.vo.ProblemDailyVo;
 import com.example.backend.models.vo.competition.CompetitionProblemsVo;
 import com.example.backend.models.vo.problem.ProblemAlgorithmBankVo;
 import com.example.backend.models.vo.problem.ProblemDailyNumVo;
@@ -240,4 +242,21 @@ public interface ProblemAlgorithmService extends IService<ProblemAlgorithmBank> 
      * @return 音频信息
      */
     AliyunVodVo AliyunVodGet(Long problemId) throws Exception;
+
+    /**
+     * 查看用户当天的卡牌题目
+     *
+     * @param uuid 用户ID
+     * @return 用户当天的题目卡牌
+     */
+    List<ProblemDailyVo> problemDailyGet(Long uuid);
+
+    /**
+     * 设置题目
+     *
+     * @param problem_id 问题ID
+     * @param uuid 用户ID
+     * @return 是否设置成功
+     */
+    Boolean problemDailySet(Long problem_id, Long uuid);
 }

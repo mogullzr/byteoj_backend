@@ -37,6 +37,7 @@ import com.example.backend.models.request.problem.AlgorithmQueryRequest;
 import com.example.backend.models.request.problem.ProblemAlgorithmRequest;
 import com.example.backend.models.request.problem.ProblemAlgorithmTestCaseRequest;
 import com.example.backend.models.vo.AliyunVodVo;
+import com.example.backend.models.vo.ProblemDailyVo;
 import com.example.backend.models.vo.competition.CompetitionProblemsVo;
 import com.example.backend.models.vo.problem.ProblemAlgorithmBankVo;
 import com.example.backend.models.vo.problem.ProblemDailyNumVo;
@@ -53,6 +54,7 @@ import com.example.backend.utils.VodUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.parsing.Problem;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -119,6 +121,9 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 
     @Resource
     private UserLastEnterMapper userLastEnterMapper;
+
+    @Resource
+    private ProblemDailyInfoMapper problemDailyInfoMapper;
 
     @Resource
     private JdbcTemplate jdbcTemplate;
@@ -1898,5 +1903,73 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         aliyunVodVo.setVid(vid);
 
         return aliyunVodVo;
+    }
+
+    @Override
+    public List<ProblemDailyVo> problemDailyGet(Long uuid) {
+        QueryWrapper<ProblemDailyInfo> queryWrapper1 = new QueryWrapper<>();
+        queryWrapper1.eq("uuid", uuid);
+
+        List<ProblemDailyInfo> problemDailyInfos = problemDailyInfoMapper.selectList(queryWrapper1);
+
+        QueryWrapper<ProblemAlgorithmBank> queryWrapper2 = new QueryWrapper<>();
+
+        if (problemDailyInfos == null || problemDailyInfos.isEmpty()) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "请联系管理员进行排查(898561494@qq.com)");
+        }
+        for (ProblemDailyInfo problemDailyInfo : problemDailyInfos) {
+            if (problemDailyInfo.getIs_select() == 1) {
+                QueryWrapper<ProblemAlgorithmBank> queryWrapper3 = new QueryWrapper<>();
+                ProblemDailyVo problemDailyVo = new ProblemDailyVo();
+
+                queryWrapper3.eq("problem_id", problemDailyInfo.getProblem_id());
+                ProblemAlgorithmBank problemAlgorithmBank = problemAlgorithmBankMapper.selectOne(queryWrapper3);
+                List<ProblemDailyVo> problemDailyVos = new ArrayList<>();
+
+                problemDailyVo.setProblem_id(problemAlgorithmBank.getProblem_id());
+                problemDailyVo.setProblem_name(problemAlgorithmBank.getChinese_name());
+                problemDailyVo.setDifficulty(problemAlgorithmBank.getDifficulty_name());
+
+                problemDailyVos.add(problemDailyVo);
+
+                return problemDailyVos;
+            }
+            queryWrapper2.eq("problem_id", problemDailyInfo.getProblem_id()).or();
+        };
+
+        List<ProblemDailyVo> problemDailyVos = new ArrayList<>();
+        List<ProblemAlgorithmBank> problemAlgorithmBanks = problemAlgorithmBankMapper.selectList(queryWrapper2);
+        problemAlgorithmBanks.forEach(problemAlgorithmBank -> {
+            ProblemDailyVo problemDailyVo = new ProblemDailyVo();
+
+            problemDailyVo.setProblem_id(problemAlgorithmBank.getProblem_id());
+            problemDailyVo.setProblem_name(problemAlgorithmBank.getChinese_name());
+            problemDailyVo.setDifficulty(problemAlgorithmBank.getDifficulty_name());
+
+            problemDailyVos.add(problemDailyVo);
+        });
+
+        return problemDailyVos;
+    }
+
+    @Override
+    public Boolean problemDailySet(Long problem_id, Long uuid) {
+        QueryWrapper<ProblemDailyInfo> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("uuid", uuid);
+
+        List<ProblemDailyInfo> problemDailyInfos = problemDailyInfoMapper.selectList(queryWrapper);
+        ProblemDailyInfo problemDailySelected = new ProblemDailyInfo();
+        problemDailyInfos.forEach(problemDailyInfo -> {
+            if (problemDailyInfo.getIs_select().equals(1)) {
+                throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "您今天已经抽过卡牌了, 明天再来吧");
+            } else if (problem_id.equals(problemDailyInfo.getProblem_id())) {
+                problemDailySelected.setIs_select(1);
+                problemDailySelected.setUuid(uuid);
+                problemDailySelected.setProblem_id(problem_id);
+            }
+        });
+
+        queryWrapper.eq("problem_id", problem_id);
+        return problemDailyInfoMapper.update(problemDailySelected, queryWrapper) == 1;
     }
 }

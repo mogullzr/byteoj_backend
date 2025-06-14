@@ -103,6 +103,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     @Value("${ROLE_MAX.UUID}")
     private Long BOSS_UUID;
 
+    @Value("${avatar.default}")
+    private String defaultAvatar;
+
     @Override
     public UserVo UserSearchByUuid(Long uuid) {
         if (uuid == null || uuid <= 0) {
@@ -188,6 +191,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         user.setCreate_time(new Date());
         user.setUpdate_time(new Date());
         user.setReadings(0);
+        user.setAvatar(defaultAvatar);
+
         // 验证成功，清除本地redis邮箱验证码
         RedisUtils.del(EmailConstant.EMAIL_CODE.getValue() + EmailConstant.EMAIL_CODE_ERROR.getValue() + user.getUuid());
 

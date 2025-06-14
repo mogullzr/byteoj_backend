@@ -15,7 +15,7 @@ public class CompetitionRankSource implements DataSource<UserVo>{
     private CompetitionsService competitionsService;
 
     @Override
-    public List<UserVo> doSearch(String keyword, List<Integer> tagsList, List<String> sourceList, String difficulty, Integer pageNum, Integer pageSize, Long uuid, Integer status, boolean isAdmin) {
+    public List<UserVo> doSearch(String keyword, List<Integer> tagsList, List<String> sourceList, String difficulty, Integer pageNum, Integer pageSize, Long uuid, Integer status, boolean isAdmin, String module, List<Integer> code, Integer is_date_order, Integer StartMilliSeconds, Integer EndMilliSeconds) {
         CompetitionRankRequest competitionRankRequest = new CompetitionRankRequest();
         competitionRankRequest.setCurrent(pageNum);
         competitionRankRequest.setSize(pageSize);
