@@ -30,7 +30,7 @@ public class DailyProblemSetUtil {
     @Resource
     private UserService userService;
 
-    @Scheduled(cron = "0 37 20 * * ?")
+    @Scheduled(cron = "0 0 0 * * ?")
 //    @Scheduled(fixedRate = 1000 * 200)
     public void dailyProblemSet() {
         // 0.删除表里面的全部信息

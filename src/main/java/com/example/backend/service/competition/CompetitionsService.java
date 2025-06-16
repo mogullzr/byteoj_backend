@@ -5,9 +5,12 @@ import com.example.backend.models.domain.competiton.Competitions;
 import com.example.backend.models.request.CompetitionAddRequest;
 import com.example.backend.models.request.competition.CompetitionRankRequest;
 import com.example.backend.models.vo.UserVo;
+import com.example.backend.models.vo.competition.CompetitionProblemsInfo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import com.example.backend.models.vo.competition.CompetitionInfoVo;
 import com.example.backend.models.vo.competition.CompetitionRankVo;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -48,7 +51,7 @@ public interface CompetitionsService extends IService<Competitions> {
      * @param uuid 用户ID
      * @return 竞赛排名信息
      */
-    CompetitionRankVo competitionSearchRank(Long competition_id, Integer PageNum, Long uuid);
+    CompetitionRankVo competitionSearchRank(Long competition_id, Integer PageNum, Long uuid, Integer status);
 
 
     /**

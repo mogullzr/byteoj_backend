@@ -10,6 +10,7 @@ import com.example.backend.models.domain.user.User;
 import com.example.backend.models.request.CompetitionAddRequest;
 import com.example.backend.models.request.problem.ProblemAlgorithmRequest;
 import com.example.backend.models.vo.UserVo;
+import com.example.backend.models.vo.competition.CompetitionProblemsInfo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import com.example.backend.models.vo.competition.CompetitionInfoVo;
 import com.example.backend.models.vo.competition.CompetitionRankVo;
@@ -78,15 +79,16 @@ public class CompetitionController {
 
     @AccessLimit(seconds = 3, maxCount = 20, needLogin = true)
     @PostMapping("/search/rank/pageNum")
-    private BaseResponse<CompetitionRankVo> competitionSearchRank(Long competition_id, Integer PageNum, HttpServletRequest httpServletRequest) {
+    private BaseResponse<CompetitionRankVo> competitionSearchRank(Long competition_id, Integer PageNum, Integer status, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
         Long uuid = userService.getLoginUser(httpServletRequest).getUuid();
 
-        CompetitionRankVo result = competitionsService.competitionSearchRank(competition_id, PageNum, uuid);
+        CompetitionRankVo result = competitionsService.competitionSearchRank(competition_id, PageNum, uuid, status);
         return ResultUtils.success(result);
     }
+
     @AccessLimit(seconds = 3, maxCount = 30, needLogin = true)
     @PostMapping("/search/records/pageNum")
     private BaseResponse<List<SubmissionsAlgorithmRecordsVo>> competitionSearchRecord(Long competition_id, Long PageNum, HttpServletRequest httpServletRequest) {

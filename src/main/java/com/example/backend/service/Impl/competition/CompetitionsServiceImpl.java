@@ -18,16 +18,19 @@ import com.example.backend.models.request.CompetitionAddRequest;
 import com.example.backend.models.request.CompetitionProblems;
 import com.example.backend.models.request.competition.CompetitionRankRequest;
 import com.example.backend.models.vo.UserVo;
+import com.example.backend.models.vo.competition.*;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
-import com.example.backend.models.vo.competition.CompetitionInfoVo;
-import com.example.backend.models.vo.competition.CompetitionProblemInfo;
-import com.example.backend.models.vo.competition.CompetitionRankDetailVo;
-import com.example.backend.models.vo.competition.CompetitionRankVo;
 import com.example.backend.service.competition.CompetitionsService;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
@@ -38,6 +41,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
 
 /**
  * @author Mogullzr
@@ -109,7 +113,7 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
     }
 
     @Override
-    public CompetitionRankVo competitionSearchRank(Long competition_id, Integer PageNum, Long uuid) {
+    public CompetitionRankVo competitionSearchRank(Long competition_id, Integer PageNum, Long uuid, Integer status) {
         CompetitionRankVo competitionRankVo = new CompetitionRankVo();
         List<CompetitionRankDetailVo> rank_user_list = new ArrayList<>();
         List<CompetitionProblemInfo> problem_list = new ArrayList<>();
@@ -145,7 +149,9 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
 
 //        competitionsUsers.add(competitionsUser);
         // 2.在competitions_user中根据ac_num，score进行降序排序
-        Page<CompetitionsUser> competitionsUserPage = new Page<>(PageNum, 20);
+        Page<CompetitionsUser> competitionsUserPage;
+        competitionsUserPage = new Page<>(PageNum, 15);
+
         QueryWrapper<CompetitionsUser> competitionsUserQueryWrapper = new QueryWrapper<>();
         competitionsUserQueryWrapper.eq("competition_id", competition_id);
         competitionsUserQueryWrapper.eq("is_participant", 0);
@@ -231,14 +237,24 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
                     submissionAlgorithmRecordVo.setSubmission_id(submissionsAlgorithm.getSubmission_id());
                     submissionAlgorithmRecordVo.setScore(submissionsAlgorithm.getScore());
                     submissionAlgorithmRecordVo.setTest_num(competitionAcProblemsAlgorithm.getTest_num());
+
                     if (competitionAcProblemsAlgorithm.getStatus() == 1) {
                         submissionsAlgorithmRecordsVoList.add(submissionAlgorithmRecordVo);
                         return;
                     }
+
                     submissionAlgorithmRecordVo.setSubmit_time(submissionsAlgorithm.getSubmit_time());
                     submissionAlgorithmRecordVo.setResult(submissionsAlgorithm.getResults());
                     submissionAlgorithmRecordVo.setLanguage(submissionsAlgorithm.getLanguages());
-                    submissionAlgorithmRecordVo.setResult(submissionsAlgorithm.getResults());
+
+                    if (status == 1) {
+                        submissionAlgorithmRecordVo.setSource_code(submissionsAlgorithm.getSource_code());
+                        submissionAlgorithmRecordVo.setUser_name(user1.getUsername());
+                        submissionAlgorithmRecordVo.setSubmission_id(null);
+                        submissionAlgorithmRecordVo.setScore(null);
+                        submissionAlgorithmRecordVo.setSubmit_time(null);
+                        submissionAlgorithmRecordVo.setLanguage(null);
+                    }
 
                     submissionsAlgorithmRecordsVoList.add(submissionAlgorithmRecordVo);
                     total_score.updateAndGet(v -> v + submissionsAlgorithm.getScore());
@@ -257,6 +273,7 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
         if (!rank_user_list.isEmpty()) {
             rank_user_list.get(0).setPage_num(competitionsUserMapper.selectPage(competitionsUserPage, competitionsUserQueryWrapper).getPages());
         }
+
         // 最终插入即可
         competitionRankVo.setRank_user_list(rank_user_list);
         competitionRankVo.setProblem_list(problem_list);

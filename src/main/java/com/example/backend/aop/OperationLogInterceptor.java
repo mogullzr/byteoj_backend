@@ -39,7 +39,7 @@ public class OperationLogInterceptor implements HandlerInterceptor {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private static final HashMap<String, String> MODULE_MAPPING = new HashMap<>() {{
+    private static final HashMap<String, String> MODULE_MAPPING = new HashMap<String, String>() {{
         put("/user", "用户模块");
         put("/search", "聚合搜索模块");
         put("/problem/algorithm", "题目模块");

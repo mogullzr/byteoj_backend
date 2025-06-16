@@ -24,7 +24,7 @@ spring:
     #    解决升级Spring Boot2.6后,因依赖循环引用导致启动时报错的问题
     allow-circular-references: true
   profiles:
-    active: local
+    active: dev
     name: backend
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
