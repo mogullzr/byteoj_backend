@@ -198,7 +198,7 @@ public class OperationLogInterceptor implements HandlerInterceptor {
                         logOperation.setResponse_param(responseStr);  // 存完整 JSON
 
                         // 关键修改：仅在成功时记录日志（code == 0）
-                            if (baseResponse.getCode() == 0) {
+                        if (baseResponse.getCode() == 0) {
                             // 9.1 插入日志（仅成功时记录）
                             logOperation.setCode(0);
                             logOperationMapper.insert(logOperation);
