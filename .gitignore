@@ -5,9 +5,10 @@ application-dev.yml
 application-local.yml
 target/
 test.sql
-sql/
 log/
 .idea/
+sql/2025-7-16-byteoj.sql
+sql/2025-07-19-byteoj.sql
 
 # User-specific stuff
 .idea/**/workspace.xml
