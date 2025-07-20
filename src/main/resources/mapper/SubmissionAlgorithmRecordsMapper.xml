@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.backend.mapper.SubmissionAlgorithmRecordsMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.backend.models.domain.algorithm.submission.SubmissionAlgorithmRecords">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="submission_id" column="submission_id" jdbcType="BIGINT"/>
+            <result property="create_time" column="create_time" jdbcType="DATE"/>
+            <result property="is_delete" column="is_delete" jdbcType="INTEGER"/>
+            <result property="time_used" column="time_used" jdbcType="INTEGER"/>
+            <result property="result" column="result" jdbcType="VARCHAR"/>
+            <result property="memory_used" column="memory_used" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,submission_id,create_time,
+        is_delete,time_used,result,
+        memory_used
+    </sql>
+</mapper>
