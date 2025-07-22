@@ -1,12 +1,13 @@
 package com.example.backend.utils;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.example.backend.mapper.CompetitionsMapper;
-import com.example.backend.mapper.CompetitionsUserMapper;
-import com.example.backend.mapper.UserMapper;
+import com.example.backend.mapper.*;
 import com.example.backend.models.domain.competiton.Competitions;
+import com.example.backend.models.domain.competiton.CompetitionsProblemsAlgorithm;
 import com.example.backend.models.domain.competiton.CompetitionsUser;
 import com.example.backend.models.domain.user.User;
+import com.example.backend.models.domain.user.UserRating;
+import com.example.backend.service.user.UserRatingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -25,9 +26,14 @@ public class CompetitionsRatedUtil {
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private UserRatingService userRatingService;
+    @Autowired
+    private CompetitionsProblemsAlgorithmMapper competitionsProblemsAlgorithmMapper;
+
     // 规定在每天的12点到24点每隔30min执行
-//    @Scheduled(cron = "0 0/30 12-23 * * ?")
-    @Scheduled(fixedRate = 1000 * 60 * 40)
+    @Scheduled(cron = "0 0/30 12-23 * * ?")
+//    @Scheduled(fixedRate = 1000 * 60 * 40)
     public void executeRated() {
         Date date = new Date();
 //        Calendar calendar = Calendar.getInstance();
@@ -73,8 +79,18 @@ public class CompetitionsRatedUtil {
             List<User> userList = userMapper.selectList(queryWrapper1);
             int inc = 0;
 
+            // 查询总题目数量
+            QueryWrapper<CompetitionsProblemsAlgorithm> competitionsProblemsAlgorithmQueryWrapper = new QueryWrapper<>();
+            competitionsProblemsAlgorithmQueryWrapper.eq("competition_id", competition_id);
+
+            Long total_num = competitionsProblemsAlgorithmMapper.selectCount(competitionsProblemsAlgorithmQueryWrapper);;
+
+            // 用户竞赛信息列表
+            List<UserRating> userRatingList = new ArrayList<>();
+
             // 计算每位用户赛后的竞赛分数
             for (int i = 0; i < user_size; i++) {
+                UserRating userRating = new UserRating();
                 Long uuid = competitionsUsers.get(i).getUuid();
                 Integer rating = 0;
                 int K = 0;
@@ -84,7 +100,7 @@ public class CompetitionsRatedUtil {
                 float m = 0;
                 int diff = 0;
 
-                // 获取当前用户的竞分数
+                // 获取当前用户的竞赛分数
                 QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
                 userQueryWrapper.eq("uuid", uuid);
                 User user = userMapper.selectOne(userQueryWrapper);
@@ -92,6 +108,7 @@ public class CompetitionsRatedUtil {
 
                 // 根据当前用户的天梯分确认调节因子K
                 K = getK(rating);
+
                 // 计算S_actual
                 S_actual = i;
 
@@ -114,6 +131,19 @@ public class CompetitionsRatedUtil {
 
                 user.setRating(new_rating);
                 userList.set(i, user);
+
+                // 插入竞赛分数变化情况
+                userRating.setCompetition_name(competition.getCompetition_name());
+                userRating.setRating_before(rating);
+                userRating.setCompetition_id(competition_id);
+                userRating.setUuid(uuid);
+                userRating.setStart_time(competition.getStart_time());
+                userRating.setUser_rank(i + 1);
+                userRating.setAc_num(Math.toIntExact(competitionsUsers.get(i).getAc_num()));
+                userRating.setJoins((int) user_size);
+                userRating.setTotal_num(Math.toIntExact(total_num));
+
+                userRatingList.add(userRating);
             }
 
             // 防止分数膨胀
@@ -121,12 +151,24 @@ public class CompetitionsRatedUtil {
 
             for (int j = 0; j < user_size; j++) {
                 User user = userList.get(j);
+                UserRating userRatingInfo = userRatingList.get(j);
+
+                Integer new_rating = user.getRating() + inc;
                 Long uuid = user.getUuid();
-                user.setRating(user.getRating() + inc);
+                user.setRating(new_rating);
+
+                userRatingInfo.setRating_after(new_rating);
+
+                userRatingList.set(j, userRatingInfo);
+
+                // 设定变化之后的分数
                 QueryWrapper<User> userQueryWrapper1 = new QueryWrapper<>();
                 userQueryWrapper1.eq("uuid", uuid);
                 userMapper.update(user, userQueryWrapper1);
             }
+
+            // 批量插入竞赛变化信息
+            userRatingService.saveBatch(userRatingList);
         }
     }
 

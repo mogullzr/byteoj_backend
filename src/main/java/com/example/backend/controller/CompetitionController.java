@@ -7,8 +7,12 @@ import com.example.backend.common.ErrorCode;
 import com.example.backend.common.ResultUtils;
 import com.example.backend.exception.BusinessException;
 import com.example.backend.models.domain.user.User;
+import com.example.backend.models.domain.user.UserRating;
 import com.example.backend.models.request.CompetitionAddRequest;
+import com.example.backend.models.request.competition.CompetitionSearchRequest;
 import com.example.backend.models.request.problem.ProblemAlgorithmRequest;
+import com.example.backend.models.request.problem.SearchRequest;
+import com.example.backend.models.vo.UserRatingVo;
 import com.example.backend.models.vo.UserVo;
 import com.example.backend.models.vo.competition.CompetitionProblemsInfo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
@@ -76,7 +80,6 @@ public class CompetitionController {
         return ResultUtils.success(result);
     }
 
-
     @AccessLimit(seconds = 3, maxCount = 20, needLogin = true)
     @PostMapping("/search/rank/pageNum")
     private BaseResponse<CompetitionRankVo> competitionSearchRank(Long competition_id, Integer PageNum, Integer status, HttpServletRequest httpServletRequest) {
@@ -88,7 +91,6 @@ public class CompetitionController {
         CompetitionRankVo result = competitionsService.competitionSearchRank(competition_id, PageNum, uuid, status);
         return ResultUtils.success(result);
     }
-
     @AccessLimit(seconds = 3, maxCount = 30, needLogin = true)
     @PostMapping("/search/records/pageNum")
     private BaseResponse<List<SubmissionsAlgorithmRecordsVo>> competitionSearchRecord(Long competition_id, Long PageNum, HttpServletRequest httpServletRequest) {
@@ -137,6 +139,8 @@ public class CompetitionController {
         boolean result = competitionsService.competitionDeleteByAdmin(competition_id, uuid, isAdmin);
         return ResultUtils.success(result);
     }
+
+    @GetMapping("/get")
 
     @AccessLimit(seconds=5, maxCount=25, needLogin=true)
     @PostMapping("/user/modify")
@@ -211,4 +215,11 @@ public class CompetitionController {
         return null;
     }
 
+    @PostMapping("/user/joins/get")
+    @AccessLimit(seconds=5, maxCount=20, needLogin=true)
+    private BaseResponse<List<UserRatingVo>> competitionUserJoinsInfoGet(@RequestBody CompetitionSearchRequest competitionSearchRequest, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+        Long uuid = userService.getLoginUser(httpServletRequest).getUuid();
+        List<UserRatingVo> result = competitionsService.competitionUserJoinsInfoGet(uuid, competitionSearchRequest.getPageNum());
+        return ResultUtils.success(result);
+    }
 }

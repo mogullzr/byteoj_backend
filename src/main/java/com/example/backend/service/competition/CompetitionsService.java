@@ -2,9 +2,11 @@ package com.example.backend.service.competition;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.backend.models.domain.competiton.Competitions;
+import com.example.backend.models.domain.user.UserRating;
 import com.example.backend.models.request.CompetitionAddRequest;
 import com.example.backend.models.request.competition.CompetitionRankRequest;
 import com.example.backend.models.request.competition.CompetitionRecordsRequest;
+import com.example.backend.models.vo.UserRatingVo;
 import com.example.backend.models.vo.UserVo;
 import com.example.backend.models.vo.competition.CompetitionProblemsInfo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
@@ -143,4 +145,12 @@ public interface CompetitionsService extends IService<Competitions> {
      */
     List<SubmissionsAlgorithmRecordsVo> listRecordsVo(CompetitionRecordsRequest competitionRecordsRequest);
 
+    /**
+     * 获取用户的竞赛参加情况曲线对应信息
+     *
+     * @param uuid 用户ID
+     * @param pageNum 面数
+     * @return 用户竞赛参加情况数据
+     */
+    List<UserRatingVo> competitionUserJoinsInfoGet(Long uuid, Integer pageNum);
 }

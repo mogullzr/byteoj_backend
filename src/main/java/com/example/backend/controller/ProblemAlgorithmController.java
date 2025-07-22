@@ -155,7 +155,7 @@ public class ProblemAlgorithmController {
         return ResultUtils.success(result);
     }
 
-    @AccessLimit(seconds=5, maxCount=20, needLogin=false)
+    @AccessLimit(seconds=5, maxCount=20, needLogin=true)
     @PostMapping("/search/user/daily")
     private BaseResponse<List<ProblemDailyNumVo>> getProblemDailyNum(HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -163,12 +163,7 @@ public class ProblemAlgorithmController {
         }
         User loginUser = userService.getLoginUser(httpServletRequest);
         Long uuid = -1L;
-        if (loginUser != null) {
-            uuid = loginUser.getUuid();
-        } else{
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录呢");
-        }
-
+        uuid = loginUser.getUuid();
         List<ProblemDailyNumVo> result = problemAlgorithmService.getProblemDailyNum(uuid);
         return ResultUtils.success(result);
     }

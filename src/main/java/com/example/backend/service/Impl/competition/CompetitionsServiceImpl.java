@@ -14,10 +14,12 @@ import com.example.backend.models.domain.algorithm.submission.SubmissionAlgorith
 import com.example.backend.models.domain.algorithm.submission.SubmissionsAlgorithm;
 import com.example.backend.models.domain.competiton.*;
 import com.example.backend.models.domain.user.User;
+import com.example.backend.models.domain.user.UserRating;
 import com.example.backend.models.request.CompetitionAddRequest;
 import com.example.backend.models.request.CompetitionProblems;
 import com.example.backend.models.request.competition.CompetitionRankRequest;
 import com.example.backend.models.request.competition.CompetitionRecordsRequest;
+import com.example.backend.models.vo.UserRatingVo;
 import com.example.backend.models.vo.UserVo;
 import com.example.backend.models.vo.competition.*;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
@@ -76,9 +78,12 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
 
     @Resource
     private SubmissionAlgorithmDetailsMapper submissionAlgorithmDetailsMapper;
+
     @Resource
     private UserMapper userMapper;
 
+    @Resource
+    private UserRatingMapper userRatingMapper;
 
     /**
      * 盐值，混淆密码,不懂的去了解MD5加密方式
@@ -888,6 +893,62 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
             submissionsAlgorithmRecordsVoList.add(submissionsAlgorithmRecordsVo);
         });
         return submissionsAlgorithmRecordsVoList;
+    }
+
+    @Override
+    public List<UserRatingVo> competitionUserJoinsInfoGet(Long uuid, Integer pageNum) {
+        if (pageNum == null || pageNum < 0 || pageNum > 100000) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数存在问题");
+        }
+
+        if (!pageNum.equals(0)) {
+            Page<UserRating> page = new Page<>(pageNum, 5);
+            QueryWrapper<UserRating> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("uuid", uuid);
+            Page<UserRating> pageInfo = userRatingMapper.selectPage(page, queryWrapper);
+            List<UserRating> userRatings = pageInfo.getRecords();
+            List<UserRatingVo> userRatingVos = new ArrayList<>();
+
+            userRatings.forEach((userRating)->{
+                UserRatingVo userRatingVo = new UserRatingVo();
+                userRatingVo.setCompetition_id(userRating.getCompetition_id());
+                userRatingVo.setCompetition_name(userRating.getCompetition_name());
+                userRatingVo.setRating_after(userRating.getRating_after());
+                userRatingVo.setRating_change(userRating.getRating_after() - userRating.getRating_before());
+                userRatingVo.setRank(userRating.getUser_rank());
+                userRatingVo.setJoins(userRating.getJoins());
+                userRatingVo.setStart_time(userRating.getStart_time());
+                userRatingVo.setTotal_num(userRating.getTotal_num());
+                userRatingVo.setAc_num(userRating.getAc_num());
+                userRatingVo.setTotal(pageInfo.getTotal());
+
+                userRatingVos.add(userRatingVo);
+            });
+
+            return userRatingVos;
+        } else {
+            QueryWrapper<UserRating> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("uuid", uuid);
+            List<UserRating> userRatings = userRatingMapper.selectList(queryWrapper);
+            List<UserRatingVo> userRatingVos = new ArrayList<>();
+
+            userRatings.forEach((userRating)->{
+                UserRatingVo userRatingVo = new UserRatingVo();
+                userRatingVo.setCompetition_id(userRating.getCompetition_id());
+                userRatingVo.setCompetition_name(userRating.getCompetition_name());
+                userRatingVo.setRating_after(userRating.getRating_after());
+                userRatingVo.setRating_change(userRating.getRating_after() - userRating.getRating_before());
+                userRatingVo.setRank(userRating.getUser_rank());
+                userRatingVo.setJoins(userRating.getJoins());
+                userRatingVo.setStart_time(userRating.getStart_time());
+                userRatingVo.setTotal_num(userRating.getTotal_num());
+                userRatingVo.setAc_num(userRating.getAc_num());
+
+                userRatingVos.add(userRatingVo);
+            });
+
+            return userRatingVos;
+        }
     }
 
     private List<UserVo> getUserVoList(Page<User> page, String keyword) {

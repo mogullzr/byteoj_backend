@@ -938,6 +938,27 @@ create table user_last_enter
         foreign key (uuid) references user (uuid)
 );
 
+create table user_rating
+(
+    id               bigint auto_increment comment 'ID'
+        primary key,
+    uuid             bigint                             null comment '用户ID',
+    rating_before    int                                not null comment '比赛前的分数',
+    rating_after     int                                not null comment '比赛后的分数',
+    competition_id   bigint                             not null comment '竞赛ID',
+    competition_name varchar(255)                       null comment '竞赛名称',
+    start_time       datetime default CURRENT_TIMESTAMP not null comment '竞赛开始时间',
+    joins            int      default 0                 not null comment '参赛人数',
+    user_rank        int                                not null comment '比赛排名',
+    total_num        int      default 0                 not null comment '竞赛总题目数量',
+    ac_num           int      default 0                 not null comment 'ac代码数量',
+    create_time      datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    update_time      datetime default CURRENT_TIMESTAMP not null comment '更新时间',
+    is_delete        tinyint  default 0                 not null comment '逻辑删除',
+    constraint user_rating_pk_2
+        unique (id)
+);
+
 create table user_role
 (
     id          int auto_increment comment 'id'
@@ -999,4 +1020,3 @@ create table website_background_pictures
         foreign key (uuid) references user (uuid)
 )
     comment '网站的背景图片集';
-

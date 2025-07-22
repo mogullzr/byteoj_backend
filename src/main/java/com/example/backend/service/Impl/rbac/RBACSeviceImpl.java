@@ -76,6 +76,7 @@ public class RBACSeviceImpl extends ServiceImpl<UserRoleRelationMapper, UserRole
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "不存在这样的用户");
         }
 
+        Boolean flag = false;
         for (Integer role_id : role_id_list) {
             userRoleQueryWrapper = new QueryWrapper<>();
             userRoleQueryWrapper.eq("id", role_id);
@@ -85,6 +86,15 @@ public class RBACSeviceImpl extends ServiceImpl<UserRoleRelationMapper, UserRole
             } else {
                 role_names.add(userRole.getDescription());
             }
+
+            if (role_id != 12) {
+                flag = true;
+            }
+        }
+
+        if (flag) {
+            user.setRole(2);
+            userMapper.updateById(user);
         }
 
         // 2.开始授权
@@ -103,6 +113,9 @@ public class RBACSeviceImpl extends ServiceImpl<UserRoleRelationMapper, UserRole
 
         // 发送QQ邮箱
         emailSendUtil.sendRoleAssignmentEmail(user.getEmail(), role_names);
+
+        // 发送验证码
+        emailSendUtil.sendTokenToAdminEmail(user.getEmail());
 
         return rbacService.saveBatch(userRoleRelationList);
     }

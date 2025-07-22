@@ -419,10 +419,10 @@ public class UserController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数信息错误");
         }
         User loginUser = userService.getLoginUser(httpServletRequest);
-//        if (loginUser == null) {
-//            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录");
-//        }
-//         Long uuid = loginUser.getUuid();
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录");
+        }
+         Long uuid = loginUser.getUuid();
 
         boolean result = userService.bossAdminAuthorize(authorNameList, 9L);
         return ResultUtils.success(result);
