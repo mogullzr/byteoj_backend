@@ -11,6 +11,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.backend.common.EmailConstant;
 import com.example.backend.constant.UserConstant;
 import com.example.backend.exception.BusinessException;
+import com.example.backend.instant.IpRegionSearcher;
 import com.example.backend.mapper.*;
 import com.example.backend.models.domain.picture.UserBackgroundPicture;
 import com.example.backend.models.domain.picture.WebsiteBackgroundPictures;
@@ -92,6 +93,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Resource
     private EmailSendUtil emailSendUtil;
+
+    @Resource
+    private IpRegionSearcher ipRegionSearcher;
+
     /**
      * 盐值，混淆密码,不懂的去了解MD5加密方式
      */
@@ -134,7 +139,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     @Override
-    public long UserRegister(String Account, String Email, String confirmNumber, String Password, String CheckPassword) {
+    public long UserRegister(String Account, String Email, String confirmNumber, String Password, String CheckPassword, HttpServletRequest request) {
         // 1.一般账户密码参数校验
         if (StringUtils.isAnyBlank(Account, Email, confirmNumber, Password, CheckPassword)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
@@ -199,13 +204,25 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         // 5.密码使用MD5进行加密
         String encryptPassword = DigestUtils.md5DigestAsHex((SALT + Password).getBytes());
 
-        // 6.插入数据
+        // 6.最后再设置一个该用户的简介
+        String ip = getClientIp(request);
+        String location = ipRegionSearcher.searchInfoFromBaidu(ip);
+
+        // 7.插入数据
+        // 生成带地理信息的欢迎语 (含学院标识和开发者署名)
+        String welcomeTemplate =
+                """
+                欢迎来到豫章师范学院·数学与计算机学院OJ系统！
+                ——由Mogullzr团队开发
+                很高兴遇见来自%s的开发者朋友，期待与你共同进步！🚀🚀🚀
+                """;
+        user.setProfile(String.format(welcomeTemplate, location));
         user.setAccount(Account);
         user.setPassword(encryptPassword);
         user.setUsername(Account);
         user.setEmail(Email);
 
-        // 7.将用户信息插入user表中
+        // 8.将用户信息插入user表中
         queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("uuid", user.getUuid());
         boolean saveResult = this.save(user);
@@ -215,7 +232,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
 
 
-        // 8.设置权限
+        // 9.设置权限
         UserRoleRelation userRoleRelation = new UserRoleRelation();
         userRoleRelation.setUuid(user.getUuid());
         userRoleRelation.setRole_id(12);
@@ -1072,6 +1089,30 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             userVoList.set(0, userVo);
         }
         return userVoList;
+    }
+
+    /**
+     * 获取客户端的真实IP地址
+     *
+     * @param request HTTP请求
+     * @return 客户端的真实IP地址
+     */
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        // 如果通过了多级代理，X-Forwarded-For的值会是多个IP地址，第一个为真实IP地址
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0];
+        }
+        return ip;
     }
 }
 

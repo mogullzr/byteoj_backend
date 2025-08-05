@@ -50,7 +50,6 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts>
 
     @Override
     public boolean postAdd(PostsRequest postsRequest, Long uuid) {
-
         Posts posts = new Posts();
         posts.setTitle(postsRequest.getTitle());
         posts.setContent(postsRequest.getContent());

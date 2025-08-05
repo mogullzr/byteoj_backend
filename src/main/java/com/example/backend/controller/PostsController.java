@@ -6,6 +6,7 @@ import com.example.backend.common.BaseResponse;
 import com.example.backend.common.ErrorCode;
 import com.example.backend.common.ResultUtils;
 import com.example.backend.exception.BusinessException;
+import com.example.backend.instant.IpRegionSearcher;
 import com.example.backend.mapper.PostsMapper;
 import com.example.backend.mapper.PostsTagsMapper;
 import com.example.backend.models.domain.user.User;
@@ -24,6 +25,8 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
+import static com.example.backend.utils.IpUtils.getClientIp;
+
 @RestController
 @RequestMapping("/posts/")
 @Slf4j
@@ -41,6 +44,9 @@ public class  PostsController {
     @Resource
     private UserService userService;
 
+    @Resource
+    private IpRegionSearcher ipRegionSearcher;
+
     @AccessLimit(seconds=3, maxCount=15, needLogin=true)
     @PostMapping("/add")
     private BaseResponse<Boolean> PostAdd(@RequestBody PostsRequest postsRequest, HttpServletRequest httpServletRequest) {
@@ -55,6 +61,12 @@ public class  PostsController {
         } else {
             throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录呢！");
         }
+
+        // 位置定位修正
+        String ip = getClientIp(httpServletRequest);
+        String location = ipRegionSearcher.searchInfoFromBaidu(ip);
+
+        postsRequest.setLocation(location);
 
         boolean result = postsService.postAdd(postsRequest, uuid);
 

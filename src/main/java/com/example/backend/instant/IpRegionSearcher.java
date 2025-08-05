@@ -1,5 +1,10 @@
 package com.example.backend.instant;
 
+import com.alibaba.nacos.shaded.com.google.gson.JsonObject;
+import com.alibaba.nacos.shaded.com.google.gson.JsonParser;
+import org.springframework.beans.factory.annotation.Value;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.lionsoul.ip2region.xdb.Searcher;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
@@ -13,6 +18,12 @@ import java.io.InputStream;
 @Component
 public class IpRegionSearcher {
     private Searcher searcher;
+
+    @Value("${baidu.ipService.ak}")
+    private String ak;
+
+    @Value("${baidu.ipService.coor}")
+    private String coor;
 
     @PostConstruct
     public void init() throws IOException {
@@ -36,12 +47,80 @@ public class IpRegionSearcher {
         this.searcher = Searcher.newWithBuffer(cBuff);
     }
 
+    /**
+     * 无数次免费服务
+     * @param ip ip地址
+     * @return 查询到的地址对应位置信息
+     */
     public String searchFormatted(String ip) {
         try {
             String region = searcher.search(ip);
             return formatRegion(region);
         } catch (Exception e) {
             return "未知地区";
+        }
+    }
+
+    /**
+     * 通过百度云服务查询IP更精确位置（每天最多5000次使用）
+     *
+     * @param ip IP地址
+     * @return 精确到县城的位置区域
+     */
+    public String searchInfoFromBaidu(String ip) {
+        try {
+            // 调用百度地图的 IP 定位API接口
+            String location = getBaiduApiLocation(ip);
+            if (location == null || location.isEmpty()) {
+                return searchFormatted(ip);
+            }
+            return location;
+        } catch (Exception e) {
+            return "未知地区";
+        }
+    }
+
+    private String getBaiduApiLocation(String ip) throws IOException {
+        // 设置请求头
+        String url = "https://api.map.baidu.com/location/ip";
+        String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36";
+        String referer = "https://leetcode.cn/contest/";
+        String contentType = "application/json";
+
+        try {
+            // 发送 POST 请求
+            Document doc = Jsoup.connect(url)
+                    .userAgent(userAgent)
+                    .header("Referer", referer)
+                    .header("Content-Type", contentType)
+                    .ignoreContentType(true)
+                    .data("ak", ak)
+                    .data("ip", ip)
+                    .data("coor", coor)
+                    .get();
+
+            // 获取返回的 JSON 字符串
+            String jsonResponse = doc.body().text();
+
+            // 使用 Gson 解析 JSON
+            JsonObject jsonObj = JsonParser.parseString(jsonResponse).getAsJsonObject();
+
+            // 检查状态码（假设 status=0 表示成功）
+            if (jsonObj.has("status") && jsonObj.get("status").getAsInt() != 0) {
+                return ""; // 状态码非 0，返回空字符串
+            }
+
+            // 检查 content 和 address 是否存在
+            if (jsonObj.has("content")) {
+                JsonObject contentObj = jsonObj.getAsJsonObject("content");
+                if (contentObj.has("address")) {
+                    return contentObj.get("address").getAsString();
+                }
+            }
+
+            return ""; // 如果 content 或 address 不存在，返回空字符串
+        } catch (Exception e) {
+            return ""; // 请求或解析出错，返回空字符串
         }
     }
 

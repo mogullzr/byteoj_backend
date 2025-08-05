@@ -108,25 +108,6 @@ mybatis-plus:
       logic-delete-field: isDelete # 全局逻辑删除的实体字段名(since 3.3.0,配置后可以忽略不配置步骤2)
       logic-delete-value: 1 # 逻辑已删除值(默认为 1)
       logic-not-delete-value: 0 # 逻辑未删除值(默认为 0)
-anti:
-  reptile:
-    manager:
-      # 是否开启爬虫
-      enabled: true
-      ua-rule:
-        # 不允许使用代理
-        allowed-proxy: false
-        # 对User-Agent校验
-        enabled: true
-        # 允许Linux访问
-        allowed-linux: true
-        # 允许移动PC移动
-        allowed-pc: true
-      ip-rule:
-        # 同时发送的请求数最高限制
-        request-max-size: 2000
-
-
 aliyun:
   oss:
     endpoint: ${hm.aliyun.oss.endpoint} # 阿里云OSS地址，这里看你自己的OSS选择
@@ -180,6 +161,11 @@ log:
     create_date: "create_date"
   log_info:
     operation_time: "operation_time"
+
+baidu:
+  ipService:
+    ak: ${baidu.ipService.ak}
+    coor: ${baidu.ipService.coor}
 #logging:
 # 日志持久化存储文件 nohup java -jar xxx.jar > /dev/null 2>&1 &
 #  file:
@@ -189,3 +175,20 @@ log:
 #    rollingpolicy:
 #      file-name-pattern: ${LOG_FILE}.%d{yyyy-MM-dd}.%i.txt
 #      max-file-size: 1MB
+#anti:
+#  reptile:
+#    manager:
+#      # 是否开启爬虫
+#      enabled: true
+#      ua-rule:
+#        # 不允许使用代理
+#        allowed-proxy: false
+#        # 对User-Agent校验
+#        enabled: true
+#        # 允许Linux访问
+#        allowed-linux: true
+#        # 允许移动PC移动
+#        allowed-pc: true
+#      ip-rule:
+#        # 同时发送的请求数最高限制
+#        request-max-size: 2000

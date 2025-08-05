@@ -73,7 +73,7 @@ public class UserController {
     // TODO 注意一下下面这一部分注释了
 
     @PostMapping("/register")
-    private BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
+    private BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest, HttpServletRequest httpServletRequest) {
         if (userRegisterRequest == null){
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
@@ -82,7 +82,8 @@ public class UserController {
         String confirmNumber = userRegisterRequest.getConfirmNumber();
         String Password = userRegisterRequest.getPassword();
         String checkPassword = userRegisterRequest.getCheckPassword();
-        Long result = userService.UserRegister(Account, Email, confirmNumber, Password, checkPassword);
+
+        Long result = userService.UserRegister(Account, Email, confirmNumber, Password, checkPassword, httpServletRequest);
         return ResultUtils.success(result);
     }
     @PostMapping("/search/uuid")

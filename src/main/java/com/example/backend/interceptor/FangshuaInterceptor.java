@@ -65,10 +65,11 @@ public class FangshuaInterceptor extends HandlerInterceptorAdapter {
 //            String clientIp = getClientIp(request);
 //            getLocationInfo(request.getRemoteAddr());
             User user = userService.getLoginUser(request);
+
             // 如果需要登录
             if (login) {
                 if (user == null) {
-                    throw new BusinessException(ErrorCode.PARAMS_ERROR, "你还没有登录呢！");
+                    throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录呢！");
                 } else if (!isPermissionAssigned(user, url)){
                     throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "谁给你的权利访问我的呀？？");
                 }
@@ -161,6 +162,7 @@ public class FangshuaInterceptor extends HandlerInterceptorAdapter {
         return userRoleRelations.stream()
                 .anyMatch(relation -> authRoleIds.contains(relation.getRole_id()));
     }
+
     /**
      * 获取客户端的真实IP地址
      *

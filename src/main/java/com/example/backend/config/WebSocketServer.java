@@ -61,7 +61,7 @@ public class WebSocketServer {
     @OnOpen
     public void onOpen(Session session, @PathParam("uuid") Long uuid, @PathParam("room_id") Long room_id) throws IOException {
         if (uuid == -1) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "您还没有登录呢");
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "您还没有登录呢");
         }
         sessionMap.put(uuid, session);
         // 需要将online_num ++

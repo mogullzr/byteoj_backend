@@ -52,9 +52,10 @@ public interface UserService extends IService<User> {
      * @param confirmNumber 邮箱确认密码
      * @param Password 密码
      * @param CheckPassword 确认密码
+     * @param request 前端请求
      * @return 是否成功
      */
-    long UserRegister(String Account, String Email, String confirmNumber, String Password, String CheckPassword);
+    long UserRegister(String Account, String Email, String confirmNumber, String Password, String CheckPassword, HttpServletRequest request);
     /**
      * 管理员登录
      *
