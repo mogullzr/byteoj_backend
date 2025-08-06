@@ -36,3 +36,7 @@ hm:
       accessKeySecret: xxxxxxxxxxxxx # 阿里云void的OSS密钥
 avatar:
   default: xxxxx # 替换为自己设定的默认头像地址
+baidu:
+  ipService:
+    ak: xxxxxxxx # 这个是百度地图的IP定位的 ak
+    coor: xxxxxxxx # 这个是百度地图的IP定位的参数信息
