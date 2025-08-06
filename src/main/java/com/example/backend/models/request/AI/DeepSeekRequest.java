@@ -16,10 +16,10 @@ public class DeepSeekRequest implements Serializable {
 
     /**
      * 选择模型
-     * <p>
      * DeepSeek/V3线路一 官网不稳定，但是快;
      * DeepSeek/V3线路二 菲官网，但是稳定;
      * DeepSeek/R1 比较慢
+     * QianWen 用于知识库检索
      */
     private String model;
 

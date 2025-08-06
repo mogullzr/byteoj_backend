@@ -126,6 +126,7 @@ public class CourseController {
         boolean isAdmin = userService.isAdmin(httpServletRequest);
         boolean result = courseService.courseAdminProblemSet(courseRequest, isAdmin);
 
+
         return ResultUtils.success(result);
     }
 

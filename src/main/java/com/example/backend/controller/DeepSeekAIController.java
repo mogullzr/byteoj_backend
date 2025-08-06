@@ -21,7 +21,7 @@ public class DeepSeekAIController {
     private DeepSeekService deepSeekService;
 
     // 定义SSE接口，用于逐句返回聊天内容
-//    @AccessLimit(seconds = 5, maxCount = 10, needLogin = true)
+    @AccessLimit(seconds = 5, maxCount = 10, needLogin = true)
     @RequestMapping("/ask")
     public SseEmitter deepSeekChat(@RequestBody DeepSeekRequest deepSeekRequest) {
         SseEmitter emitter = new SseEmitter();
