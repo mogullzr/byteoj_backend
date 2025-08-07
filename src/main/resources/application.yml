@@ -166,6 +166,10 @@ baidu:
   ipService:
     ak: ${baidu.ipService.ak}
     coor: ${baidu.ipService.coor}
+qq:
+  app_id: ${qq.app_id}
+  app_key: ${qq.app_key}
+  app_redirect_url: ${qq.app_redirect_url}
 #logging:
 # 日志持久化存储文件 nohup java -jar xxx.jar > /dev/null 2>&1 &
 #  file:

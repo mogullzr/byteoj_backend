@@ -1,10 +1,10 @@
 package com.example.backend.service.Impl.user;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import cn.hutool.http.HttpRequest;
-import cn.hutool.http.HttpResponse;
-import cn.hutool.json.JSONObject;
-import cn.hutool.json.JSONUtil;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -25,6 +25,7 @@ import com.example.backend.service.user.UserRoleAuthService;
 import com.example.backend.service.user.UserRoleRelationService;
 import com.example.backend.service.user.UserService;
 import com.example.backend.utils.EmailSendUtil;
+import com.example.backend.utils.HttpClientUtils;
 import com.example.backend.utils.OssUtils;
 import com.example.backend.utils.RedisUtils;
 import io.swagger.models.auth.In;
@@ -60,7 +61,6 @@ import static com.example.backend.constant.UserConstant.USER_LOGIN_STATE;
 @Slf4j
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         implements UserService {
-
     @Resource
     private UserMapper userMapper;
 
@@ -110,6 +110,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Value("${avatar.default}")
     private String defaultAvatar;
+
+    @Value("${qq.app_id}")
+    private String appId;
+
+    @Value("${qq.app_key}")
+    private String appKey;
+
+    @Value("${qq.app_redirect_url}")
+    private String app_redirect_url;
 
     @Override
     public UserVo UserSearchByUuid(Long uuid) {
@@ -341,52 +350,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Override
     public Boolean UserLoginByGithub(String code, String clientId, String clientSecret, HttpServletRequest httpServletRequest) {
-        HashMap<String, Object> paramMap = new HashMap<>();
-        paramMap.put("code", code);
-        paramMap.put("client_id", clientId);
-        paramMap.put("client_secret", clientSecret);
-        HttpResponse httpResponse = HttpRequest.get("https://github.com/login/oauth/access_token")
-                .header("Content-Type", "application/json")
-                .body(JSONUtil.toJsonStr(paramMap))
-                 .execute();
-
-        String httpResponseBody = httpResponse.body();
-        Pattern p = Pattern.compile("=(\\w+)&");
-        Matcher m = p.matcher(httpResponseBody);
-        String access_token = "";
-        while (m.find()) {
-            access_token = m.group(1);
-            break;
-        }
-
-        paramMap = new HashMap<>();
-        paramMap.put("access_token", access_token);
-        httpResponse = HttpRequest.get("https://api.github.com/user")
-                .header("Authorization", "token " + access_token)
-                .execute();
-        httpResponseBody = httpResponse.body();
-        JSONObject jsonObject = JSONUtil.parseObj(httpResponseBody);
-        long uuid = Integer.parseInt((String) jsonObject.get("id"));
-        String account = (String) jsonObject.get("login");
-        String username = (String) jsonObject.get("name");
-
-        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
-        userQueryWrapper.eq("uuid", uuid);
-
-        User user = userMapper.selectOne(userQueryWrapper);
-        if (user == null) {
-            user = new User();
-            user.setUuid(uuid);
-            user.setAccount(account);
-            user.setUsername(username);
-            return userMapper.insert(user) == 1;
-        }
-        HttpSession session = httpServletRequest.getSession();
-        session.setAttribute(USER_LOGIN_STATE, user);
-        session.setMaxInactiveInterval(3600 * 24 * 7);
-
-        return true;
+        return null;
     }
+
 
     @Override
     public boolean UserSetPassword(UserRegisterRequest userLoginEmailRequest) {
@@ -1091,6 +1057,79 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return userVoList;
     }
 
+    @Override
+    public Boolean userQQCallBack(String code, String state, HttpServletRequest httpServletRequest) {
+        try {
+            // 1. 使用code换取access_token1. 使用code换取access_token
+            String tokenUrl = "https://graph.qq.com/oauth2.0/token?" +
+                    "grant_type=authorization_code" +
+                    "&client_id=" + appId +
+                    "&client_secret=" + appKey +
+                    "&code=" + code +
+                    "&redirect_uri=" + URLEncoder.encode(app_redirect_url, StandardCharsets.UTF_8);
+
+            String tokenResponse = HttpClientUtils.get(tokenUrl); // 发送HTTP请求
+            Map<String, String> tokenMap = parseQQResponse(tokenResponse);
+            String accessToken = tokenMap.get("access_token");
+
+            // 2. 使用access_token获取openid（用户唯一标识）
+            String openidUrl = "https://graph.qq.com/oauth2.0/me?access_token=" + accessToken;
+            String openidResponse = HttpClientUtils.get(openidUrl);
+            JSONObject openidObj = JSON.parseObject(openidResponse.substring(openidResponse.indexOf("{")));
+            String openid = openidObj.getString("openid");
+
+            // 3. 获取QQ用户信息（昵称、头像等）
+            String userInfoUrl = "https://graph.qq.com/user/get_user_info?" +
+                    "access_token=" + accessToken +
+                    "&oauth_consumer_key=" + appId +
+                    "&openid=" + openid;
+            JSONObject userInfo = JSON.parseObject(HttpClientUtils.get(userInfoUrl));
+
+            // 4. 处理用户登录（注册或登录）
+            // 4.1.我们将用户信息返回给前端的时候需要进行用户信息脱敏处理
+//            UserVo safetyUser = getSafetyUser(user);
+
+            // 4.2.记录用户的登录状态,直接设置session
+//            HttpSession session = httpServletRequest.getSession();
+//            session.setAttribute(USER_LOGIN_STATE, user);
+//            session.setMaxInactiveInterval(3600 * 24 * 7);
+//            safetyUser.setSessionId(httpServletRequest.getRequestedSessionId());
+            return true;
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "QQ登录失败");
+        }
+    }
+
+    // 解析QQ返回的字符串（如：access_token=xxx&expires_in=7776000）
+    private Map<String, String> parseQQResponse(String response) {
+        return Arrays.stream(response.split("&"))
+                .map(pair -> pair.split("="))
+                .collect(Collectors.toMap(arr -> arr[0], arr -> (arr.length > 1 ? arr : "").toString()));
+    }
+
+    /**
+     *
+     * @param code
+     * @return
+     * @throws IOException
+     */
+    private String getQQAccessToken(String code) throws IOException {
+        String url = "https://graph.qq.com/oauth2.0/token?" +
+                "grant_type=authorization_code" +
+                "&client_id=" +
+                "&client_secret=" + appKey +
+                "&code=" + code +
+                "&redirect_uri=" + URLEncoder.encode(app_redirect_url, StandardCharsets.UTF_8);
+
+        String response = HttpClientUtils.get(url);
+        // 解析形如 "access_token=YOUR_TOKEN&expires_in=7776000"
+        return Arrays.stream(response.split("&"))
+                .filter(pair -> pair.startsWith("access_token="))
+                .map(pair -> pair.split("=")[1])
+                .findFirst()
+                .orElse(null);
+    }
+
     /**
      * 获取客户端的真实IP地址
      *
@@ -1116,6 +1155,51 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 }
 
-
-
-
+//    @Override
+//    public Boolean UserLoginByGithub(String code, String clientId, String clientSecret, HttpServletRequest httpServletRequest) {
+//        HashMap<String, Object> paramMap = new HashMap<>();
+//        paramMap.put("code", code);
+//        paramMap.put("client_id", clientId);
+//        paramMap.put("client_secret", clientSecret);
+//        HttpResponse httpResponse = HttpRequest.get("https://github.com/login/oauth/access_token")
+//                .header("Content-Type", "application/json")
+//                .body(JSONUtil.toJsonStr(paramMap))
+//                 .execute();
+//
+//        String httpResponseBody = httpResponse.body();
+//        Pattern p = Pattern.compile("=(\\w+)&");
+//        Matcher m = p.matcher(httpResponseBody);
+//        String access_token = "";
+//        while (m.find()) {
+//            access_token = m.group(1);
+//            break;
+//        }
+//
+//        paramMap = new HashMap<>();
+//        paramMap.put("access_token", access_token);
+//        httpResponse = HttpRequest.get("https://api.github.com/user")
+//                .header("Authorization", "token " + access_token)
+//                .execute();
+//        httpResponseBody = httpResponse.body();
+//        JSONObject jsonObject = JSONUtil.parseObj(httpResponseBody);
+//        long uuid = Integer.parseInt((String) jsonObject.get("id"));
+//        String account = (String) jsonObject.get("login");
+//        String username = (String) jsonObject.get("name");
+//
+//        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
+//        userQueryWrapper.eq("uuid", uuid);
+//
+//        User user = userMapper.selectOne(userQueryWrapper);
+//        if (user == null) {
+//            user = new User();
+//            user.setUuid(uuid);
+//            user.setAccount(account);
+//            user.setUsername(username);
+//            return userMapper.insert(user) == 1;
+//        }
+//        HttpSession session = httpServletRequest.getSession();
+//        session.setAttribute(USER_LOGIN_STATE, user);
+//        session.setMaxInactiveInterval(3600 * 24 * 7);
+//
+//        return true;
+//    }

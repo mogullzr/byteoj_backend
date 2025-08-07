@@ -40,3 +40,7 @@ baidu:
   ipService:
     ak: xxxxxxxx # 这个是百度地图的IP定位的 ak
     coor: xxxxxxxx # 这个是百度地图的IP定位的参数信息
+qq:
+  app_id: xxxxxxxxx # 申请开发应用之后的app_id.注意：至少需要一个已经备案的域名。
+  app_key: xxxxxxxxxx # 申请开发应用之后的app_key，至少需要一个已经备案的域名。
+  app_redirect_url: xxxxxxxxxxxx # 自己设置的回调函数地址

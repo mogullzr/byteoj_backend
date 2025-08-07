@@ -269,4 +269,13 @@ public interface UserService extends IService<User> {
      * @return 返回脱敏用户信息
      */
     List<UserVo> listUserVoByPage(UserSearchRequest userSearchRequest);
+
+    /**
+     * 回调函数处理
+     *
+     * @param code
+     * @param state
+     * @param httpServletRequest
+     */
+    Boolean userQQCallBack(String code, String state, HttpServletRequest httpServletRequest);
 }

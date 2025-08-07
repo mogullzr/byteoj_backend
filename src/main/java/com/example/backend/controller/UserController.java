@@ -1,5 +1,7 @@
 package com.example.backend.controller;
 
+import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http;
+import com.alibaba.nacos.shaded.com.google.protobuf.Any;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.common.*;
@@ -29,10 +31,13 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.swing.*;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -70,8 +75,16 @@ public class UserController {
     @Value("${ROLE_MAX.UUID}")
     private Long BOSS_UUID;
 
-    // TODO 注意一下下面这一部分注释了
+    @Value("${qq.app_id}")
+    private String appId;
 
+    @Value("${qq.app_key}")
+    private String appKey;
+
+    @Value("${qq.app_redirect_url}")
+    private String appRedirectUrl;
+
+    // TODO 注意一下下面这一部分注释了
     @PostMapping("/register")
     private BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest, HttpServletRequest httpServletRequest) {
         if (userRegisterRequest == null){
@@ -183,6 +196,23 @@ public class UserController {
         return ResultUtils.success(result);
     }
 
+    @GetMapping("/QQ/login")
+    private BaseResponse<String> userQQAutoLogin(HttpServletRequest httpServletRequest, HttpServletResponse response) {
+        String state = UUID.randomUUID().toString(); // 防CSRF攻击
+        String authUrl = String.format(
+                "https://graph.qq.com/oauth2.0/authorize?response_type=code&client_id=%s&redirect_uri=%s&state=%s&scope=get_user_info",
+                appId,
+                URLEncoder.encode(appRedirectUrl, StandardCharsets.UTF_8),
+                state
+        );
+        return ResultUtils.success(authUrl);
+    }
+
+    @GetMapping("/callback")
+    private BaseResponse<Boolean> userQQCallBack(@RequestParam("code") String code, @RequestParam("state") String state, HttpServletRequest httpServletRequest, HttpServletResponse response) {
+        Boolean result = userService.userQQCallBack(code, state, httpServletRequest);
+        return ResultUtils.success(result);
+    }
     @AccessLimit(seconds=60, maxCount=10, needLogin=false)
     @PostMapping("/email/send")
     private BaseResponse<Boolean> userEmailSend(String receiveEmail, HttpServletRequest httpServletRequest) {
