@@ -59,7 +59,7 @@ public class  PostsController {
         if (loginUser != null) {
             uuid = loginUser.getUuid();
         } else {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录呢！");
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录呢！");
         }
 
         // 位置定位修正
@@ -86,7 +86,7 @@ public class  PostsController {
         if (loginUser != null) {
             uuid = loginUser.getUuid();
         } else {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录呢！");
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录呢！");
         }
 
         boolean isAdmin = userService.isAdmin(httpServletRequest);
@@ -164,7 +164,7 @@ public class  PostsController {
 
         User loginUser = userService.getLoginUser(httpServletRequest);
         if (loginUser == null) {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录呢！");
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录呢！");
         }
 
         boolean isAdmin = userService.isAdmin(httpServletRequest);
@@ -180,7 +180,7 @@ public class  PostsController {
 
         User loginUser = userService.getLoginUser(httpServletRequest);
         if (loginUser == null) {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录呢！");
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录呢！");
         }
 
         boolean isAdmin = userService.isAdmin(httpServletRequest);
@@ -200,7 +200,7 @@ public class  PostsController {
         if (user != null) {
             uuid = user.getUuid();
         } else {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录呢");
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录呢");
         }
 
         boolean result = postsService.PostThumbsAddOrCancel(post_id, uuid, status);
@@ -218,7 +218,7 @@ public class  PostsController {
         if (user != null) {
             uuid = user.getUuid();
         } else {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录呢");
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录呢");
         }
 
         boolean result = postsService.PostThumbsStatus(post_id, uuid);
@@ -237,7 +237,7 @@ public class  PostsController {
         if (user != null) {
             uuid = user.getUuid();
         } else {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录呢");
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录呢");
         }
 
         boolean result = postsService.PostCommentAdd(postsCommentRequest, uuid);
@@ -257,7 +257,7 @@ public class  PostsController {
         if (user != null) {
             uuid = user.getUuid();
         } else {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录呢");
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录呢");
         }
 
         boolean result = postsService.PostCommentDelete(comment_id, isAdmin, uuid);
@@ -275,7 +275,7 @@ public class  PostsController {
         if (user != null) {
             uuid = user.getUuid();
         } else {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录呢");
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录呢");
         }
 
         boolean result = postsService.PostCommentAddOrCancel(comment_id, post_id, status, uuid);

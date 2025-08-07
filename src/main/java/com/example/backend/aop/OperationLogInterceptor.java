@@ -2,6 +2,7 @@ package com.example.backend.aop;
 
 import cn.hutool.json.JSONUtil;
 import com.example.backend.common.BaseResponse;
+import com.example.backend.common.ErrorCode;
 import com.example.backend.instant.IpRegionSearcher;
 import com.example.backend.mapper.LogExceptionMapper;
 import com.example.backend.mapper.LogOperationMapper;
@@ -212,10 +213,18 @@ public class OperationLogInterceptor implements HandlerInterceptor {
                             logOperation.setCode(0);
                             logOperationMapper.insert(logOperation);
                         } else {
+                            Integer code = baseResponse.getCode();
                             // 9.2 插入异常日志
                             StackTraceElement firstStackTrace = finalEx.getStackTrace()[0];
                             logException.setMethod(firstStackTrace.getClassName() + "." + firstStackTrace.getMethodName() + ".");
                             logException.setCode(baseResponse.getCode());
+
+                            if (code.equals(ErrorCode.PARAMS_ERROR.getCode())
+                                    || code.equals(ErrorCode.SYSTEM_ERROR.getCode())
+                                    || code.equals(ErrorCode.NOT_AUTH_ERROR.getCode())) {
+                                location = ipRegionSearcher.searchInfoFromBaidu(ip);
+                                logException.setIp(ip + " - " + location);
+                            }
                             logException.setError_message(ExceptionUtils.getStackTrace(finalEx));
                             logExceptionMapper.insert(logException);
                         }

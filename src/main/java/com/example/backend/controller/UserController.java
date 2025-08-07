@@ -421,7 +421,7 @@ public class UserController {
         }
         User loginUser = userService.getLoginUser(httpServletRequest);
         if (loginUser == null) {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录");
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录");
         }
          Long uuid = loginUser.getUuid();
 

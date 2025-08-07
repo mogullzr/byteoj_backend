@@ -551,7 +551,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         Long uuid = -1L;
         User loginUser = userService.getLoginUser(httpServletRequest);
         if (loginUser == null) {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录呢！！！");
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录呢！！！");
         } else {
             uuid = loginUser.getUuid();
         }

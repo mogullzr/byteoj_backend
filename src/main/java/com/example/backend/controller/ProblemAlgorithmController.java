@@ -85,7 +85,7 @@ public class ProblemAlgorithmController {
         User user = userService.getLoginUser(httpServletRequest);
         Long uuid = -1L;
         if (user == null) {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录呢");
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录呢");
         } else {
             uuid = user.getUuid();
         }
@@ -311,7 +311,7 @@ public class ProblemAlgorithmController {
         if (loginUser != null) {
             uuid = loginUser.getUuid();
         } else {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录呢");
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录呢");
         }
 
         Boolean result = problemAlgorithmService.problemAlgorithmRecordAdd(uuid, judgeRequest);
@@ -329,7 +329,7 @@ public class ProblemAlgorithmController {
         if (loginUser != null) {
             uuid = loginUser.getUuid();
         } else {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录呢！");
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录呢！");
         }
         boolean isAdmin = userService.isAdmin(httpServletRequest);
         Boolean result = problemAlgorithmService.problemAdd(problemAlgorithmRequest, isAdmin, uuid, username, status, httpServletRequest);
@@ -372,7 +372,7 @@ public class ProblemAlgorithmController {
         if (loginUser != null) {
             uuid = loginUser.getUuid();
         } else {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录！！！");
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录！！！");
         }
         List<ProblemAlgorithmTestCaseRequest> result = problemAlgorithmService.problemTestCaseGet(problem_id,isAdmin);
 
@@ -392,7 +392,7 @@ public class ProblemAlgorithmController {
         if (loginUser != null) {
             uuid = loginUser.getUuid();
         } else {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录！！！");
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录！！！");
         }
 
         ResponseEntity<byte[]> result = problemAlgorithmService.problemTestCaseFileGet(problem_id,isAdmin);
@@ -408,7 +408,7 @@ public class ProblemAlgorithmController {
         boolean isAdmin = userService.isAdmin(httpServletRequest);
         User loginUser = userService.getLoginUser(httpServletRequest);
         if (loginUser == null) {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录！！！");
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录！！！");
         }
         Boolean result = problemAlgorithmService.problemTestCaseAdd(problemAlgorithmTestCaseRequestList, isAdmin, problem_id);
 
@@ -425,7 +425,7 @@ public class ProblemAlgorithmController {
         boolean isAdmin = userService.isAdmin(httpServletRequest);
         User loginUser = userService.getLoginUser(httpServletRequest);
         if (loginUser == null) {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录！！！");
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录！！！");
         }
         Boolean result = problemAlgorithmService.problemTestCasesFileAdd(TestFile, isAdmin, problem_id);
 

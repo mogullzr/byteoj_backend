@@ -86,7 +86,7 @@ public class WebSocketServer {
     @OnClose
     public void onClose(@PathParam("uuid") Long uuid, @PathParam("room_id") Long room_id) throws IOException {
         if (uuid == -1) {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你还没有登录呢");
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录呢");
         }
         // 需要将online_num ++
         QueryWrapper<PublicChatRooms> queryWrapper = new QueryWrapper<>();
