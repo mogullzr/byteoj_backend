@@ -1,3 +1,17 @@
+# 🚀 ByteOJ智能AI编程项目
+
+![GitHub last commit](https://img.shields.io/github/last-commit/yourname/ByteOJ?style=flat-square)
+![GitHub issues](https://img.shields.io/github/issues/yourname/ByteOJ?color=green&style=flat-square)
+![GitHub stars](https://img.shields.io/github/stars/yourname/ByteOJ?style=social)
+
+> ✨ 一个集编程竞赛、算法学习、技术交流于一体的全栈式OJ平台
+
+📢 同步于**[掘金文章](https://juejin.cn/post/7535294784216596523)**
+
+---
+
+同步于**[掘金](https://juejin.cn/post/7535294784216596523)**文章。
+
 ## 一、背景介绍
 
 ​	本人开发此网站从2024年7月7日开始规划。但是从2024年末开始，要考研，又要开发，又要带带新生，所以开发进度极慢，现在开发功能模块仅**20**个不到，许多前端和后端的细节处理还有很大问题，部分功能实现可能甚至需要实现重构处理。
@@ -206,11 +220,11 @@
 
 ![每日一题截图](https://mogullzr001.oss-cn-beijing.aliyuncs.com/typora_img/20250707235546433.png)
 
-![image-20250806201835444](C:/Users/Mogullzr/AppData/Roaming/Typora/typora-user-images/image-20250806201835444.png)
+![image-20250806201835444](https://mogullzr001.oss-cn-beijing.aliyuncs.com/typora_img/20250806221146852.png)
 
-![image-20250806201844774](C:/Users/Mogullzr/AppData/Roaming/Typora/typora-user-images/image-20250806201844774.png)
+![image-20250806201844774](https://mogullzr001.oss-cn-beijing.aliyuncs.com/typora_img/20250806221144703.png)
 
-![image-20250806201859548](C:/Users/Mogullzr/AppData/Roaming/Typora/typora-user-images/image-20250806201859548.png)
+![image-20250806201859548](https://mogullzr001.oss-cn-beijing.aliyuncs.com/typora_img/20250806221141998.png)
 
 
 
@@ -218,7 +232,7 @@
 
 ![image-20250806201920084](https://mogullzr001.oss-cn-beijing.aliyuncs.com/typora_img/20250806202026465.png)
 
-![image-20250806201941374](C:/Users/Mogullzr/AppData/Roaming/Typora/typora-user-images/image-20250806201941374.png)
+![image-20250806201941374](https://mogullzr001.oss-cn-beijing.aliyuncs.com/typora_img/20250806221130846.png)
 
 ### 4.竞赛模块(提供竞赛练习服务)
 
