@@ -208,11 +208,11 @@ public class UserController {
         return ResultUtils.success(authUrl);
     }
 
-    @GetMapping("/callback")
-    private BaseResponse<Boolean> userQQCallBack(@RequestParam("code") String code, @RequestParam("state") String state, HttpServletRequest httpServletRequest, HttpServletResponse response) {
-        Boolean result = userService.userQQCallBack(code, state, httpServletRequest);
-        return ResultUtils.success(result);
-    }
+//    @GetMapping("/callback")
+//    private BaseResponse<Boolean> userQQCallBack(@RequestParam("code") String code, @RequestParam("state") String state, HttpServletRequest httpServletRequest, HttpServletResponse response) {
+//        Boolean result = userService.userQQCallBack(code, state, httpServletRequest);
+//        return ResultUtils.success(result);
+//    }
     @AccessLimit(seconds=60, maxCount=10, needLogin=false)
     @PostMapping("/email/send")
     private BaseResponse<Boolean> userEmailSend(String receiveEmail, HttpServletRequest httpServletRequest) {

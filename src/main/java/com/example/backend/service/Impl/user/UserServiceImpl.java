@@ -1059,7 +1059,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Override
     public Boolean userQQCallBack(String code, String state, HttpServletRequest httpServletRequest) {
-        try {
             // 1. 使用code换取access_token1. 使用code换取access_token
             String tokenUrl = "https://graph.qq.com/oauth2.0/token?" +
                     "grant_type=authorization_code" +
@@ -1070,12 +1069,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
             String tokenResponse = HttpClientUtils.get(tokenUrl); // 发送HTTP请求
             Map<String, String> tokenMap = parseQQResponse(tokenResponse);
+
             String accessToken = tokenMap.get("access_token");
 
             // 2. 使用access_token获取openid（用户唯一标识）
             String openidUrl = "https://graph.qq.com/oauth2.0/me?access_token=" + accessToken;
             String openidResponse = HttpClientUtils.get(openidUrl);
-            JSONObject openidObj = JSON.parseObject(openidResponse.substring(openidResponse.indexOf("{")));
+            // 提取大括号内的JSON内容
+            int start = openidResponse.indexOf('{');
+            int end = openidResponse.lastIndexOf('}');
+            String jsonStr = openidResponse.substring(start, end + 1);
+            JSONObject openidObj = JSON.parseObject(jsonStr);
             String openid = openidObj.getString("openid");
 
             // 3. 获取QQ用户信息（昵称、头像等）
@@ -1085,49 +1089,34 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
                     "&openid=" + openid;
             JSONObject userInfo = JSON.parseObject(HttpClientUtils.get(userInfoUrl));
 
-            // 4. 处理用户登录（注册或登录）
-            // 4.1.我们将用户信息返回给前端的时候需要进行用户信息脱敏处理
+            // 4.获取QQ邮箱（需要企业资质，放弃...............）
+//            String account = userInfo.getString("nickname");
+//            String username = userInfo.getString("nickname");
+//            String avatar = userInfo.getString("figure_url");
+//             4. 处理用户登录（注册或登录）
+//             4.1.我们将用户信息返回给前端的时候需要进行用户信息脱敏处理
+//            this.UserRegister();
 //            UserVo safetyUser = getSafetyUser(user);
-
-            // 4.2.记录用户的登录状态,直接设置session
+//
+//             4.2.记录用户的登录状态,直接设置session
 //            HttpSession session = httpServletRequest.getSession();
 //            session.setAttribute(USER_LOGIN_STATE, user);
 //            session.setMaxInactiveInterval(3600 * 24 * 7);
 //            safetyUser.setSessionId(httpServletRequest.getRequestedSessionId());
             return true;
-        } catch (Exception e) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "QQ登录失败");
-        }
     }
 
     // 解析QQ返回的字符串（如：access_token=xxx&expires_in=7776000）
     private Map<String, String> parseQQResponse(String response) {
-        return Arrays.stream(response.split("&"))
-                .map(pair -> pair.split("="))
-                .collect(Collectors.toMap(arr -> arr[0], arr -> (arr.length > 1 ? arr : "").toString()));
-    }
-
-    /**
-     *
-     * @param code
-     * @return
-     * @throws IOException
-     */
-    private String getQQAccessToken(String code) throws IOException {
-        String url = "https://graph.qq.com/oauth2.0/token?" +
-                "grant_type=authorization_code" +
-                "&client_id=" +
-                "&client_secret=" + appKey +
-                "&code=" + code +
-                "&redirect_uri=" + URLEncoder.encode(app_redirect_url, StandardCharsets.UTF_8);
-
-        String response = HttpClientUtils.get(url);
-        // 解析形如 "access_token=YOUR_TOKEN&expires_in=7776000"
-        return Arrays.stream(response.split("&"))
-                .filter(pair -> pair.startsWith("access_token="))
-                .map(pair -> pair.split("=")[1])
-                .findFirst()
-                .orElse(null);
+        Map<String, String> map = new HashMap<>();
+        String[] pairs = response.split("&");
+        for (String pair : pairs) {
+            String[] keyValue = pair.split("=");
+            if (keyValue.length == 2) {
+                map.put(keyValue[0], keyValue[1]);
+            }
+        }
+        return map;
     }
 
     /**
