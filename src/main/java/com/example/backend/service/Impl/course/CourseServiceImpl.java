@@ -216,28 +216,76 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "课程编号已存在");
         }
 
+        // 管理员自动导入参加
+        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
+        userQueryWrapper.eq("role", 2);
+
+        List<User> userList = userMapper.selectList(userQueryWrapper);
+
         // 插入数据
         course.setCourse_id(course_id);
         course.setCourse_title(course_title);
         course.setCourse_title_description(course_title_description);
         course.setCreate_name(userAccount);
         course.setAvatar(avatar);
-        course.setNum(0L);
+        course.setNum((long) userList.size());
         course.setStart_time(start_time);
         course.setEnd_time(end_time);
         course.setCreate_time(new Date());
         courseMapper.insert(course);
 
-        // 管理员自动导入参加
-        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
-        userQueryWrapper.eq("role", 1);
-
-        List<User> userList = userMapper.selectList(userQueryWrapper);
         for (User user : userList) {
             CourseUserAcProblem courseUserAcProblem = new CourseUserAcProblem();
             courseUserAcProblem.setCourse_id(course_id);
             courseUserAcProblem.setUuid(user.getUuid());
             courseUserAcProblemMapper.insert(courseUserAcProblem);
+        }
+
+        // 设置题目
+        List<CourseProblemsVo> courseProblemsList = courseRequest.getCourseProblemsList();
+        for (CourseProblemsVo courseProblemsVo : courseProblemsList) {
+            // 课程专栏表填充
+            CourseProblemsType courseProblemsType = new CourseProblemsType();
+            courseProblemsType.setCourse_id(course_id);
+            courseProblemsType.setCourse_problems(courseProblemsVo.getProblems_type());
+            courseProblemsTypeMapper.insert(courseProblemsType);
+
+            // 课程专栏信息填充
+            CourseProblems courseProblems = new CourseProblems();
+            courseProblems.setCourse_problems(courseProblemsVo.getProblems_type());
+            courseProblems.setCourse_id(course_id);
+            courseProblems.setCreate_time(nowDate);
+            courseProblems.setUpdate_time(nowDate);
+
+
+            String problems_type = courseProblemsVo.getProblems_type();
+            Long ac_num = courseProblemsVo.getAc_num();
+            Long problem_num = courseProblemsVo.getProblem_num();
+
+            if (StringUtils.isAnyBlank(problems_type) && Objects.isNull(ac_num) && Objects.nonNull(problem_num)) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "填写专栏基本信息有误");
+            }
+
+            List<CourseChildProblems> courseProblemsList1 = courseProblemsVo.getCourseProblemList();
+            for (CourseChildProblems courseChildProblems:courseProblemsList1) {
+                String problemAlgorithmType = courseChildProblems.getProblem_algorithm_type();
+                if (StringUtils.isAnyBlank(problemAlgorithmType)) {
+                    throw new BusinessException(ErrorCode.PARAMS_ERROR, "专栏类别不允许为空");
+                }
+                courseProblems.setCourse_problem_id(null);
+                courseProblems.setProblem_algorithm_type(problemAlgorithmType);
+
+                List<CourseProblem> courseProblemList = courseChildProblems.getCourseProblemList();
+                List<Long> problem_id_list = new ArrayList<>();
+                // 当且仅当 数据库存在相关题目信息的时候修改，反之插入
+                for (CourseProblem courseProblem:courseProblemList) {
+                    Long problem_id = courseProblem.getProblem_id();
+                    problem_id_list.add(problem_id);
+                }
+
+                courseProblems.setProblem_id_list(problem_id_list.toString());
+                courseProblemsMapper.insert(courseProblems);
+            }
         }
         return true;
     }
@@ -261,19 +309,19 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         QueryWrapper<Course> courseQueryWrapper = new QueryWrapper<>();
         QueryWrapper<CourseProblems> courseProblemsQueryWrapper = new QueryWrapper<>();
         QueryWrapper<CourseUserAcProblem> courseUserAcProblemQueryWrapper = new QueryWrapper<>();
-        QueryWrapper<CourseUserAcStatus> courseUserAcStatusQueryWrapper = new QueryWrapper<>();
+//        QueryWrapper<CourseUserAcStatus> courseUserAcStatusQueryWrapper = new QueryWrapper<>();
         QueryWrapper<CourseProblemsAcNum> courseProblemsAcNumQueryWrapper = new QueryWrapper<>();
         QueryWrapper<CourseProblemsType> courseProblemsTypeQueryWrapper = new QueryWrapper<>();
 
         courseQueryWrapper.eq("course_id", courseId);
         courseProblemsQueryWrapper.eq("course_id", courseId);
         courseUserAcProblemQueryWrapper.eq("course_id", courseId);
-        courseUserAcStatusQueryWrapper.eq("course_id", courseId);
+//        courseUserAcStatusQueryWrapper.eq("course_id", courseId);
 //        courseProblemsAcNumQueryWrapper.eq("course_id", courseId);
         courseProblemsTypeQueryWrapper.eq("course_id", courseId);
 
         courseProblemsMapper.delete(courseProblemsQueryWrapper);
-        courseUserAcStatusMapper.delete(courseUserAcStatusQueryWrapper);
+//        courseUserAcStatusMapper.delete(courseUserAcStatusQueryWrapper);
         courseUserAcProblemMapper.delete(courseUserAcProblemQueryWrapper);
 //        courseProblemsAcNumMapper.delete(courseProblemsAcNumQueryWrapper);
         courseProblemsTypeMapper.delete(courseProblemsTypeQueryWrapper);
@@ -301,6 +349,17 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         if (course ==null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "不存在这样的课程");
         }
+
+        // 修改课程信息
+        String course_titile = courseRequest.getCourse_title();
+        String course_title_description = courseRequest.getCourse_title_description();
+        String avatar = courseRequest.getAvatar();
+
+        course.setCourse_title(course_titile);
+        course.setCourse_title_description(course_title_description);
+        course.setAvatar(avatar);
+
+        courseMapper.update(course, courseQueryWrapper);
 
         // 删除该course_id的所有数据再插入
         QueryWrapper<CourseProblems> courseProblemsQueryWrapper = new QueryWrapper<>();

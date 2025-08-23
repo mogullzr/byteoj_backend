@@ -237,10 +237,10 @@ public class  PostsController {
         if (user != null) {
             uuid = user.getUuid();
         } else {
-            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录呢");
-        }
+        throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录呢");
+    }
 
-        boolean result = postsService.PostCommentAdd(postsCommentRequest, uuid);
+    boolean result = postsService.PostCommentAdd(postsCommentRequest, uuid);
         return ResultUtils.success(result);
     }
 

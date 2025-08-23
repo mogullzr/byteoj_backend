@@ -5,7 +5,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 @Data
-public class PostsCommentRequest implements Serializable {
+public class    PostsCommentRequest implements Serializable {
     private static final long serialVersionUID = -5070563402066847644L;
     /**
      * 回复内容

@@ -1,5 +1,6 @@
 package com.example.backend.models.request;
 
+import com.example.backend.models.request.problem.ProblemRecordProcessRequest;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -59,4 +60,9 @@ public class JudgeRequest implements Serializable {
      * 内存允许使用大小
      */
     private Integer memory_used;
+
+    /**
+     * 挑战模式使用
+     */
+//    private ProblemRecordProcessRequest problemRecordProcessRequest;
 }
