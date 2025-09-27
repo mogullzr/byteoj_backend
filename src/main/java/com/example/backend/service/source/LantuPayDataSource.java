@@ -18,7 +18,6 @@ public class LantuPayDataSource implements DataSource<LantuPayViewVo> {
 
     @Override
     public List<LantuPayViewVo> doSearch(String keyword, List<Integer> tagsList, List<String> sourceList, String difficulty, Integer pageNum, Integer pageSize, Long uuid, Integer status, boolean isAdmin, String module, List<Integer> code, Integer is_date_order, Long StartMilliSeconds, Long EndMilliSeconds, CompetitionRecordsRequest recordsRequest) {
-        return null;
-//        return accountPayBackService.lantuPayView(keyword, pageNum, pageSize);
+        return accountPayBackService.lantuPayView(keyword, pageNum, pageSize);
     }
 }

@@ -19,6 +19,11 @@ public class LantuPayViewVo {
     private String out_trade_no;
 
     /**
+     * 微信单号
+     */
+    private String wx_trade_no;
+
+    /**
      * 创建时间
      */
     private Date create_date;

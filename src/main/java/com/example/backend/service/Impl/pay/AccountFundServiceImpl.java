@@ -75,7 +75,6 @@ public class AccountFundServiceImpl extends ServiceImpl<AccountFundMapper, Accou
 
     @Override
     public LantuPayVo lantuPay(LantuPayRequest lantuPayRequest, User loginUser) throws IOException {
-
         // 0.查看课程是否存在
         QueryWrapper<Course> courseQueryWrapper = new QueryWrapper<>();
         courseQueryWrapper.eq("course_id", lantuPayRequest.getCourse_id());
@@ -125,6 +124,8 @@ public class AccountFundServiceImpl extends ServiceImpl<AccountFundMapper, Accou
         accountFund.setUuid(loginUser.getUuid());
         accountFund.setUsername(loginUser.getUsername());
         accountFund.setCourse_id(course.getCourse_id());
+        accountFund.setCourse_title(course.getCourse_title());
+
         accountFundMapper.insert(accountFund);
 
         return lantuPayVo;
@@ -179,13 +180,13 @@ public class AccountFundServiceImpl extends ServiceImpl<AccountFundMapper, Accou
     }
 
     @Override
-    public List<LantuPayViewVo> lantuPayView(String keyword, Integer pageNum, Integer pageSize) {
+    public List<LantuPayViewVo> lantuPayView(String out_trade_no, Integer pageNum, Integer pageSize) {
         Page<AccountFund> page = new Page<>(pageNum, pageSize);
         QueryWrapper<AccountFund> queryWrapper = new QueryWrapper<>();
 
-        // 1.查找商品单号
-        if (keyword != null && !keyword.isEmpty()) {
-            queryWrapper.eq("out_trade_no", keyword);
+        // 1.根据商品单号查找
+        if (out_trade_no != null && !out_trade_no.isEmpty()) {
+            queryWrapper.like("out_trade_no", out_trade_no);
         }
 
         Page<AccountFund> accountFundPage = accountFundMapper.selectPage(page, queryWrapper);
@@ -195,6 +196,8 @@ public class AccountFundServiceImpl extends ServiceImpl<AccountFundMapper, Accou
         List<LantuPayViewVo> lantuPayViewVoList = new ArrayList<>();
         records.forEach(record -> {
            LantuPayViewVo lantuPayViewVo = new LantuPayViewVo();
+           lantuPayViewVo.setCourse_id(record.getCourse_id());
+           lantuPayViewVo.setWx_trade_no(record.getWx_trade_no());
            lantuPayViewVo.setCourse_title(record.getCourse_title());
            lantuPayViewVo.setFund(record.getFund());
            lantuPayViewVo.setOut_trade_no(record.getOut_trade_no());
@@ -202,6 +205,7 @@ public class AccountFundServiceImpl extends ServiceImpl<AccountFundMapper, Accou
            lantuPayViewVo.setUuid(record.getUuid());
            lantuPayViewVo.setQq(record.getQq());
            lantuPayViewVo.setStatus(record.getStatus());
+           lantuPayViewVo.setCreate_date(record.getCreate_date());
 
            lantuPayViewVoList.add(lantuPayViewVo);
         });

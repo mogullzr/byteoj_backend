@@ -16,6 +16,7 @@
             <result property="course_id" column="course_id" />
             <result property="course_title" column="course_title" />
             <result property="status" column="status" />
+            <result property="wx_trade_no" column="wx_trade_no" />
             <result property="is_delete" column="is_delete" />
     </resultMap>
 

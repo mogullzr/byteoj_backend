@@ -552,6 +552,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         if (rsign.equals(sign)) {
             // 修改订单状态
             accountFund.setStatus(1);
+            accountFund.setWx_trade_no(orderNo);
             accountFundMapper.updateById(accountFund);
 
             // 支付成功，用户加入课程

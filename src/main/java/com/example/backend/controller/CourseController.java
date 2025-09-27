@@ -92,7 +92,6 @@ public class CourseController {
     @AccessLimit(seconds = 2, maxCount =  20, needLogin = false)
     @PostMapping("/join")
     private String courseJoin(HttpServletRequest httpServletRequest) {
-        System.out.println("TEST......");
         String code = httpServletRequest.getParameter("code");
         String mch_id = httpServletRequest.getParameter("mch_id");
         String timestamp = httpServletRequest.getParameter("timestamp");

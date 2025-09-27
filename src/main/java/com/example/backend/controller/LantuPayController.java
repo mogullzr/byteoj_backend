@@ -42,10 +42,10 @@ public class LantuPayController {
         Boolean result = accountFundService.lantuPayStatus(lantuPayOtherRequest);
         return ResultUtils.success(result);
     }
-//    @AccessLimit(seconds = 1, maxCount = 3, needLogin = true)
-//    @PostMapping("/pay/back")
-//    private BaseResponse<List<String>> lantuPayBack(@RequestBody List<LantuPayBackRequest> lantuPayBackRequest, HttpServletRequest request) {
-//        List<String> result = accountFundService.lantuPayBack(lantuPayBackRequest);
-//        return ResultUtils.success(result);
-//    }
+    @AccessLimit(seconds = 1, maxCount = 3, needLogin = true)
+    @PostMapping("/pay/back")
+    private BaseResponse<List<String>> lantuPayBack(@RequestBody List<LantuPayOtherRequest> lantuPayBackRequest, HttpServletRequest request) {
+        List<String> result = accountFundService.lantuPayBack(lantuPayBackRequest);
+        return ResultUtils.success(result);
+    }
 }

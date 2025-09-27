@@ -72,6 +72,11 @@ public class AccountFund {
     private String course_title;
 
     /**
+     * 微信单号
+     */
+    private String wx_trade_no;
+
+    /**
      * 逻辑删除
      */
     private Integer is_delete;
