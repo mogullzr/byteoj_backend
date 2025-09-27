@@ -77,8 +77,10 @@ public class DeepSeekService {
                         JsonNode jsonResponse = objectMapper.readTree(response);
 
                         // 提取 content 字段
-                        String content = jsonResponse.path("choices").get(0).path("delta").path("content").asText();
-                        String reason_content = jsonResponse.path("choices").get(0).path("delta").path("reasoning_content").asText();
+                        String content = jsonResponse.path("choices").
+                                get(0).path("delta").path("content").asText();
+                        String reason_content = jsonResponse.path("choices")
+                                .get(0).path("delta").path("reasoning_content").asText();
 
                         // 如果 content 包含 [DONE]，返回结束标志
                         if (content.contains("[DONE]")) {
@@ -90,7 +92,8 @@ public class DeepSeekService {
                             System.out.print(reason_content);
 
                             if (id[0] == 1) {
-                                DeepSeekNetMessage deepSeekNetMessage = new DeepSeekNetMessage("> " + reason_content, id[0]);
+                                DeepSeekNetMessage deepSeekNetMessage = new
+                                        DeepSeekNetMessage("> " + reason_content, id[0]);
                                 id[0] += 1;
                                 return Flux.just(deepSeekNetMessage); // 返回内容片段
                             }else {

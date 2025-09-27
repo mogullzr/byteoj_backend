@@ -391,7 +391,8 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
     }
 
     @Override
-    public ProblemAlgorithmBankVo problemSearchByProblemId(Integer problem_id, HttpServletRequest httpServletRequest) {
+    public ProblemAlgorithmBankVo problemSearchByProblemId(Integer problem_id,
+                                                           HttpServletRequest httpServletRequest) {
         ProblemAlgorithmBank problemAlgorithmBank = getProblemAlgorithmBank(Long.valueOf(problem_id), 0);
 
         if (problemAlgorithmBank == null) {
@@ -444,7 +445,8 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
             QueryWrapper<SubmissionAlgorithmDetails> submissionAlgorithmDetailsQueryWrapper = new QueryWrapper<>();
             submissionAlgorithmDetailsQueryWrapper.eq("submission_id", submissionsAlgorithm.get(item).getSubmission_id());
             submissionAlgorithmDetailsQueryWrapper.orderByDesc("submission_id");
-            submissionsAlgorithmRecordsVoList.add(getSubmissionsAlgorithmRecordsVO(submissionsAlgorithm.get(item), submissionAlgorithmDetailsMapper.selectOne(submissionAlgorithmDetailsQueryWrapper)));
+            submissionsAlgorithmRecordsVoList.add(getSubmissionsAlgorithmRecordsVO(submissionsAlgorithm.get(item),
+                    submissionAlgorithmDetailsMapper.selectOne(submissionAlgorithmDetailsQueryWrapper)));
         }
 
         return submissionsAlgorithmRecordsVoList;
@@ -527,10 +529,12 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
     @Override
     public List<Judge> problemAlgorithmJudge(JudgeRequest judgeRequest) {
         if (judgeRequest.getCompetition_id() != null) {
-            QueryWrapper<CompetitionsProblemsAlgorithm> competitionsProblemsAlgorithmQueryWrapper = new QueryWrapper<>();
+            QueryWrapper<CompetitionsProblemsAlgorithm> competitionsProblemsAlgorithmQueryWrapper
+                    = new QueryWrapper<>();
             competitionsProblemsAlgorithmQueryWrapper.eq("idx", judgeRequest.getIndex());
             competitionsProblemsAlgorithmQueryWrapper.eq("competition_id", judgeRequest.getCompetition_id());
-            CompetitionsProblemsAlgorithm competitionsProblemsAlgorithm = competitionsProblemsAlgorithmMapper.selectOne(competitionsProblemsAlgorithmQueryWrapper);
+            CompetitionsProblemsAlgorithm competitionsProblemsAlgorithm = competitionsProblemsAlgorithmMapper
+                    .selectOne(competitionsProblemsAlgorithmQueryWrapper);
             judgeRequest.setProblem_id(competitionsProblemsAlgorithm.getProblem_id());
         }
         QueryWrapper<ProblemAlgorithmLimit> problemAlgorithmLimitQueryWrapper = new QueryWrapper<>();
@@ -539,7 +543,8 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         }else {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息错误");
         }
-        ProblemAlgorithmLimit problemAlgorithmLimit = problemAlgorithmLimitMapper.selectOne(problemAlgorithmLimitQueryWrapper);
+        ProblemAlgorithmLimit problemAlgorithmLimit = problemAlgorithmLimitMapper
+                .selectOne(problemAlgorithmLimitQueryWrapper);
         if (problemAlgorithmLimit == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "此题信息存在缺失，请联系总管理员8989561494@qq.com");
         }
@@ -1315,14 +1320,18 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 
     @Override
     public List<CompetitionProblemsVo> competitionSearchProblems(Long competition_id, Long uuid) {
-        QueryWrapper<CompetitionsProblemsAlgorithm> competitionsProblemsAlgorithmQueryWrapper = new QueryWrapper<>();
+        QueryWrapper<CompetitionsProblemsAlgorithm>
+                competitionsProblemsAlgorithmQueryWrapper = new QueryWrapper<>();
         QueryWrapper<Competitions> competitionsQueryWrapper = new QueryWrapper<>();
         competitionsProblemsAlgorithmQueryWrapper.eq("competition_id", competition_id);
-        List<CompetitionsProblemsAlgorithm> competitionsProblemsAlgorithmList = competitionsProblemsAlgorithmMapper.selectList(competitionsProblemsAlgorithmQueryWrapper);
+        List<CompetitionsProblemsAlgorithm> competitionsProblemsAlgorithmList =
+                competitionsProblemsAlgorithmMapper
+                .selectList(competitionsProblemsAlgorithmQueryWrapper);
         List<CompetitionProblemsVo> problemAlgorithmBankVoList = new ArrayList<>();
 
         if (competitionsProblemsAlgorithmList == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "该竞赛不存在或者，该竞赛不存在题目？？？系统出错了！！！联系管理员！！！898561494@qq.com");
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR,
+                    "该竞赛不存在或者，该竞赛不存在题目？？？系统出错了！！！联系管理员！！！898561494@qq.com");
         }
 
         QueryWrapper<CompetitionsUser> competitionsUserQueryWrapper = new QueryWrapper<>();
@@ -1424,7 +1433,8 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
     }
 
     @Override
-    public Boolean problemAdd(ProblemAlgorithmRequest problemAlgorithmRequest, boolean isAdmin, Long uuid, String username, Integer status, HttpServletRequest httpServletRequest) {
+    public Boolean problemAdd(ProblemAlgorithmRequest problemAlgorithmRequest, boolean isAdmin,
+                              Long uuid, String username, Integer status, HttpServletRequest httpServletRequest) {
         if (!isAdmin) {
             throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "对不起，您的权限不足");
         }
@@ -1571,7 +1581,8 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         QueryWrapper<ProblemAlgorithmLimit> problemAlgorithmLimitQueryWrapper = new QueryWrapper<>();
         problemAlgorithmLimitQueryWrapper.eq("problem_id", problem_id);
         problemAlgorithmLimitQueryWrapper.eq("is_delete", 0);
-        ProblemAlgorithmLimit problemAlgorithmLimit = problemAlgorithmLimitMapper.selectOne(problemAlgorithmLimitQueryWrapper);
+        ProblemAlgorithmLimit problemAlgorithmLimit = problemAlgorithmLimitMapper
+                .selectOne(problemAlgorithmLimitQueryWrapper);
         problemAlgorithmLimit.setIs_delete(1);
         problemAlgorithmLimitMapper.update(problemAlgorithmLimit, problemAlgorithmLimitQueryWrapper);
 
@@ -1586,7 +1597,8 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         QueryWrapper<ProblemAlgorithmTags> problemAlgorithmTagsQueryWrapper = new QueryWrapper<>();
         problemAlgorithmTagsQueryWrapper.eq("problem_id", problem_id);
         problemAlgorithmTagsQueryWrapper.eq("is_delete", 0);
-        List<ProblemAlgorithmTags> problemAlgorithmTags = problemAlgorithmTagsMapper.selectList(problemAlgorithmTagsQueryWrapper);
+        List<ProblemAlgorithmTags> problemAlgorithmTags = problemAlgorithmTagsMapper
+                .selectList(problemAlgorithmTagsQueryWrapper);
         isExist.setIs_delete(1);
         problemAlgorithmTags.forEach((tag)->{
             problemAlgorithmTagsMapper.update(tag, problemAlgorithmTagsQueryWrapper);
@@ -1596,14 +1608,14 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
     }
 
     @Override
-    public Boolean problemModify(ProblemAlgorithmRequest problemAlgorithmRequest, boolean isAdmin, HttpServletRequest httpServletRequest) {
+    public Boolean problemModify(ProblemAlgorithmRequest problemAlgorithmRequest, boolean isAdmin,
+                                 HttpServletRequest httpServletRequest) {
         if (!isAdmin) {
             throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "对不起，你没有修改权限");
         }
         Long problem_id = problemAlgorithmRequest.getProblem_id();
         String Chinese_name = problemAlgorithmRequest.getChinese_name();
         Integer CPU_limit = problemAlgorithmRequest.getCpu_limit();
-
         User loginUser = userService.getLoginUser(httpServletRequest);
         Long update_id = loginUser.getUuid();
         String update_name = loginUser.getUsername();
@@ -1703,9 +1715,11 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 
         for (int item = 0; item < length; item++) {
             Integer tag_id = tagsList.get(item);
-            QueryWrapper<ProblemAlgorithmTagsRelation> problemAlgorithmTagsRelationQueryWrapper = new QueryWrapper<>();
+            QueryWrapper<ProblemAlgorithmTagsRelation> problemAlgorithmTagsRelationQueryWrapper
+                    = new QueryWrapper<>();
             problemAlgorithmTagsRelationQueryWrapper.eq("tag_id", tag_id);
-            Long result = problemAlgorithmTagsRelationMapper.selectCount(problemAlgorithmTagsRelationQueryWrapper);
+            Long result = problemAlgorithmTagsRelationMapper.selectCount
+                    (problemAlgorithmTagsRelationQueryWrapper);
             if (result == 0) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "不存在这样的算法标签，请重新添加");
             }
@@ -1713,10 +1727,8 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         for (int item = 0; item < length; item++) {
             Integer tag_id = tagsList.get(item);
             ProblemAlgorithmTags problemAlgorithmTags = new ProblemAlgorithmTags();
-
             problemAlgorithmTags.setProblem_id(problem_id);
             problemAlgorithmTags.setTag_id(tag_id);
-
             problemAlgorithmTagsMapper.insert(problemAlgorithmTags);
         }
         return true;
@@ -1862,7 +1874,8 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
             String[] last_url_problem_list = last_url_problem.split("\\?\\?");
             last_url = last_url_problem_list[0];
             last_problem_name = last_url_problem_list[1];
-            if (Objects.isNull(last_url) || Objects.isNull(last_problem_name) || last_url.isEmpty() || last_problem_name.isEmpty()) {
+            if (Objects.isNull(last_url) || Objects.isNull(last_problem_name) ||
+                    last_url.isEmpty() || last_problem_name.isEmpty()) {
                 QueryWrapper<UserLastEnter> queryWrapper = new QueryWrapper<>();
                 queryWrapper.eq("uuid", uuid);
                 UserLastEnter userLastEnter = userLastEnterMapper.selectOne(queryWrapper);

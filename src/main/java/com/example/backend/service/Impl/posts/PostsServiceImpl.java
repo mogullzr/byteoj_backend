@@ -105,7 +105,7 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts>
         postsQueryWrapper.eq("post_id", postsRequest.getPost_id());
         Posts post = postsMapper.selectOne(postsQueryWrapper);
         if (!Objects.equals(post.getUuid(), uuid)) {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "你是谁？？？？？");
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "who are you?");
         }
         post.setTitle(postsRequest.getTitle());
         post.setContent(postsRequest.getContent());

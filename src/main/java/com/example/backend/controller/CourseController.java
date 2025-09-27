@@ -7,8 +7,10 @@ import com.example.backend.common.ResultUtils;
 import com.example.backend.exception.BusinessException;
 import com.example.backend.models.domain.course.Course;
 import com.example.backend.models.domain.user.User;
+import com.example.backend.models.request.CourseJoinRequest;
 import com.example.backend.models.request.CourseRequest;
 import com.example.backend.models.request.CourseUserRequest;
+import com.example.backend.models.request.pay.LantuPayCallbackRequest;
 import com.example.backend.models.vo.course.CourseProblemsVo;
 import com.example.backend.service.course.CourseService;
 import com.example.backend.service.user.UserService;
@@ -27,7 +29,6 @@ import java.util.List;
 @RequestMapping("/course")
 @Slf4j
 @Controller
-
 public class CourseController {
 
     @Resource
@@ -87,6 +88,33 @@ public class CourseController {
 
         return ResultUtils.success(result);
     }
+
+    @AccessLimit(seconds = 2, maxCount =  20, needLogin = false)
+    @PostMapping("/join")
+    private String courseJoin(HttpServletRequest httpServletRequest) {
+        System.out.println("TEST......");
+        String code = httpServletRequest.getParameter("code");
+        String mch_id = httpServletRequest.getParameter("mch_id");
+        String timestamp = httpServletRequest.getParameter("timestamp");
+        String order_no = httpServletRequest.getParameter("order_no");
+        String out_trade_no = httpServletRequest.getParameter("out_trade_no");
+        String pay_no = httpServletRequest.getParameter("pay_no");
+        String total_fee = httpServletRequest.getParameter("total_fee");
+        String sign = httpServletRequest.getParameter("sign");
+
+        LantuPayCallbackRequest callbackRequest = new LantuPayCallbackRequest();
+        callbackRequest.setCode(code);
+        callbackRequest.setMch_id(mch_id);
+        callbackRequest.setTimestamp(timestamp);
+        callbackRequest.setOrder_no(order_no);
+        callbackRequest.setOut_trade_no(out_trade_no);
+        callbackRequest.setPay_no(pay_no);
+        callbackRequest.setTotal_fee(total_fee);
+        callbackRequest.setSign(sign);
+
+        return courseService.courseJoin(callbackRequest);
+    }
+
     @AccessLimit(seconds = 3, maxCount =  10, needLogin = true)
     @PostMapping("/admin/add")
     private BaseResponse<Boolean> courseAdminAdd(@RequestBody CourseRequest courseRequest, HttpServletRequest httpServletRequest) {
@@ -125,7 +153,6 @@ public class CourseController {
 
         boolean isAdmin = userService.isAdmin(httpServletRequest);
         boolean result = courseService.courseAdminProblemSet(courseRequest, isAdmin);
-
 
         return ResultUtils.success(result);
     }

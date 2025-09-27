@@ -10,6 +10,7 @@ import com.example.backend.models.request.problem.SearchRequest;
 import com.example.backend.models.vo.UserVo;
 import com.example.backend.models.vo.crawler.OJCompetitionVo;
 import com.example.backend.models.vo.log.LogVo;
+import com.example.backend.models.vo.pay.LantuPayViewVo;
 import com.example.backend.models.vo.post.PostsVo;
 import com.example.backend.models.vo.problem.ProblemAlgorithmBankVo;
 import com.example.backend.models.vo.problem.ProblemMath408BankVo;
@@ -52,6 +53,9 @@ public class SearchServiceImpl implements SearchService {
 
     @Resource
     private RecordDataSource recordDataSource;
+
+    @Resource
+    private LantuPayDataSource lantuPayDataSource;
 
     @Override
     public SearchVo searchAll(SearchRequest searchRequest, Long uuid, boolean isAdmin) {
@@ -111,6 +115,9 @@ public class SearchServiceImpl implements SearchService {
             // 9.提交记录多条件搜索
             List<SubmissionsAlgorithmRecordsVo> recordsVos = recordDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin, module, code, is_date_order, startMilliSeconds, endMilliSeconds, recordsRequest);
 
+            // 10.交易成功的订单
+            List<LantuPayViewVo> lantuPayViewVos = lantuPayDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin, module, code, is_date_order, startMilliSeconds, endMilliSeconds, recordsRequest);
+
             // ......扩展
             // 最终聚合
             searchVo.setProblemAlgorithmBankVoList(problemAlgorithmBankVoList);
@@ -124,7 +131,9 @@ public class SearchServiceImpl implements SearchService {
 
         } else {
             DataSource<?> dataSource = dataSourceRegistry.getDataSourceByCategory(category);
-            List<?> dataList = dataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin, module, code, is_date_order, startMilliSeconds, endMilliSeconds, recordsRequest);
+            List<?> dataList = dataSource.doSearch(keyword, tagsList, sourceList,
+                    difficulty, pageNum, pageSize, uuid, status, isAdmin,
+                    module, code, is_date_order, startMilliSeconds, endMilliSeconds, recordsRequest);
             searchVo.setDataList(dataList);
         }
         return searchVo;

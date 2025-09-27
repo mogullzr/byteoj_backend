@@ -1,6 +1,5 @@
 package com.example.backend.controller;
 
-import com.aliyuncs.vod.model.v20170321.DescribeVodDomainLogResponse;
 import com.example.backend.common.AccessLimit;
 import com.example.backend.common.BaseResponse;
 import com.example.backend.common.ErrorCode;

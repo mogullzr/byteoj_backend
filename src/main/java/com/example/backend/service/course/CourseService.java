@@ -2,7 +2,10 @@ package com.example.backend.service.course;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.backend.models.domain.course.Course;
+import com.example.backend.models.domain.user.User;
+import com.example.backend.models.request.CourseJoinRequest;
 import com.example.backend.models.request.CourseRequest;
+import com.example.backend.models.request.pay.LantuPayCallbackRequest;
 import com.example.backend.models.vo.course.CourseProblemsVo;
 
 import java.util.List;
@@ -85,4 +88,11 @@ public interface CourseService extends IService<Course> {
      * @return 当前用户的名次
      */
     Long courseSearchRankByCourseId(Long courseId, Long uuid);
+
+    /**
+     * 用户信息
+     * @param callbackRequest 回调订单信息
+     * @return 是否加入成功
+     */
+    String courseJoin(LantuPayCallbackRequest callbackRequest);
 }

@@ -84,9 +84,9 @@ public class UserController {
     @Value("${qq.app_redirect_url}")
     private String appRedirectUrl;
 
-    // TODO 注意一下下面这一部分注释了
     @PostMapping("/register")
-    private BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest, HttpServletRequest httpServletRequest) {
+    private BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest,
+                                            HttpServletRequest httpServletRequest) {
         if (userRegisterRequest == null){
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
@@ -96,7 +96,8 @@ public class UserController {
         String Password = userRegisterRequest.getPassword();
         String checkPassword = userRegisterRequest.getCheckPassword();
 
-        Long result = userService.UserRegister(Account, Email, confirmNumber, Password, checkPassword, httpServletRequest);
+        Long result = userService.UserRegister(Account, Email, confirmNumber, Password,
+                checkPassword, httpServletRequest);
         return ResultUtils.success(result);
     }
     @PostMapping("/search/uuid")
@@ -155,7 +156,8 @@ public class UserController {
         return ResultUtils.success(result);
     }
     @PostMapping("/login")
-    private BaseResponse<UserVo> userLogin(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest httpServletRequest) {
+    private BaseResponse<UserVo> userLogin(@RequestBody UserLoginRequest userLoginRequest,
+                                           HttpServletRequest httpServletRequest) {
         if (userLoginRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
@@ -495,7 +497,8 @@ public class UserController {
         return ResultUtils.success(result);
     }
     @PostMapping("/BOSS/add")
-    private BaseResponse<Boolean> bossAdminAddAdmin(@RequestBody AdminRegisterRequest adminRegisterRequest, HttpServletRequest httpServletRequest) {
+    private BaseResponse<Boolean> bossAdminAddAdmin(@RequestBody AdminRegisterRequest adminRegisterRequest,
+                                                    HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }

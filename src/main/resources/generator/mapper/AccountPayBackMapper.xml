@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="generator.mapper.AccountPayBackMapper">
+
+    <resultMap id="BaseResultMap" type="generator.domain.AccountPayBack">
+            <id property="id" column="id" />
+            <result property="out_trade_no" column="out_trade_no" />
+            <result property="out_refund_no" column="out_refund_no" />
+            <result property="refund_desc" column="refund_desc" />
+            <result property="is_delete" column="is_delete" />
+            <result property="create_date" column="create_date" />
+            <result property="update_date" column="update_date" />
+            <result property="pay_back" column="pay_back" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,out_trade_no,out_refund_no,refund_desc,is_delete,create_date,
+        update_date,pay_back
+    </sql>
+</mapper>

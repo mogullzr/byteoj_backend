@@ -9,14 +9,18 @@ import com.example.backend.mapper.*;
 import com.example.backend.models.domain.algorithm.AcAlgorithmProblem;
 import com.example.backend.models.domain.algorithm.probleminfo.ProblemAlgorithmBank;
 import com.example.backend.models.domain.course.*;
+import com.example.backend.models.domain.pay.AccountFund;
 import com.example.backend.models.domain.user.User;
 import com.example.backend.models.request.CourseRequest;
+import com.example.backend.models.request.pay.LantuPayCallbackRequest;
 import com.example.backend.models.vo.course.CourseChildProblems;
 import com.example.backend.models.vo.course.CourseProblem;
 import com.example.backend.models.vo.course.CourseProblemsVo;
 import com.example.backend.service.course.CourseService;
+import com.example.backend.utils.PaySignUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,6 +62,15 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
 
     @Resource
     private CourseProblemsUserAcMapper courseProblemsUserAcMapper;
+
+    @Resource
+    private AccountFundMapper accountFundMapper;
+
+    @Value("${lantu.mch_id}")
+    private String mch_id;
+
+    @Value("${lantu.key}")
+    private String key;
 
     @Override
     public List<Course> courseSearchByPageNum(Integer pageNum) {
@@ -133,8 +146,10 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
                     acAlgorithmProblemQueryWrapper.eq("problem_id", problem_id);
                     problemAlgorithmBankQueryWrapper.eq("problem_id", problem_id);
 
-                    AcAlgorithmProblem acAlgorithmProblem = acAlgorithmProblemMapper.selectOne(acAlgorithmProblemQueryWrapper);
-                    ProblemAlgorithmBank problemAlgorithmBank = problemAlgorithmBankMapper.selectOne(problemAlgorithmBankQueryWrapper);
+                    AcAlgorithmProblem acAlgorithmProblem = acAlgorithmProblemMapper
+                            .selectOne(acAlgorithmProblemQueryWrapper);
+                    ProblemAlgorithmBank problemAlgorithmBank = problemAlgorithmBankMapper
+                            .selectOne(problemAlgorithmBankQueryWrapper);
 
                     courseChildProblems1.setProblem_id(problem_id);
                     courseChildProblems1.setProblem_name(problemAlgorithmBank.getChinese_name());
@@ -150,16 +165,6 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
                         }
                     }
 
-                    // 设置ac_num
-//                    QueryWrapper<CourseProblemsAcNum> courseProblemsAcNumQueryWrapper = new QueryWrapper<>();
-//                    courseProblemsAcNumQueryWrapper.eq("course_id", courseId);
-//                    courseProblemsAcNumQueryWrapper.eq("problem_id", problem_id);
-
-//                    CourseProblemsAcNum courseProblemsAcNum = courseProblemsAcNumMapper.selectOne(courseProblemsAcNumQueryWrapper);
-//                    if (courseProblemsAcNum == null) {
-//                        throw new BusinessException(ErrorCode.PARAMS_ERROR, "该课程存在一些问题，请联系管理员898561494@qq.com");
-//                    }
-//                    courseChildProblems1.setAc_num(Long.valueOf(courseProblemsAcNum.getNum()));
                     // 插入数据
                     courseProblemList.add(courseChildProblems1);
                 }
@@ -354,10 +359,12 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         String course_titile = courseRequest.getCourse_title();
         String course_title_description = courseRequest.getCourse_title_description();
         String avatar = courseRequest.getAvatar();
+        String pay = courseRequest.getPay();
 
         course.setCourse_title(course_titile);
         course.setCourse_title_description(course_title_description);
         course.setAvatar(avatar);
+        course.setPay(pay);
 
         courseMapper.update(course, courseQueryWrapper);
 
@@ -495,5 +502,75 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
             rank +=courseProblemsUserAc.getAc_num();
         }
         return rank;
+    }
+
+    @Override
+    public String courseJoin(LantuPayCallbackRequest callbackRequest) {
+        String code = callbackRequest.getCode();
+        String sign = callbackRequest.getSign();
+        String orderNo = callbackRequest.getOrder_no();
+        String payNo = callbackRequest.getPay_no();
+        String timestamp = callbackRequest.getTimestamp();
+        String mchId = callbackRequest.getMch_id();
+        String totalFee = callbackRequest.getTotal_fee();
+        String outTradeNo = callbackRequest.getOut_trade_no();
+
+        // 1.code
+        if (!code.equals("0")) {
+            return "FAIL";
+        }
+
+        // 2.mch_id
+        if (!mch_id.equals(mchId)) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "大胆！who are you？！！！！！");
+        }
+
+        // 3.out_trade_no + total_fee
+        QueryWrapper<AccountFund> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("out_trade_no", outTradeNo);
+        AccountFund accountFund = accountFundMapper.selectOne(queryWrapper);
+
+        if (accountFund == null) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "大胆！who are you？！！！！！");
+        }
+
+        if (totalFee == null || !totalFee.equals(accountFund.getFund())) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "大胆！who are you？！！！！！");
+        }
+
+        // 4.密钥检查
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("code", code);
+        map.put("mch_id", mch_id);
+        map.put("order_no", orderNo);
+        map.put("out_trade_no", outTradeNo);
+        map.put("pay_no", payNo);
+        map.put("timestamp", timestamp);
+        map.put("total_fee", totalFee);
+        String rsign = PaySignUtil.createSign(map, key);
+
+        if (rsign.equals(sign)) {
+            // 修改订单状态
+            accountFund.setStatus(1);
+            accountFundMapper.updateById(accountFund);
+
+            // 支付成功，用户加入课程
+            CourseUserAcProblem courseUserAcProblem = new CourseUserAcProblem();
+
+            courseUserAcProblem.setCourse_id(accountFund.getCourse_id());
+            courseUserAcProblem.setNum(0L);
+            courseUserAcProblem.setUuid(accountFund.getUuid());
+
+            // 插入课程
+            QueryWrapper<Course> courseQueryWrapper = new QueryWrapper<>();
+            courseQueryWrapper.eq("course_id", accountFund.getCourse_id());
+            Course course = courseMapper.selectOne(courseQueryWrapper);
+            course.setNum(course.getNum() + 1);
+
+            return (courseUserAcProblemMapper.insert(courseUserAcProblem) == 1 && courseMapper.updateById(course) == 1)
+                    ? "SUCCESS" : "FAIL";
+        } else {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "大胆！who are you？！！！！！");
+        }
     }
 }

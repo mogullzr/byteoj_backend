@@ -131,7 +131,8 @@ public interface ProblemAlgorithmService extends IService<ProblemAlgorithmBank> 
      * @param httpServletRequest 前端http请求
      * @return 是否成功创建
      */
-    Boolean problemAdd(ProblemAlgorithmRequest problemAlgorithmRequest, boolean isAdmin, Long uuid, String username, Integer status, HttpServletRequest httpServletRequest);
+    Boolean problemAdd(ProblemAlgorithmRequest problemAlgorithmRequest, boolean isAdmin, Long uuid, String username, Integer status,
+                       HttpServletRequest httpServletRequest);
 
     /**
      *  管理员删除题目

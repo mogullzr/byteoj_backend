@@ -9,31 +9,17 @@ import java.util.stream.Collectors;
 /**
  * 搜索类型枚举
  */
-public enum SearchTypeEnum {
-    ALGORITHM("算法", "algorithm"),
+public enum ProblemTypeEnum {
+    Math("数学", "math"),
+    GEE408("408考研"  , "408"),
+    MYSQL("数据库", "mysql"),
+    ASSEMBLY("汇编", "assembly");
 
-    MATH_408("数学/408",  "math408"),
-
-    POST("帖子", "post"),
-
-    USER("用户", "user"),
-
-    BOSS_AUTH_SEARCH("BOSS管理员权限查询", "boss_auth_search"),
-
-    OJ("OJ", "oj"),
-
-    COMPETITION_USERS("巅峰Rating排行榜", "competition_user"),
-
-    LOG_INFO("日志信息", "log"),
-
-    RECORD("提交记录", "record"),
-
-    Lantu("蓝图支付", "lantu");
     private final String text;
 
     private final String value;
 
-    SearchTypeEnum(String text, String value) {
+    ProblemTypeEnum(String text, String value) {
         this.text = text;
         this.value = value;
     }
@@ -53,11 +39,11 @@ public enum SearchTypeEnum {
      * @param value
      * @return
      */
-    public static SearchTypeEnum getEnumByValue(String value) {
+    public static ProblemTypeEnum getEnumByValue(String value) {
         if (ObjectUtils.isEmpty(value)) {
             return null;
         }
-        for (SearchTypeEnum anEnum : SearchTypeEnum.values()) {
+        for (ProblemTypeEnum anEnum : ProblemTypeEnum.values()) {
             if (anEnum.value.equals(value)) {
                 return anEnum;
             }

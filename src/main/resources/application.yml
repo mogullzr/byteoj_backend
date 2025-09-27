@@ -170,6 +170,13 @@ qq:
   app_id: ${qq.app_id}
   app_key: ${qq.app_key}
   app_redirect_url: ${qq.app_redirect_url}
+lantu:
+  mch_id: ${lantu.mch_id}
+  key: ${lantu.key}
+  expire_time: ${lantu.expire_time}
+  url: ${lantu.url}
+  post_url: ${lantu.post_url}
+  refund_url: ${lantu.refund_url}
 #logging:
 # 日志持久化存储文件 nohup java -jar xxx.jar > /dev/null 2>&1 &
 #  file:

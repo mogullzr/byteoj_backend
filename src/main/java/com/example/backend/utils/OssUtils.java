@@ -89,21 +89,21 @@ public class OssUtils {
 
         // 判断文件类型
         String multiFileName = file.getOriginalFilename(); // 获取文件名
-        String fileExtension = multiFileName.substring(multiFileName.lastIndexOf(".") + 1); // 提取扩展名
+        String fileExtension = multiFileName.substring(
+                multiFileName.lastIndexOf(".") + 1); // 提取扩展名
 
         fileName += "." + fileExtension;
         try {
             if(file.getSize() != 0){
-                // getInputStream()返回一个InputStream以从中读取文件的内容。通过此方法就可以获取到流
                 InputStream multipartFileInputStream = file.getInputStream();
-                PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, fileName, multipartFileInputStream);
+                PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, fileName,
+                        multipartFileInputStream);
                 ossClient.putObject(putObjectRequest);
                 return "http://" + bucketName + "." + endPoint + "/" + fileName;
             }
         } catch (IOException e) {
             e.printStackTrace();
         }finally {
-            // 关闭流
             ossClient.shutdown();
         }
         throw new BusinessException(ErrorCode.SYSTEM_ERROR, "出现了未知的错误！！！");

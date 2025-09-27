@@ -72,6 +72,11 @@ public class Course implements Serializable {
      */
     private String course_description;
 
+    /**
+     * 报名价钱
+     */
+    private String pay;
+
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 }

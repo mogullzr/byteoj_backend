@@ -35,12 +35,19 @@ hm:
       accessKeyId: xxxxxxxxxxxxxxxxx # 阿里云vod的OSS账号
       accessKeySecret: xxxxxxxxxxxxx # 阿里云void的OSS密钥
 avatar:
-  default: xxxxx # 替换为自己设定的默认头像地址
+  default: "xxxxx" # 替换为自己设定的默认头像地址
 baidu:
   ipService:
-    ak: xxxxxxxx # 这个是百度地图的IP定位的 ak
-    coor: xxxxxxxx # 这个是百度地图的IP定位的参数信息
+    ak: "xxxxxxxx" # 这个是百度地图的IP定位的 ak
+    coor: "xxxxxxxx" # 这个是百度地图的IP定位的参数信息
 qq:
-  app_id: xxxxxxxxx # 申请开发应用之后的app_id.注意：至少需要一个已经备案的域名。
-  app_key: xxxxxxxxxx # 申请开发应用之后的app_key，至少需要一个已经备案的域名。
-  app_redirect_url: xxxxxxxxxxxx # 自己设置的回调函数地址
+  app_id: "xxxxxxxxx" # 申请开发应用之后的app_id.注意：至少需要一个已经备案的域名。
+  app_key: "xxxxxxxxxx" # 申请开发应用之后的app_key，至少需要一个已经备案的域名。
+  app_redirect_url: "xxxxxxxxxxxx" # 自己设置的回调函数地址
+lantu: # 蓝兔支付——仅微信支付
+  mch_id: "xxxxxxxx" # 微信商户管理的商户号
+  key: "xxxxxxxxxx" # 微信商户管理的商户密钥
+  expire_time: "3m" # 支付二维码过期时间：最小1m，表示1min，最长2h，表示2hour
+  url: "https://www.byteoj.com/api/course/join" # 支付成功之后的回调地址，自己修改(注意：必须为线上可访问地址，如需本地调试，需要进行内网穿透)
+  post_url: "https://api.ltzf.cn/api/wxpay/native" # 不变，蓝兔支付二维码生成地址
+  refund_url: "https://api.ltzf.cn/api/wxpay/refund_order" # 不变，蓝兔退款请求地址

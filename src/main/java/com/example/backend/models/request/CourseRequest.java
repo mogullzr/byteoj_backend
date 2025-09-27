@@ -36,6 +36,11 @@ public class CourseRequest implements Serializable {
     private String avatar;
 
     /**
+     * 价钱
+     */
+    private String pay;
+
+    /**
      * 开始时间,默认为永久
      */
     private Date start_time;

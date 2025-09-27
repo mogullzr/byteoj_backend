@@ -13,27 +13,22 @@ import java.util.Map;
 public class DataSourceRegistry {
     @Resource
     private AlgorithmDataSource algorithmDataSource;
-
     @Resource
     private PostsDataSource postsDataSource;
-
     @Resource
     private UserDataSource userDataSource;
-
     @Resource
     private UserAuthDataSource userAuthDataSource;
-
     @Resource
     private CompetitionRankSource competitionRankSource;
-
     @Resource
     private OJCompetitionDataSource ojCompetitionDataSource;
-
     @Resource
     private LogDataSource logDataSource;
-
     @Resource
     private RecordDataSource recordDataSource;
+    @Resource
+    private LantuPayDataSource lantuPayDataSource;
 
     private Map<String, DataSource<?>> typeDataSourceMap;
 
@@ -48,6 +43,7 @@ public class DataSourceRegistry {
             put(SearchTypeEnum.COMPETITION_USERS.getValue(), competitionRankSource);
             put(SearchTypeEnum.LOG_INFO.getValue(), logDataSource);
             put(SearchTypeEnum.RECORD.getValue(), recordDataSource);
+            put(SearchTypeEnum.Lantu.getValue(), lantuPayDataSource);
         }};
     }
 

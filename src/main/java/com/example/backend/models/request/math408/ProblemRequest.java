@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 @Data
-public class ProblemMath408Request implements Serializable {
+public class ProblemRequest implements Serializable {
     /**
      *
      */

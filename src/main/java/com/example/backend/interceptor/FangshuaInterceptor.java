@@ -70,7 +70,7 @@ public class FangshuaInterceptor extends HandlerInterceptorAdapter {
             if (login) {
                 if (user == null) {
                     throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录呢！");
-                } else if (!isPermissionAssigned(user, url)){
+                } else if (!isPermissionAssigned(user, url)) {
                     throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "谁给你的权利访问我的呀？？");
                 }
             }
@@ -80,9 +80,11 @@ public class FangshuaInterceptor extends HandlerInterceptorAdapter {
             }
 
             // 判断当前用户是否被封禁了
-            if (user != null && RedisUtils.getStr(key + "_lock") != null && RedisUtils.getStr(key + "_lock").equals(String.valueOf(maxCount))) {
+            if (user != null && RedisUtils.getStr(key + "_lock") != null
+                    && RedisUtils.getStr(key + "_lock").equals(String.valueOf(maxCount))) {
                 throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "对不起，你已经被封了！");
-            } else if (user == null && RedisUtils.getStr(key + "_lock") != null && RedisUtils.getStr(key + "_lock").equals(String.valueOf(maxCount))) {
+            } else if (user == null && RedisUtils.getStr(key + "_lock") != null
+                    && RedisUtils.getStr(key + "_lock").equals(String.valueOf(maxCount))) {
                 throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "对不起，你已经被封了！");
             }
             // 从redis中获取用户访问的次数
@@ -134,7 +136,8 @@ public class FangshuaInterceptor extends HandlerInterceptorAdapter {
         // 1.查找当前用户拥有的所有role角色
         QueryWrapper<UserRoleRelation> userRoleRelationQueryWrapper = new QueryWrapper<>();
         userRoleRelationQueryWrapper.eq("uuid",uuid);
-        List<UserRoleRelation> userRoleRelations = userRoleRelationMapper.selectList(userRoleRelationQueryWrapper);
+        List<UserRoleRelation> userRoleRelations = userRoleRelationMapper.
+                selectList(userRoleRelationQueryWrapper);
 
         // 2.查找对应的url所分属的role角色
         QueryWrapper<UserApi> userApiQueryWrapper = new QueryWrapper<>();

@@ -115,7 +115,8 @@ public class CompetitionsRatedUtil {
                 // 计算S_expected
                 for (int j = 0; j < competitionsUsers.size(); j++) {
                     if (j != i) {
-                        S_expected += (float) (1.0 / (1 + (Math.pow(10, (userList.get(j).getRating() - rating)) / 400)));
+                        S_expected += (float) (1.0 / (1 + (Math.pow(10,
+                                (userList.get(j).getRating() - rating)) / 400)));
                     }
                 }
 

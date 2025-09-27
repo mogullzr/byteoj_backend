@@ -56,6 +56,7 @@ public class OperationLogInterceptor implements HandlerInterceptor {
         put("/getPublicKey", "RSA模块");
         put("/log", "日志模块");
         put("/RBAC", "RBAC权限管理模块");
+        put("/lantu", "蓝兔支付模块");
     }};
     // 浏览器类型映射 - 改进版
     private static final Map<String, String> BROWSER_MAPPING = new LinkedHashMap<>() {{

@@ -61,7 +61,6 @@ public class  PostsController {
         } else {
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录呢！");
         }
-
         // 位置定位修正
         String ip = getClientIp(httpServletRequest);
         String location = ipRegionSearcher.searchInfoFromBaidu(ip);

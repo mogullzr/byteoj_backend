@@ -4,6 +4,7 @@ import com.example.backend.models.domain.spider.OjCompetition;
 import com.example.backend.models.vo.UserVo;
 import com.example.backend.models.vo.crawler.OJCompetitionVo;
 import com.example.backend.models.vo.log.LogVo;
+import com.example.backend.models.vo.pay.LantuPayViewVo;
 import com.example.backend.models.vo.post.PostsVo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import lombok.Data;
@@ -60,6 +61,11 @@ public class SearchVo implements Serializable {
      * 提交记录
      */
     private List<SubmissionsAlgorithmRecordsVo> recordsVos;
+
+    /**
+     *
+     */
+    private List<LantuPayViewVo> lantuPayViewVos;
 
     /**
      * 通用数据源

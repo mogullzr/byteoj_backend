@@ -16,6 +16,7 @@
             <result property="is_delete" column="is_delete" jdbcType="INTEGER"/>
             <result property="create_time" column="create_time" jdbcType="TIMESTAMP"/>
             <result property="course_description" column="course_description" jdbcType="VARCHAR"/>
+            <result property="pay" column="pay" jdbcType="VARCHAR"/>
     </resultMap>
 
     <sql id="Base_Column_List">

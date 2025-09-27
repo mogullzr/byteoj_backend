@@ -28,16 +28,16 @@ public class DeepSeekAIController {
 
         // 启动一个异步线程来处理流式数据
         deepSeekService.deepSeekAsker(deepSeekRequest)
-                .doOnTerminate(emitter::complete)  // 流结束时自动关闭
+                .doOnTerminate(emitter::complete)
                 .doOnError(ex -> {
-                    emitter.completeWithError(ex);  // 发生错误时关闭
+                    emitter.completeWithError(ex);
                 })
                 .subscribe(message -> {
                     try {
                         // 逐句发送消息到前端
                         emitter.send(message);
                     } catch (IOException e) {
-                        log.error("Error sending message to client", e);
+                        log.error("问题Error:", e);
                     }
                 });
 
