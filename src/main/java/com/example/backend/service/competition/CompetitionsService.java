@@ -9,6 +9,7 @@ import com.example.backend.models.request.competition.CompetitionRecordsRequest;
 import com.example.backend.models.vo.UserRatingVo;
 import com.example.backend.models.vo.UserVo;
 import com.example.backend.models.vo.competition.CompetitionProblemsInfo;
+import com.example.backend.models.vo.competition.CompetitionProblemsVo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import com.example.backend.models.vo.competition.CompetitionInfoVo;
 import com.example.backend.models.vo.competition.CompetitionRankVo;
@@ -153,4 +154,12 @@ public interface CompetitionsService extends IService<Competitions> {
      * @return 用户竞赛参加情况数据
      */
     List<UserRatingVo> competitionUserJoinsInfoGet(Long uuid, Integer pageNum);
+
+    /**
+     * 管理员查看竞赛试题
+     *
+     * @param competitionId 竞赛ID
+     * @return 竞赛试题获取
+     */
+    List<CompetitionProblemsVo> competitionProblemsAdmingGet(Long competitionId);
 }

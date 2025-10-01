@@ -23,6 +23,7 @@ import com.example.backend.models.vo.UserRatingVo;
 import com.example.backend.models.vo.UserVo;
 import com.example.backend.models.vo.competition.*;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
+import com.example.backend.service.competition.CompetitionsProblemsAlgorithmService;
 import com.example.backend.service.competition.CompetitionsService;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -55,6 +56,8 @@ import java.util.zip.ZipEntry;
 @Slf4j
 public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Competitions>
         implements CompetitionsService{
+    @Resource
+    private CompetitionsProblemsAlgorithmService competitionsProblemsAlgorithmService;
 
     @Resource
     private CompetitionsMapper competitionsMapper;
@@ -408,62 +411,47 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
     public boolean competitionModifyByUser(CompetitionAddRequest competitionAddRequest, Long uuid) {
         List<CompetitionProblems> algorithm_problem_list = competitionAddRequest.getAlgorithm_problem_list();
         List<CompetitionProblems> math408_problem_list = competitionAddRequest.getMath408_problem_list();
+
         QueryWrapper<CompetitionsProblemsAlgorithm> competitionsProblemsAlgorithmQueryWrapper = new QueryWrapper<>();
-        QueryWrapper<CompetitionsProblemsMath408> competitionsProblemsMath408QueryWrapper = new QueryWrapper<>();
+//        QueryWrapper<CompetitionsProblemsMath408> competitionsProblemsMath408QueryWrapper = new QueryWrapper<>();
         competitionsProblemsAlgorithmQueryWrapper.eq("competition_id", competitionAddRequest.getCompetition_id());
-        competitionsProblemsMath408QueryWrapper.eq("competition_id", competitionAddRequest.getCompetition_id());
+//        competitionsProblemsMath408QueryWrapper.eq("competition_id", competitionAddRequest.getCompetition_id());
 
-        List<CompetitionsProblemsAlgorithm> competitionsProblemsAlgorithms = competitionsProblemsAlgorithmMapper.selectList(competitionsProblemsAlgorithmQueryWrapper);
-        List<CompetitionsProblemsMath408> competitionsProblemsMath408s = competitionsProblemsMath408Mapper.selectList(competitionsProblemsMath408QueryWrapper);
+        // 1.删除竞赛试题
+        QueryWrapper<CompetitionsProblemsAlgorithm> competitionsProblemsAlgorithmQueryWrapper1 = new QueryWrapper<>();
+//        QueryWrapper<CompetitionsProblemsMath408> competitionsProblemsMath408QueryWrapper1 = new QueryWrapper<>();
 
-        List<CompetitionsProblemsAlgorithm> AlgorithmList = new ArrayList<>();
-        List<CompetitionsProblemsMath408> Math408List = new ArrayList<>();
+        competitionsProblemsAlgorithmQueryWrapper1.eq("competition_id", competitionAddRequest.getCompetition_id());
+//        competitionsProblemsMath408QueryWrapper1.eq("competition_id", competitionAddRequest.getCompetition_id());
+        competitionsProblemsAlgorithmMapper.delete(competitionsProblemsAlgorithmQueryWrapper1);
+//        competitionsProblemsMath408Mapper.delete(competitionsProblemsMath408QueryWrapper1);
 
-        // filter过滤寻找出不同项
-//        for (int item = 0; item < competitionsProblemsAlgorithms.size(); item ++) {
-//            AlgorithmList.add(competitionsProblemsAlgorithms.get(item));
+
+        // 2.设置竞赛信息
+        competitionSetCompetition(competitionAddRequest);
+
+        // 3.设置题目信息
+        List<CompetitionsProblemsAlgorithm> algorithmList = new ArrayList<>();
+//        List<CompetitionsProblemsMath408> math408List = new ArrayList<>();
+
+
+        for (CompetitionProblems competitionProblems : algorithm_problem_list) {
+            CompetitionsProblemsAlgorithm demo = new CompetitionsProblemsAlgorithm();
+            demo.setCompetition_id(competitionAddRequest.getCompetition_id());
+            demo.setIdx(competitionProblems.getIndex());
+            demo.setProblem_id(competitionProblems.getProblem_id());
+            demo.setProblem_name(competitionProblems.getProblem_name());
+            demo.setTest_total(0L);
+            demo.setAc_total(0L);
+            demo.setScore(100L);
+
+            algorithmList.add(demo);
+        }
+        competitionsProblemsAlgorithmService.saveBatch(algorithmList);
+
+//        for (CompetitionProblems problemsMath408 : math408_problem_list) {
+//
 //        }
-//        AlgorithmList = findDifferentItems(AlgorithmList, algorithm_problem_list);
-//        for (int item = 0; item < competitionsProblemsMath408s.size(); item ++) {
-//            Math408List.add(competitionsProblemsMath408s.get(item).getProblem_id());
-//        }
-//        Math408List = findDifferentItems(Math408List, math408_problem_list);
-//
-//
-//        competitionSetCompetition(competitionAddRequest);
-//
-//        for (int item = 0; item < AlgorithmList.size(); item ++) {
-//            QueryWrapper<CompetitionsProblemsAlgorithm> queryWrapper = new QueryWrapper<>();
-//            queryWrapper.eq("competition_id", competitionAddRequest.getCompetition_id());
-//            queryWrapper.eq("problem_id", AlgorithmList.get(item));
-//            CompetitionsProblemsAlgorithm competitionsProblemsAlgorithm = competitionsProblemsAlgorithmMapper.selectOne(queryWrapper);
-//            if (competitionsProblemsAlgorithm == null) {
-//                CompetitionsProblemsAlgorithm algorithm = new CompetitionsProblemsAlgorithm();
-//                algorithm.setCompetition_id(competitionAddRequest.getCompetition_id());
-//                algorithm.setProblem_id(AlgorithmList.get(item).getProblem_id());
-//
-//                competitionsProblemsAlgorithmMapper.insert(algorithm);
-//            } else {
-//                competitionsProblemsAlgorithmMapper.delete(queryWrapper);
-////            }
-//        }
-//
-//
-//        for (int item = 0; item < Math408List.size(); item ++) {
-//            QueryWrapper<CompetitionsProblemsMath408> queryWrapper = new QueryWrapper<>();
-//            queryWrapper.eq("problem_id", Math408List.get(item));
-//            CompetitionsProblemsMath408 competitionsProblemsMath408 = competitionsProblemsMath408Mapper.selectOne(queryWrapper);
-//            if (competitionsProblemsMath408 == null) {
-//                CompetitionsProblemsMath408 math408 = new CompetitionsProblemsMath408();
-//                math408.setCompetition_id(competitionAddRequest.getCompetition_id());
-//                math408.setProblem_id(Math408List.get(item));
-//
-//                competitionsProblemsMath408Mapper.insert(math408);
-//            } else {
-//                competitionsProblemsMath408Mapper.delete(queryWrapper);
-//            }
-//        }
-//
         return true;
     }
 
@@ -951,6 +939,36 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
         }
     }
 
+    @Override
+    public List<CompetitionProblemsVo> competitionProblemsAdmingGet(Long competition_id) {
+        // 查找竞赛相关信息
+        QueryWrapper<CompetitionsProblemsAlgorithm>
+                competitionsProblemsAlgorithmQueryWrapper = new QueryWrapper<>();
+        competitionsProblemsAlgorithmQueryWrapper.eq("competition_id", competition_id);
+        List<CompetitionsProblemsAlgorithm> competitionsProblemsAlgorithmList =
+                competitionsProblemsAlgorithmMapper
+                        .selectList(competitionsProblemsAlgorithmQueryWrapper);
+        List<CompetitionProblemsVo> problemAlgorithmBankVoList = new ArrayList<>();
+
+        if (competitionsProblemsAlgorithmList == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR,
+                    "该竞赛不存在或者，该竞赛不存在题目？？？系统出错了！！！联系管理员！！！898561494@qq.com");
+        }
+
+        // 组合信息
+        competitionsProblemsAlgorithmList.forEach((problem)->{
+            CompetitionProblemsVo competitionProblemsVo = new CompetitionProblemsVo();
+            competitionProblemsVo.setIndex(problem.getIdx());
+            competitionProblemsVo.setProblem_name(problem.getProblem_name());
+            competitionProblemsVo.setAc_total(problem.getAc_total());
+            competitionProblemsVo.setTest_total(problem.getTest_total());
+            competitionProblemsVo.setProblem_id(problem.getProblem_id());
+
+            problemAlgorithmBankVoList.add(competitionProblemsVo);
+        });
+        return problemAlgorithmBankVoList;
+    }
+
     private List<UserVo> getUserVoList(Page<User> page, String keyword) {
         QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
         userQueryWrapper.orderByDesc("rating");
@@ -1008,6 +1026,8 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
         competition.setEnd_time(competitionAddRequest.getEnd_time());
         competition.setAvatar(competitionAddRequest.getAvatar());
         competition.setDescription(competitionAddRequest.getDescription());
+        competition.setPassword(competitionAddRequest.getPassword());
+
         // MD5加密方式
         if (competitionAddRequest.getStatus() != null && competitionAddRequest.getStatus() == 1) {
             competition.setPassword(DigestUtils.md5DigestAsHex((SALT + competitionAddRequest.getPassword()).getBytes()));

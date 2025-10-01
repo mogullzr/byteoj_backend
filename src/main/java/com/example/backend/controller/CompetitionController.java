@@ -15,6 +15,7 @@ import com.example.backend.models.request.problem.SearchRequest;
 import com.example.backend.models.vo.UserRatingVo;
 import com.example.backend.models.vo.UserVo;
 import com.example.backend.models.vo.competition.CompetitionProblemsInfo;
+import com.example.backend.models.vo.competition.CompetitionProblemsVo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import com.example.backend.models.vo.competition.CompetitionInfoVo;
 import com.example.backend.models.vo.competition.CompetitionRankVo;
@@ -140,8 +141,6 @@ public class CompetitionController {
         return ResultUtils.success(result);
     }
 
-    @GetMapping("/get")
-
     @AccessLimit(seconds=5, maxCount=25, needLogin=true)
     @PostMapping("/user/modify")
     private BaseResponse<Boolean> competitionModifyByUser(@RequestBody CompetitionAddRequest competitionAddRequest, HttpServletRequest httpServletRequest) {
@@ -220,6 +219,13 @@ public class CompetitionController {
     private BaseResponse<List<UserRatingVo>> competitionUserJoinsInfoGet(@RequestBody CompetitionSearchRequest competitionSearchRequest, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
         Long uuid = userService.getLoginUser(httpServletRequest).getUuid();
         List<UserRatingVo> result = competitionsService.competitionUserJoinsInfoGet(uuid, competitionSearchRequest.getPageNum());
+        return ResultUtils.success(result);
+    }
+
+    @AccessLimit(seconds = 3, maxCount = 20, needLogin=true)
+    @GetMapping("/admin/problems/get")
+    private BaseResponse<List<CompetitionProblemsVo>> competitionProblemsAdminGet(Long competition_id, HttpServletRequest httpServletRequest) {
+        List<CompetitionProblemsVo> result = competitionsService.competitionProblemsAdmingGet(competition_id);
         return ResultUtils.success(result);
     }
 }

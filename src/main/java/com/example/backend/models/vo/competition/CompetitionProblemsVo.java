@@ -8,6 +8,11 @@ import java.io.Serializable;
 public class CompetitionProblemsVo implements Serializable {
     private static final long serialVersionUID = 1753552126497561646L;
     /**
+     * 问题ID
+     */
+    private Long problem_id;
+
+    /**
      * 索引编号
      */
     private String index;
