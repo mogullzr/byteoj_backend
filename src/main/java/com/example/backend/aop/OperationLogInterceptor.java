@@ -102,12 +102,25 @@ public class OperationLogInterceptor implements HandlerInterceptor {
         put("ipad", "iOS");
     }};
 
-    @Override
+    // 过滤接口
+    private static final HashMap<String, Boolean> FILTER_PATTERNS  = new LinkedHashMap<String, Boolean>() {{
+        put("/api/user/current", true);  // 完全过滤
+        put("/api/user/picture/user/get/", true);
+        put("/api/user/picture/user/get", true);
+    }};
+
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         // 跳过OPTIONS预检请求
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             return true; // 直接放行，不记录日志
         }
+
+        // 检查是否需要过滤当前请求
+        String requestURI = request.getRequestURI();
+        if (shouldFilter(requestURI)) {
+            return true; // 直接放行，不记录日志
+        }
+
         // 1. 记录开始时间
         request.setAttribute("startTime", System.currentTimeMillis());
 
@@ -116,6 +129,28 @@ public class OperationLogInterceptor implements HandlerInterceptor {
             return true;
         }
         return true;
+    }
+
+    /**
+     * 是否需要进行接口过滤
+     *
+     * @param requestURI 请求URI
+     * @return 是否需要过滤
+     */
+    private boolean shouldFilter(String requestURI) {
+        for (Map.Entry<String, Boolean> entry : FILTER_PATTERNS.entrySet()) {
+            String pattern = entry.getKey();
+            // 简单通配符匹配
+            if (pattern.endsWith("/*")) {
+                String prefix = pattern.substring(0, pattern.length() - 1);
+                if (requestURI.startsWith(prefix)) {
+                    return true;
+                }
+            } else if (requestURI.equals(pattern)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
