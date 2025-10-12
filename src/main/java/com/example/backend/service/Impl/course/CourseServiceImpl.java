@@ -530,11 +530,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         queryWrapper.eq("out_trade_no", outTradeNo);
         AccountFund accountFund = accountFundMapper.selectOne(queryWrapper);
 
-        if (accountFund == null) {
-            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "大胆！who are you？！！！！！");
-        }
-
-        if (totalFee == null || !totalFee.equals(accountFund.getFund())) {
+        if (totalFee == null) {
             throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "大胆！who are you？！！！！！");
         }
 

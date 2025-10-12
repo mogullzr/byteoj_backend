@@ -14,8 +14,6 @@ import java.util.List;
 * @Entity com.example.backend.models.domain.log.LogException
 */
 public interface LogExceptionMapper extends BaseMapper<LogException> {
-    @Select("select ")
-    public LogAdminBasicInfo selectActualInfoByRules();
 }
 
 

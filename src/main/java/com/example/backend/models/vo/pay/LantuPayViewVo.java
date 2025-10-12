@@ -29,7 +29,7 @@ public class LantuPayViewVo {
     private Date create_date;
 
     /**
-     * QQ号
+     * 号
      */
     private String qq;
 
