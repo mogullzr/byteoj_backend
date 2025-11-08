@@ -1,10 +1,7 @@
-package com.example.backend.service.source;
+package com.example.backend.service.source.search;
 
 import com.example.backend.models.request.competition.CompetitionRecordsRequest;
 import com.example.backend.models.request.log.LogSearchRequest;
-import com.example.backend.models.request.problem.AlgorithmQueryRequest;
-import com.example.backend.models.vo.problem.ProblemAlgorithmBankVo;
-import com.example.backend.service.algorithm.ProblemAlgorithmService;
 import com.example.backend.service.log.LogService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

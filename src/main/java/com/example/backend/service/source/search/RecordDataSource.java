@@ -1,8 +1,6 @@
-package com.example.backend.service.source;
+package com.example.backend.service.source.search;
 
 import com.example.backend.models.request.competition.CompetitionRecordsRequest;
-import com.example.backend.models.vo.post.PostsVo;
-import com.example.backend.models.vo.problem.SearchVo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import com.example.backend.service.competition.CompetitionsService;
 import org.springframework.stereotype.Service;

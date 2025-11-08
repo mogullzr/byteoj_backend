@@ -1,7 +1,7 @@
 package com.example.backend.registry;
 
 import com.example.backend.common.SearchTypeEnum;
-import com.example.backend.service.source.*;
+import com.example.backend.service.source.search.*;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;

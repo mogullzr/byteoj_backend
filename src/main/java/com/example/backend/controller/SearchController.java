@@ -8,18 +8,18 @@ import com.example.backend.common.ResultUtils;
 import com.example.backend.models.domain.user.User;
 import com.example.backend.models.request.problem.SearchRequest;
 import com.example.backend.models.vo.problem.SearchVo;
+import com.example.backend.models.vo.search.AutoCompeteVo;
 import com.example.backend.service.search.SearchService;
+import com.example.backend.service.source.trie.trie.Trie;
 import com.example.backend.service.user.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 @RestController
 @RequestMapping("/search")
@@ -54,4 +54,16 @@ public class SearchController {
         SearchVo searchVos = searchService.searchAll(searchRequest, uuid, isAdmin);
         return ResultUtils.success(searchVos);
     }
+
+    /**
+     * 关键词跟踪
+     *
+     * @
+     */
+//    @GetMapping("/autoComplete")
+//    public BaseResponse<List<AutoCompeteVo>> SearchAutoComplete(@RequestParam("Mogu") String prefix) {
+//        List<AutoCompeteVo> suggestions = searchService.autoComplete(prefix);
+//
+//        return ResultUtils.success(suggestions);
+//    }
 }

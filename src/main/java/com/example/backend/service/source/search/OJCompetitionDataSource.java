@@ -1,6 +1,5 @@
-package com.example.backend.service.source;
+package com.example.backend.service.source.search;
 
-import com.example.backend.models.domain.spider.OjCompetition;
 import com.example.backend.models.request.competition.CompetitionRecordsRequest;
 import com.example.backend.models.request.problem.AlgorithmQueryRequest;
 import com.example.backend.models.vo.crawler.OJCompetitionVo;

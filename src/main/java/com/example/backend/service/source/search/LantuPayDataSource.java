@@ -1,11 +1,8 @@
-package com.example.backend.service.source;
+package com.example.backend.service.source.search;
 
 import com.example.backend.models.request.competition.CompetitionRecordsRequest;
 import com.example.backend.models.vo.pay.LantuPayViewVo;
-import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
-import com.example.backend.service.competition.CompetitionsService;
 import com.example.backend.service.pay.AccountFundService;
-import generator.service.AccountPayBackService;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;

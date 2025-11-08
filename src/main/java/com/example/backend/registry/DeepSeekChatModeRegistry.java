@@ -38,6 +38,15 @@ public class DeepSeekChatModeRegistry {
     @Value("${deepseek.api.r1_1.key}")
     private String r1_ApiKey;
 
+    @Value("${deepseek.api.v3-tenCloud.model}")
+    private String v3_tenCloudModel;
+
+    @Value("${deepseek.api.v3-tenCloud.url}")
+    private String v3_tenCloudUrl;
+
+    @Value("${deepseek.api.v3-tenCloud.key}")
+    private String v3_tenCloudApiKey;
+
     private Map<String, List<String>> modelInfo;
 
     @PostConstruct
@@ -61,6 +70,12 @@ public class DeepSeekChatModeRegistry {
         keyInfo_r1.add(r1_ApiUrl);
         keyInfo_r1.add(r1_ApiKey);
         modelInfo.put(r1_Model, keyInfo_r1);
+
+        // 腾讯云v3模型
+        List<String> keyInfo_v3_tengCloud = new ArrayList<>();
+        keyInfo_v3_tengCloud.add(v3_tenCloudUrl);
+        keyInfo_v3_tengCloud.add(v3_tenCloudApiKey);
+        modelInfo.put(v3_tenCloudModel, keyInfo_v3_tengCloud);
     }
 
     public List<String> getChatModeInfo(String model) {

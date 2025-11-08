@@ -1,15 +1,5 @@
-package com.example.backend.service.source;
+package com.example.backend.service.source.search;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.example.backend.common.ErrorCode;
-import com.example.backend.exception.BusinessException;
-import com.example.backend.mapper.*;
-import com.example.backend.models.domain.algorithm.AcAlgorithmProblem;
-import com.example.backend.models.domain.algorithm.probleminfo.ProblemAlgorithmBank;
-import com.example.backend.models.domain.algorithm.probleminfo.ProblemAlgorithmLimit;
-import com.example.backend.models.domain.algorithm.tag.ProblemAlgorithmTags;
-import com.example.backend.models.domain.algorithm.tag.ProblemAlgorithmTagsRelation;
 import com.example.backend.models.request.competition.CompetitionRecordsRequest;
 import com.example.backend.models.request.problem.AlgorithmQueryRequest;
 import com.example.backend.models.vo.problem.ProblemAlgorithmBankVo;

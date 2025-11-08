@@ -8,7 +8,7 @@ services:
       - "3306:3306"
     environment:
       TZ: "Asia/Shanghai"
-      MYSQL_ROOT_PASSWORD: "MySQL数据库密码"
+      MYSQL_ROOT_PASSWORD: "142398749lzr"
     volumes:
       - "/root/opt/mysql/conf:/etc/mysql/conf.d"
       - "/root/opt/mysql/logs:/var/log/mysql"
@@ -26,8 +26,8 @@ services:
       - "5672:5672"      # AMQP 端口
       - "15672:15672"    # 管理界面端口
     environment:
-      RABBITMQ_DEFAULT_USER: "RabbitMQ账号"
-      RABBITMQ_DEFAULT_PASS: "RabbitMQ密码"
+      RABBITMQ_DEFAULT_USER: "Mogullzr"
+      RABBITMQ_DEFAULT_PASS: "zpDhDEkKAzkVBCZD35Qm"
       RABBITMQ_DEFAULT_VHOST: /
       RABBITMQ_ERLANG_COOKIE: "byteoj_secret_cookie"
     volumes:
@@ -50,7 +50,7 @@ services:
     volumes:
       - "/root/opt/redis/data:/data"
     restart: always
-    command: redis-server --requirepass "Redis的密码"
+    command: redis-server --requirepass ",s8ab3kz9U4J20[wRFOM!Vg(cu7S#1W@"
     privileged: true
     networks:
       - byteoj
@@ -77,8 +77,8 @@ services:
       # RabbitMQ 配置（密码已修复为与服务器一致）
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_PORT: 5672
-      SPRING_RABBITMQ_USERNAME: "RabbitMQ账号"
-      SPRING_RABBITMQ_PASSWORD: "RabbitMQ密码"
+      SPRING_RABBITMQ_USERNAME: "Mogullzr"
+      SPRING_RABBITMQ_PASSWORD: "zpDhDEkKAzkVBCZD35Qm"
       SPRING_RABBITMQ_VIRTUAL_HOST: /
 
   nginx:

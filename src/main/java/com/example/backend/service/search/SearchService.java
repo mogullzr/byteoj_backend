@@ -3,6 +3,8 @@ package com.example.backend.service.search;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.backend.models.request.problem.SearchRequest;
 import com.example.backend.models.vo.problem.SearchVo;
+import com.example.backend.models.vo.search.AutoCompeteVo;
+import com.example.backend.service.source.trie.trie.TrieNode;
 
 import java.util.List;
 
@@ -17,5 +19,13 @@ public interface SearchService {
      * @return 搜索到的内容
      */
     SearchVo searchAll(SearchRequest searchRequest, Long uuid, boolean isAdmin);
+
+
+    /**
+     * 自动填充内容显示
+     *
+     *
+     */
+//    List<AutoCompeteVo> autoComplete(String prefix);
 
 }

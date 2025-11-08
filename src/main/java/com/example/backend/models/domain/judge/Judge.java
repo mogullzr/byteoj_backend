@@ -1,10 +1,13 @@
 package com.example.backend.models.domain.judge;
 
 import lombok.Data;
+
+import java.io.Serial;
 import java.io.Serializable;
 
 @Data
 public class Judge implements Serializable {
+    @Serial
     private static final long serialVersionUID = -4730324887729132478L;
     /**
      * 文件句柄ID

@@ -1,12 +1,8 @@
-package com.example.backend.service.source;
+package com.example.backend.service.source.search;
 
-import com.example.backend.models.domain.spider.OjCompetition;
 import com.example.backend.models.request.competition.CompetitionRecordsRequest;
-import com.example.backend.models.request.problem.AlgorithmQueryRequest;
 import com.example.backend.models.request.user.UserAuthSearchRequest;
 import com.example.backend.models.vo.UserVo;
-import com.example.backend.models.vo.crawler.OJCompetitionVo;
-import com.example.backend.service.crawler.OJCompetitionService;
 import com.example.backend.service.user.UserService;
 import org.springframework.stereotype.Service;
 

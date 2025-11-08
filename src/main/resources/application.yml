@@ -1,4 +1,11 @@
 spring:
+  jpa:
+    hibernate:
+      ddl-auto: update  # 测试用create-drop，生产update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
   aop:
     proxy-target-class: true
   jackson:
@@ -74,15 +81,38 @@ spring:
   # RabbitMQ 配置
   rabbitmq:
     host: localhost
-    port: 15672
-    username: guest
-    password: guest
+    port: 5672
+    username: ${hm.rabbitmq.username}
+    password: ${hm.rabbitmq.password}
     virtual-host: /
     # 开启消息发送确认
     publisher-returns: true
+    publisher-confirm-type: correlated  # 确认发送
+    cache:
+      channel:
+        checkout-timeout: 10s  # 通道池
+        size: 50  # 通道数
     listener:
       simple:
+        concurrency: 20  # 起步 20 线程（100 人够）
+        max-concurrency: 50  # 峰值 50
+        prefetch: 10  # 预取 10 条/线程（平衡负载）
         acknowledge-mode: manual
+        retry:
+          enabled: true
+          max-attempts: 5  # 重试 5 次
+          initial-interval: 1000ms
+          multiplier: 2.0
+          max-interval: 30000ms
+          listen-attempts: 3
+        missing-queues-fatal: false  # 容错
+      template:
+        retry:
+          enabled: true
+          initial-interval: 500ms
+          max-attempts: 3
+    # 超时设置
+    connection-timeout: 5000
   servlet:
     multipart:
       max-file-size: 50MB
@@ -124,6 +154,9 @@ interfaceAccess:
   requestCount: 60    # 请求3次
   lockTime: 60      # 禁用时长--单位/秒
 
+hanlp:
+  enable: true
+
 ROLE_MAX:
   UUID: 9
 deepseek:
@@ -140,6 +173,10 @@ deepseek:
       model: ${hm.deepseek.api.r1_1.model}
       url: ${hm.deepseek.api.r1_1.url}
       key: ${hm.deepseek.api.r1_1.key}
+    v3-tenCloud:
+      model: ${hm.deepseek.api.v3-tenCloud.model}
+      url: ${hm.deepseek.api.v3-tenCloud.url}
+      key: ${hm.deepseek.api.v3-tenCloud.key}
 domain:
   url_1: https://www.byteoj.com/ # 自己的域名地址，替换一下
 avatar:

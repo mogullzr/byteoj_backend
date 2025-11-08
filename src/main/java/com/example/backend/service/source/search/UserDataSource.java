@@ -1,22 +1,8 @@
-package com.example.backend.service.source;
+package com.example.backend.service.source.search;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.example.backend.common.ErrorCode;
-import com.example.backend.exception.BusinessException;
-import com.example.backend.mapper.*;
-import com.example.backend.models.domain.posts.*;
-import com.example.backend.models.domain.user.User;
 import com.example.backend.models.request.competition.CompetitionRecordsRequest;
-import com.example.backend.models.request.post.PostsCommentRequest;
-import com.example.backend.models.request.post.PostsQueryRequest;
-import com.example.backend.models.request.post.PostsRequest;
 import com.example.backend.models.request.user.UserSearchRequest;
 import com.example.backend.models.vo.UserVo;
-import com.example.backend.models.vo.post.PostsCommentVo;
-import com.example.backend.models.vo.post.PostsVo;
-import com.example.backend.service.posts.PostsService;
 import com.example.backend.service.user.UserService;
 import org.springframework.stereotype.Service;
 

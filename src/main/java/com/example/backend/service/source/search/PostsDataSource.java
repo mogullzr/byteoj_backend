@@ -1,4 +1,4 @@
-package com.example.backend.service.source;
+package com.example.backend.service.source.search;
 
 import com.example.backend.models.request.competition.CompetitionRecordsRequest;
 import com.example.backend.models.request.post.PostsQueryRequest;

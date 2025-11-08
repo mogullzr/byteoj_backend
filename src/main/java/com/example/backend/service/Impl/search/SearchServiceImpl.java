@@ -3,8 +3,6 @@ package com.example.backend.service.Impl.search;
 import com.example.backend.common.ErrorCode;
 import com.example.backend.common.SearchTypeEnum;
 import com.example.backend.exception.BusinessException;
-import com.example.backend.models.domain.spider.OjCompetition;
-import com.example.backend.models.domain.user.User;
 import com.example.backend.models.request.competition.CompetitionRecordsRequest;
 import com.example.backend.models.request.problem.SearchRequest;
 import com.example.backend.models.vo.UserVo;
@@ -13,20 +11,18 @@ import com.example.backend.models.vo.log.LogVo;
 import com.example.backend.models.vo.pay.LantuPayViewVo;
 import com.example.backend.models.vo.post.PostsVo;
 import com.example.backend.models.vo.problem.ProblemAlgorithmBankVo;
-import com.example.backend.models.vo.problem.ProblemMath408BankVo;
 import com.example.backend.models.vo.problem.SearchVo;
+import com.example.backend.models.vo.search.AutoCompeteVo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import com.example.backend.registry.DataSourceRegistry;
 import com.example.backend.service.search.SearchService;
-import com.example.backend.service.source.*;
-import com.example.backend.service.user.UserService;
+import com.example.backend.service.source.search.*;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class SearchServiceImpl implements SearchService {
@@ -56,6 +52,10 @@ public class SearchServiceImpl implements SearchService {
 
     @Resource
     private LantuPayDataSource lantuPayDataSource;
+
+    // 自动注入所有Extractor
+//    @Autowired
+//    private List<DataSourceExtractor<?>> extractors;
 
     @Override
     public SearchVo searchAll(SearchRequest searchRequest, Long uuid, boolean isAdmin) {
@@ -138,4 +138,44 @@ public class SearchServiceImpl implements SearchService {
         }
         return searchVo;
     }
+
+//    @Override
+//    public List<AutoCompeteVo> autoComplete(String prefix) {
+//        Trie trie = new Trie();
+//        System.out.println("Building Trie from multiple sources...");
+//        long start = System.currentTimeMillis();
+//
+//        for (DataSourceExtractor<?> extractor : extractors) {
+//            String sourceName = extractor.getSourceName();
+//            System.out.println("Processing " + sourceName + "...");
+//
+//            List<?> entities = extractor.getRepository().findAll();
+//
+//            entities.forEach(entity -> {
+//                List<String> keywords = extractor.extractKeywords(entity);
+//                String id = extractor.getEntityId((Class<? extends Object>) entity.getClass().cast(entity));
+//                keywords.forEach(keyword -> trie.insert(keyword, id));
+//            });
+//            System.out.println("Done " + sourceName + " (" + entities.size() + " entities)");
+//        }
+//
+//        long duration = System.currentTimeMillis() - start;
+//        System.out.println("Trie built in " + duration + "ms from " + extractors.size() + " sources");
+//
+//
+//
+//
+//        List<Trie.Suggestion> searchContent = trie.search(prefix, 100);
+//        List<AutoCompeteVo> autoCompeteVoList = new ArrayList<>();
+//        searchContent.forEach((content)->{
+//            AutoCompeteVo autoCompeteVo = new AutoCompeteVo();
+//            autoCompeteVo.setId(content.getIds().toString());
+//            autoCompeteVo.setRaw(content.getWord());
+//
+//            autoCompeteVoList.add(autoCompeteVo);
+//        });
+//
+//        return autoCompeteVoList;
+//        return null;
+//    }
 }
