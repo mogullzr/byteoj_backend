@@ -11,6 +11,7 @@
 //
 //import java.util.ArrayList;
 //import java.util.List;
+//import java.util.stream.Collectors;
 //
 //@Component
 //public class OJCompetitionExtractor implements DataSourceExtractor<OjCompetition> {
@@ -19,15 +20,18 @@
 //
 //    @Override
 //    public List<String> extractKeywords(OjCompetition entity) {
-//        List<String> keywords = new ArrayList<>();
-//
-//        // 分词OJ竞赛名称
-//        List<Term> terms = HanLP.segment(entity.getTitle());
-//        keywords.addAll(terms.stream().map(term -> term.word).toList());
-//
-//        return keywords;
+//        return segmentPrefix(entity.getTitle());
 //    }
 //
+//    // 修改 search 方法中的分词调用
+//    private List<String> segmentPrefix(String prefix) {
+//        // 使用与插入时相同的分词方式
+//        List<Term> terms = HanLP.segment(prefix);
+//        return terms.stream()
+//                .map(term -> term.word)
+//                .filter(termWord -> !termWord.trim().isEmpty())
+//                .collect(Collectors.toList());
+//    }
 //    @Override
 //    public String getEntityId(OjCompetition entity) {
 //        return getSourceName() + entity.getId();

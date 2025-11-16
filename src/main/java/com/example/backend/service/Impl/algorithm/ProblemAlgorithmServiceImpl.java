@@ -754,7 +754,11 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         problemAlgorithmLimitQueryWrapper.eq("problem_id", problemAlgorithmBank.getProblem_id());
         ProblemAlgorithmLimit problemAlgorithmLimit = problemAlgorithmLimitMapper.selectOne(problemAlgorithmLimitQueryWrapper);
         if (problemAlgorithmLimit == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "此题信息存在缺失，请联系总管理员8989561494@qq.com");
+//            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "此题信息存在缺失，请联系总管理员8989561494@qq.com");
+            Judge result = new Judge();
+            result.setStatus("NOT_FOUND_ERROR");
+            result.setOutput("此题信息存在缺失，请联系总管理员8989561494@qq.com");
+            return result;
         }
 
         String language = judgeRequest.getLanguage();
@@ -785,8 +789,12 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         algorithmTestCaseQueryWrapper.eq("problem_id", problemAlgorithmBank.getProblem_id());
         List<AlgorithmTestCase> algorithmTestCases = algorithmTestCaseMapper.selectList(algorithmTestCaseQueryWrapper);
 
-        if (algorithmTestCases == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "对不起，这道题目的测试样例还没有添加，请即使联系管理员进行查询");
+        if (algorithmTestCases != null && algorithmTestCases.size() == 0) {
+//            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "对不起，这道题目的测试样例还没有添加，请即使联系管理员进行查询");
+            Judge result = new Judge();
+            result.setStatus("NOT_FOUND_ERROR");
+            result.setOutput("此题信息存在缺失，请联系总管理员8989561494@qq.com");
+            return result;
         }
 
 
@@ -1056,7 +1064,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
                         
                         // 🔥 使用原子操作更新用户竞赛数据
                         competitionsUserMapper.incrementAcNum(judgeRequest.getCompetition_id(), uuid, 1);
-                        long timePenalty = (long) ((currentDate.getTime() - localDate.getTime()) / 1000 + competitionAcProblemsAlgorithm.getTest_num() * 300);
+                        int timePenalty = (int) ((currentDate.getTime() - localDate.getTime()) / 1000 + competitionAcProblemsAlgorithm.getTest_num() * 300);
                         competitionsUserMapper.incrementTimePenalty(judgeRequest.getCompetition_id(), uuid, timePenalty);
                     } else {
                         competitionAcProblemsAlgorithm.setStatus(1);
@@ -1075,7 +1083,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
                         competitionsProblemsAlgorithmMapper.incrementTestTotal(judgeRequest.getCompetition_id(), judgeRequest.getIndex(), 1);
                         
                         // 🔥 使用原子操作更新用户罚时和AC数
-                        long timePenalty = (long) ((currentDate.getTime() - localDate.getTime()) / 1000 + competitionAcProblemsAlgorithm.getTest_num() * 300);
+                        int timePenalty = (int) ((currentDate.getTime() - localDate.getTime()) / 1000 + competitionAcProblemsAlgorithm.getTest_num() * 300);
                         competitionsUserMapper.incrementTimePenalty(judgeRequest.getCompetition_id(), uuid, timePenalty);
                         competitionsUserMapper.incrementAcNum(judgeRequest.getCompetition_id(), uuid, 1);
                     } else {

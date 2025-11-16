@@ -3,6 +3,8 @@ package com.example.backend.models.domain.algorithm.probleminfo;
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -11,12 +13,14 @@ import java.util.Date;
  * @TableName problem_algorithm_bank
  */
 @TableName(value ="problem_algorithm_bank")
+@Entity
 @Data
 public class ProblemAlgorithmBank implements Serializable {
     /**
      * 
      */
     @TableId(type = IdType.AUTO)
+    @Id
     private Long problem_id;
 
     /**

@@ -91,7 +91,7 @@ public class PostsVo implements Serializable {
      *
      * 总面数
      */
-    private Integer pages;
+    private Long pages;
 
     /**
      * 帖子类型

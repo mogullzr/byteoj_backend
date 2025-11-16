@@ -60,10 +60,10 @@ public class SearchController {
      *
      * @
      */
-//    @GetMapping("/autoComplete")
-//    public BaseResponse<List<AutoCompeteVo>> SearchAutoComplete(@RequestParam("Mogu") String prefix) {
-//        List<AutoCompeteVo> suggestions = searchService.autoComplete(prefix);
-//
-//        return ResultUtils.success(suggestions);
-//    }
+    @GetMapping("/autoComplete")
+    public BaseResponse<List<AutoCompeteVo>> SearchAutoComplete(@RequestParam("keyword") String prefix, @RequestParam("limit") Integer limit) {
+        List<AutoCompeteVo> suggestions = searchService.autoComplete(prefix, limit);
+
+        return ResultUtils.success(suggestions);
+    }
 }

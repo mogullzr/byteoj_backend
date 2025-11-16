@@ -16,27 +16,27 @@ public interface CompetitionsProblemsAlgorithmMapper extends BaseMapper<Competit
     /**
      * 原子性增加提交次数
      * @param competitionId 竞赛ID
-     * @param idx 题目索引
+     * @param idx 题目索引（String类型，对应数据库varchar）
      * @param increment 增加的数量（通常为1）
      * @return 更新的行数
      */
     @Update("UPDATE competitions_problems_algorithm SET test_total = test_total + #{increment} " +
             "WHERE competition_id = #{competitionId} AND idx = #{idx}")
     int incrementTestTotal(@Param("competitionId") Long competitionId, 
-                           @Param("idx") Long idx, 
+                           @Param("idx") String idx, 
                            @Param("increment") long increment);
 
     /**
      * 原子性增加AC次数
      * @param competitionId 竞赛ID
-     * @param idx 题目索引
+     * @param idx 题目索引（String类型，对应数据库varchar）
      * @param increment 增加的数量（通常为1）
      * @return 更新的行数
      */
     @Update("UPDATE competitions_problems_algorithm SET ac_total = ac_total + #{increment} " +
             "WHERE competition_id = #{competitionId} AND idx = #{idx}")
     int incrementAcTotal(@Param("competitionId") Long competitionId, 
-                         @Param("idx") Long idx, 
+                         @Param("idx") String idx, 
                          @Param("increment") long increment);
 
 }

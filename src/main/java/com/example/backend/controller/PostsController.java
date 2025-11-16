@@ -109,12 +109,17 @@ public class  PostsController {
 
     @AccessLimit(seconds=5, maxCount=30, needLogin=false)
     @PostMapping("/search/page")
-    private BaseResponse<List<PostsVo>> PostSearchByPage(Integer pageNum, Integer uuid, HttpServletRequest httpServletRequest){
+    private BaseResponse<List<PostsVo>> PostSearchByPage(Integer pageNum, String mode, HttpServletRequest httpServletRequest){
         if(httpServletRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
 
-        List<PostsVo> result = postsService.postSearchByPage(pageNum, uuid);
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        Long uuid = -1L;
+        if (loginUser != null) {
+            uuid = loginUser.getUuid();
+        }
+        List<PostsVo> result = postsService.postSearchByPage(pageNum, uuid, mode);
         return ResultUtils.success(result);
     }
 

@@ -17,7 +17,7 @@ public interface CompetitionAcProblemsAlgorithmMapper extends BaseMapper<Competi
      * 原子性增加测试次数
      * @param competitionId 竞赛ID
      * @param uuid 用户ID
-     * @param idx 题目索引
+     * @param idx 题目索引（String类型，对应数据库varchar）
      * @param increment 增加的数量（通常为1）
      * @return 更新的行数
      */
@@ -25,7 +25,7 @@ public interface CompetitionAcProblemsAlgorithmMapper extends BaseMapper<Competi
             "WHERE competition_id = #{competitionId} AND uuid = #{uuid} AND idx = #{idx}")
     int incrementTestNum(@Param("competitionId") Long competitionId, 
                          @Param("uuid") Long uuid, 
-                         @Param("idx") Long idx, 
+                         @Param("idx") String idx, 
                          @Param("increment") long increment);
 
 }

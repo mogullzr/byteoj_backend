@@ -17,12 +17,19 @@ import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import com.example.backend.registry.DataSourceRegistry;
 import com.example.backend.service.search.SearchService;
 import com.example.backend.service.source.search.*;
+import com.example.backend.service.source.trie.DataSourceExtractor;
+import com.example.backend.service.source.trie.trie.Trie;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 public class SearchServiceImpl implements SearchService {
@@ -53,9 +60,57 @@ public class SearchServiceImpl implements SearchService {
     @Resource
     private LantuPayDataSource lantuPayDataSource;
 
+    private final Trie trie = new Trie();
+
     // 自动注入所有Extractor
-//    @Autowired
-//    private List<DataSourceExtractor<?>> extractors;
+    @Autowired
+    private List<DataSourceExtractor<?>> extractors;
+
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
+
+    @PostConstruct
+    public void initTrie() {
+        if (initialized.get()) return;
+
+        System.out.println("Building Trie from multiple sources...");
+        long start = System.currentTimeMillis();
+        int totalEntities = 0;
+
+        try {
+            for (DataSourceExtractor<?> extractor : extractors) {
+                String sourceName = extractor.getSourceName();
+                System.out.println("Processing " + sourceName + "...");
+
+                List<?> entities = extractor.getRepository().findAll();
+                totalEntities += entities.size();
+
+                for (Object entity : entities) {
+                    @SuppressWarnings("unchecked")
+                    DataSourceExtractor<Object> typedExtractor = (DataSourceExtractor<Object>) extractor;
+
+                    @SuppressWarnings("unchecked")
+                    List<String> keywords = typedExtractor.extractKeywords(entity);
+
+                    String id = typedExtractor.getEntityId(entity);
+
+                    System.out.println("Inserting for " + id + ": " + keywords);
+
+                    if (!keywords.isEmpty()) {
+                        trie.insert(keywords, id);
+                    }
+                }
+
+                System.out.println("Done " + sourceName + " (" + entities.size() + " entities)");
+            }
+
+            long duration = System.currentTimeMillis() - start;
+            System.out.println("Trie built in " + duration + "ms from " + extractors.size() + " sources (" + totalEntities + " total entities)");
+            initialized.set(true);
+        } catch (Exception e) {
+            System.err.println("Build failed: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 
     @Override
     public SearchVo searchAll(SearchRequest searchRequest, Long uuid, boolean isAdmin) {
@@ -139,43 +194,38 @@ public class SearchServiceImpl implements SearchService {
         return searchVo;
     }
 
-//    @Override
-//    public List<AutoCompeteVo> autoComplete(String prefix) {
-//        Trie trie = new Trie();
-//        System.out.println("Building Trie from multiple sources...");
-//        long start = System.currentTimeMillis();
-//
-//        for (DataSourceExtractor<?> extractor : extractors) {
-//            String sourceName = extractor.getSourceName();
-//            System.out.println("Processing " + sourceName + "...");
-//
-//            List<?> entities = extractor.getRepository().findAll();
-//
-//            entities.forEach(entity -> {
-//                List<String> keywords = extractor.extractKeywords(entity);
-//                String id = extractor.getEntityId((Class<? extends Object>) entity.getClass().cast(entity));
-//                keywords.forEach(keyword -> trie.insert(keyword, id));
-//            });
-//            System.out.println("Done " + sourceName + " (" + entities.size() + " entities)");
-//        }
-//
-//        long duration = System.currentTimeMillis() - start;
-//        System.out.println("Trie built in " + duration + "ms from " + extractors.size() + " sources");
-//
-//
-//
-//
-//        List<Trie.Suggestion> searchContent = trie.search(prefix, 100);
-//        List<AutoCompeteVo> autoCompeteVoList = new ArrayList<>();
-//        searchContent.forEach((content)->{
-//            AutoCompeteVo autoCompeteVo = new AutoCompeteVo();
-//            autoCompeteVo.setId(content.getIds().toString());
-//            autoCompeteVo.setRaw(content.getWord());
-//
-//            autoCompeteVoList.add(autoCompeteVo);
-//        });
-//
-//        return autoCompeteVoList;
-//        return null;
-//    }
+    @Override
+    public List<AutoCompeteVo> autoComplete(String prefix, Integer limit) {
+        System.out.println("Searching: " + prefix);
+
+        if (!initialized.get()) {
+            System.out.println("Trie not ready, rebuilding...");
+            initTrie();  // fallback
+        }
+
+        if (prefix == null) {
+            return new ArrayList<>();
+        }
+        trie.printTree(); // 查看实际存储的内容
+
+
+        List<Trie.Suggestion> search = trie.search(prefix, limit);
+
+        // Service去重by word
+        Map<String, Trie.Suggestion> unique = new HashMap<>();
+        for (Trie.Suggestion sug : search) {
+            unique.putIfAbsent(sug.getWord(), sug);
+        }
+        search = new ArrayList<>(unique.values());
+
+        System.out.println("Final unique suggestions: " + search.size());
+
+        List<AutoCompeteVo> autoCompeteVos = new ArrayList<>();
+        for (Trie.Suggestion suggestion : search) {
+            AutoCompeteVo autoCompeteVo = new AutoCompeteVo();
+            autoCompeteVo.setRaw(suggestion.getWord());
+            autoCompeteVos.add(autoCompeteVo);
+        }
+        return autoCompeteVos;
+    }
 }

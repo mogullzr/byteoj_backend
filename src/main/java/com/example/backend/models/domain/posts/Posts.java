@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -14,12 +16,14 @@ import java.util.Date;
  * @TableName posts
  */
 @Data
+@Entity
 @TableName(value ="posts")
 public class Posts implements Serializable {
     /**
      * 帖子id
      */
     @TableId(type = IdType.AUTO)
+    @Id
     private Long post_id;
 
     /**

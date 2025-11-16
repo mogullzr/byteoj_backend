@@ -26,6 +26,6 @@ public interface SearchService {
      *
      *
      */
-//    List<AutoCompeteVo> autoComplete(String prefix);
+    List<AutoCompeteVo> autoComplete(String prefix, Integer limit);
 
 }

@@ -132,22 +132,28 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts>
     }
 
     @Override
-    public List<PostsVo> postSearchByPage(Integer pageNum, Integer uuid) {
+    public List<PostsVo> postSearchByPage(Integer pageNum, Long uuid, String mode) {
         Page<Posts> page = new Page<>(pageNum, 10);
         QueryWrapper<Posts> postsQueryWrapper = new QueryWrapper<>();
         postsQueryWrapper.eq("status", 0);
         postsQueryWrapper.orderByDesc("create_time");
 
-        if (!(uuid == null || uuid.equals(-1))) {
+        if (!(uuid == null || uuid.equals(-1L)) && (mode == null || mode.equals("user"))) {
             postsQueryWrapper.eq("uuid", uuid);
         }
+
+        Page<Posts> postsPage = postsMapper.selectPage(page, postsQueryWrapper);
         List<Posts> posts = postsMapper.selectPage(page, postsQueryWrapper).getRecords();
         List<PostsVo> postsVos = new ArrayList<>();
 
         posts.forEach((post)->{
             postsVos.add(getPostsVo(post));
         });
-
+        if (!postsVos.isEmpty()) {
+            PostsVo postsVo = postsVos.get(0);
+            postsVo.setPages(postsPage.getPages());
+            postsVos.set(0, postsVo);
+        }
         return postsVos;
     }
 
@@ -490,7 +496,7 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts>
         });
         if (!postsList.isEmpty()) {
             PostsVo postsVo = postsVoList.get(0);
-            postsVo.setPages((int) page.getPages());
+            postsVo.setPages(page.getPages());
             postsVoList.set(0, postsVo);
         }
         return postsVoList;

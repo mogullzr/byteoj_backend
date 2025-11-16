@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.annotation.*;
 import io.swagger.models.auth.In;
 import lombok.Data;
 
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -12,12 +14,14 @@ import java.util.Date;
  * @TableName user
  */
 @TableName(value ="user")
+@Entity
 @Data
 public class User implements Serializable {
     /**
      * ID
      */
     @TableId(type = IdType.AUTO)
+    @Id
     private Long uuid;
 
     /**

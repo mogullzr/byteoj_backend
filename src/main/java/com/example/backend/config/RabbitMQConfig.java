@@ -111,9 +111,10 @@ public class RabbitMQConfig {
         factory.setConnectionFactory(connectionFactory);
         factory.setMessageConverter(jsonMessageConverter());
         
-        // 并发配置：最多10个消费者同时处理
-        factory.setConcurrentConsumers(5);  // 初始5个消费者
-        factory.setMaxConcurrentConsumers(10);  // 最大10个消费者（匹配服务器能力）
+        // 🔥 并发配置：降低到2-4个消费者（判题是CPU密集型操作）
+        // 根据服务器CPU核心数调整：2核用1-2，4核用2-4，8核用4-6
+        factory.setConcurrentConsumers(2);  // 初始2个消费者
+        factory.setMaxConcurrentConsumers(4);  // 最大4个消费者（避免CPU过载）
         
         // QoS 配置：每个消费者一次只预取1条消息
         factory.setPrefetchCount(1);

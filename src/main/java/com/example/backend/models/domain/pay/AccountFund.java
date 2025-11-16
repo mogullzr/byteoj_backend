@@ -8,17 +8,22 @@ import java.math.BigDecimal;
 import java.util.Date;
 import lombok.Data;
 
+import javax.persistence.Entity;
+import javax.persistence.Id;
+
 /**
  * 
  * @TableName account_fund
  */
 @TableName(value ="account_fund")
+@Entity
 @Data
 public class AccountFund {
     /**
      * ID
      */
     @TableId(type = IdType.AUTO)
+    @Id
     private Long id;
 
     /**

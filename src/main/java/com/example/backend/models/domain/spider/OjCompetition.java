@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -15,11 +17,13 @@ import java.util.Date;
  */
 @TableName(value ="oj_competition")
 @Data
+@Entity
 public class OjCompetition implements Serializable {
     /**
      * ID
      */
     @TableId(type = IdType.AUTO)
+    @Id
     private Long id;
 
     /**

@@ -31,7 +31,7 @@ spring:
     #    解决升级Spring Boot2.6后,因依赖循环引用导致启动时报错的问题
     allow-circular-references: true
   profiles:
-    active: dev
+    active: local
     name: backend
   datasource:
     docker:
@@ -42,9 +42,11 @@ spring:
     username: ${hm.db.name}
     password: ${hm.db.pwd}
     hikari:
-      maximum-pool-size: 10
+      maximum-pool-size: 20  # 🔥 增加到20（原来10太少）
       minimum-idle: 5
       connection-timeout: 30000
+      idle-timeout: 600000   # 空闲连接10分钟后释放
+      max-lifetime: 1800000  # 连接最大存活30分钟
     # session失效时间(分钟)和存储工作配置
     # session:
     # timeout: 86400
@@ -94,9 +96,9 @@ spring:
         size: 50  # 通道数
     listener:
       simple:
-        concurrency: 20  # 起步 20 线程（100 人够）
-        max-concurrency: 50  # 峰值 50
-        prefetch: 10  # 预取 10 条/线程（平衡负载）
+        concurrency: 2  # 🔥 起步 2 线程（判题是CPU密集型，不能太多）
+        max-concurrency: 4  # 🔥 峰值 4（避免CPU过载）
+        prefetch: 1  # 🔥 预取 1 条/线程（确保负载均衡）
         acknowledge-mode: manual
         retry:
           enabled: true

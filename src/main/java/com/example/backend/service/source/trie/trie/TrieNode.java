@@ -11,7 +11,7 @@ public class TrieNode {
     /**
      * 子节点
      */
-    private Map<Character, TrieNode> children = new HashMap<>();
+    private Map<String, TrieNode> children = new HashMap<>();
 
     /**
      * 是否为终端结点

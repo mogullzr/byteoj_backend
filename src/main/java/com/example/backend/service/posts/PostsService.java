@@ -42,12 +42,12 @@ public interface PostsService extends IService<Posts> {
     boolean postModify(PostsRequest postsRequest, Long uuid);
 
     /**
-     * 分页查询帖子信息
+     * 分页查询用户自己的帖子信息
      *
      * @param pageNum 页数
      * @return 分页查询的帖子信息
      */
-    List<PostsVo> postSearchByPage(Integer pageNum, Integer uuid);
+    List<PostsVo> postSearchByPage(Integer pageNum, Long uuid, String mode);
 
     /**
      * 根据post_id来搜索帖子内容

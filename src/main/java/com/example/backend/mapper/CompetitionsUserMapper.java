@@ -30,14 +30,14 @@ public interface CompetitionsUserMapper extends BaseMapper<CompetitionsUser> {
      * 原子性增加罚时
      * @param competitionId 竞赛ID
      * @param uuid 用户ID
-     * @param timePenalty 增加的罚时
+     * @param timePenalty 增加的罚时（int类型，对应数据库int）
      * @return 更新的行数
      */
     @Update("UPDATE competitions_user SET time_penalty = time_penalty + #{timePenalty} " +
             "WHERE competition_id = #{competitionId} AND uuid = #{uuid}")
     int incrementTimePenalty(@Param("competitionId") Long competitionId, 
                              @Param("uuid") Long uuid, 
-                             @Param("timePenalty") long timePenalty);
+                             @Param("timePenalty") int timePenalty);
 
 }
 
