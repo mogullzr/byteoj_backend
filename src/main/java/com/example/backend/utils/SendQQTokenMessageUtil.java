@@ -27,7 +27,7 @@ public class SendQQTokenMessageUtil {
      * 定时任务——管理员Token定时修改发送
      * 1000 * 60 * 60 * 24 * 7 一周时间
      */
-    @Scheduled(fixedRate = 1000 * 60 * 60 * 24 * 7)
+    @Scheduled(cron = "0 0 0 ? * MON")
     public void Token_Send() {
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("role", 2);

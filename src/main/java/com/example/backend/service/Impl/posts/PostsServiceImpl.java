@@ -138,7 +138,7 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts>
         postsQueryWrapper.eq("status", 0);
         postsQueryWrapper.orderByDesc("create_time");
 
-        if (!(uuid == null || uuid.equals(-1L)) && (mode == null || mode.equals("user"))) {
+        if (!(uuid == null || uuid.equals(-1L)) && (mode.equals("user"))) {
             postsQueryWrapper.eq("uuid", uuid);
         }
 
