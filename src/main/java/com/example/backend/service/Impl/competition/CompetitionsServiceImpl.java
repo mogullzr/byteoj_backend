@@ -172,6 +172,7 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
         }
 
         competitionsUserQueryWrapper.orderByAsc("time_penalty");
+        competitionsUserQueryWrapper.orderByAsc("join_time");
         competitionsUsers.addAll(competitionsUserMapper.selectPage(competitionsUserPage, competitionsUserQueryWrapper).getRecords());
 
         // 3.拿到前20名的用户信息,开始搜索20名用户的各个题目的最终ac记录和最终wrong记录
