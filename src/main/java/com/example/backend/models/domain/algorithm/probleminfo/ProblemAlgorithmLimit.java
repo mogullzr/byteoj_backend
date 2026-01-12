@@ -90,5 +90,10 @@ public class ProblemAlgorithmLimit implements Serializable {
      */
     private Integer is_delete;
 
+    /**
+     * 运行类型代码
+     */
+    private String run_code;
+
     private static final long serialVersionUID = -9063267136119157378L;
 }

@@ -107,6 +107,7 @@ public class OperationLogInterceptor implements HandlerInterceptor {
         put("/api/user/current", true);  // 完全过滤
         put("/api/user/picture/user/get/", true);
         put("/api/user/picture/user/get", true);
+        put("/api/heartbeat", true);
     }};
 
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
@@ -166,9 +167,14 @@ public class OperationLogInterceptor implements HandlerInterceptor {
                     .or(() -> Optional.ofNullable((Exception) request.getAttribute("loggedException")))
                     .orElse(null);
 
+            if (request.getAttribute("startTime") == null) {
+                return;
+            }
+
             // 1. 计算耗时
             long startTime = (Long) request.getAttribute("startTime");
             long elapsedTime = System.currentTimeMillis() - startTime;
+
 
             // 2. 构建日志实体
             LogOperation logOperation = new LogOperation();

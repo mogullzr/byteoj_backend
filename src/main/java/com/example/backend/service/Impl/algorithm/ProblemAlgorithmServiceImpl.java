@@ -212,9 +212,22 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         // 批量查询所有问题的标签名称
         Map<Long, List<String>> problemAlgorithmTagsMap = getProblemAlgorithmTagsWithNames(problemIds);
 
+        // 对于没有测试样例的需要对名词进行处理
+        QueryWrapper<AlgorithmTestCase> algorithmTestCaseQueryWrapper = new QueryWrapper<>();
+        algorithmTestCaseQueryWrapper.in(!problemIds.isEmpty(), "problem_id", problemIds);
+        List<AlgorithmTestCase> algorithmTestCases = algorithmTestCaseMapper.selectList(algorithmTestCaseQueryWrapper);
+        // 从查询结果中提取 problemId 列表
+        List<Long> existingProblemIds = algorithmTestCases.stream()
+                .map(AlgorithmTestCase::getProblem_id)
+                .collect(Collectors.toList());
+        Set<Long> existingProblemIdSet = new HashSet<>(existingProblemIds);
+
         boolean isFirst = true;
         // 遍历查询结果并转换为 VO
         for (ProblemAlgorithmBank problemAlgorithmBank : problemAlgorithmBankList) {
+            if (!existingProblemIdSet.contains(problemAlgorithmBank.getProblem_id())) {
+                problemAlgorithmBank.setChinese_name(problemAlgorithmBank.getChinese_name() + "🚫🚫🚫");
+            }
             List<String> problemAlgorithmTags = problemAlgorithmTagsMap.get(problemAlgorithmBank.getProblem_id());
             String description = problemAlgorithmBank.getDescription();
             ProblemAlgorithmBankVo problemAlgorithmVO = getProblemAlgorithmVO(problemAlgorithmBank, uuid, problemAlgorithmTags);
@@ -394,10 +407,18 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
     public ProblemAlgorithmBankVo problemSearchByProblemId(Integer problem_id,
                                                            HttpServletRequest httpServletRequest) {
         ProblemAlgorithmBank problemAlgorithmBank = getProblemAlgorithmBank(Long.valueOf(problem_id), 0);
-
         if (problemAlgorithmBank == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "此题目不存在或者题目或已经被隐藏");
         }
+
+        // 判断样例是否为空
+        QueryWrapper<AlgorithmTestCase> algorithmTestCaseQueryWrapper = new QueryWrapper<>();
+        algorithmTestCaseQueryWrapper.eq("problem_id", problemAlgorithmBank.getProblem_id());
+        List<AlgorithmTestCase> algorithmTestCases = algorithmTestCaseMapper.selectList(algorithmTestCaseQueryWrapper);
+        if (algorithmTestCases.isEmpty()) {
+            problemAlgorithmBank.setChinese_name(problemAlgorithmBank.getChinese_name() + "🚫🚫🚫");
+        }
+
         List<String> tagsList = getProblemAlgorithmTags(problemAlgorithmBank.getProblem_id(), 0);
         ProblemAlgorithmBankVo problemAlgorithmVO = getProblemAlgorithmVO(problemAlgorithmBank, -1L, tagsList);
         problemAlgorithmVO.setDescription(problemAlgorithmBank.getDescription());
@@ -684,6 +705,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 
     @Override
     public Judge problemAlgorithmSubmit(JudgeRequest judgeRequest, Long uuid) {
+        List<HashMap<String, Object>> fileIdList = new ArrayList<>();
         QueryWrapper<ProblemAlgorithmBank> queryWrapper = new QueryWrapper<>();
         ProblemAlgorithmBank problemAlgorithmBank;
         if (judgeRequest == null) {
@@ -780,6 +802,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 //                "    cout << a + b + 1 << endl;\n" +
 //                "    return 0;\n" +
 //                "}";
+        String run_code = problemAlgorithmLimit.getRun_code();
         long time_used = problemAlgorithmLimit.getCpu_limit() * 1000000000L;
         long memory_used = problemAlgorithmLimit.getMemory_limit() * 1024L * 1024L;
         long total_memory_used = 0L;
@@ -789,14 +812,13 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         algorithmTestCaseQueryWrapper.eq("problem_id", problemAlgorithmBank.getProblem_id());
         List<AlgorithmTestCase> algorithmTestCases = algorithmTestCaseMapper.selectList(algorithmTestCaseQueryWrapper);
 
-        if (algorithmTestCases != null && algorithmTestCases.size() == 0) {
+        if (algorithmTestCases != null && algorithmTestCases.isEmpty()) {
 //            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "对不起，这道题目的测试样例还没有添加，请即使联系管理员进行查询");
             Judge result = new Judge();
             result.setStatus("NOT_FOUND_ERROR");
             result.setOutput("此题信息存在缺失，请联系总管理员8989561494@qq.com");
             return result;
         }
-
 
         List<Integer> time_used_list = new ArrayList<>();
         List<Integer> memory_used_list = new ArrayList<>();
@@ -893,10 +915,84 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         // 解析 JSON 数组
         jsonList = gson.fromJson(responseBody, listType);
 
+        // TODO 变动：要求分开为 2 个分支，新分支要求将以前面代码的输出作为输入进行编程
+        // TODO 新分支
+        //  输出固定为YES or NO
+        //  YES表示正确！
+        //  NO 表示错误！
+        List<String> correctList = new ArrayList<>(
+                Collections.nCopies(algorithmTestCases.size(), "YES")
+        );
+        List<Judge> runCodeAnswerList = new ArrayList<>();
+        boolean flag = run_code != null && !run_code.isEmpty();
+        if (flag) {
+                HashMap<String, Object> paramMap = new HashMap<>();
+                paramMap.put("language", "cpp");
+                paramMap.put("code", run_code);
+                paramMap.put("input", jsonList.get(0).getOutput());
+                paramMap.put("cpuLimit", time_used * 10);
+                fileList.add(paramMap);
+
+                response = HttpRequest.post("http://101.43.48.120:6048/build")
+                        .header("Content-Type", "application/json")
+                        .body(JSONUtil.toJsonStr(fileList))
+                        .execute();
+
+                // 处理响应
+                responseBody = response.body();
+
+                // 解析 JSON 数组
+                List<Judge> infoList = gson.fromJson(responseBody, listType);
+
+                // 获取到句柄fileId
+                if (Objects.equals(infoList.get(1).getStatus(), "Accepted")) {
+                    HashMap<String, Object> fileIdInfo = new HashMap<>();
+                    fileIdInfo.put("fileId", fileId);
+                    fileIdList.add(fileIdInfo);
+
+                    fileId = infoList.get(1).getFileId();
+                } else {
+                    problemAlgorithmBank.setTest_total(problemAlgorithmBank.getTest_total() + 1);
+                    problemAlgorithmBankMapper.update(problemAlgorithmBank, queryWrapper);
+                    return infoList.get(0);
+                }
+
+                //
+                List<HashMap<String, Object>> mapList = new ArrayList<>();
+                String finalLanguage = "cpp";
+                String finalFileId = fileId;
+                jsonList.forEach((judge -> {
+                    HashMap<String, Object> Param = new HashMap<>();
+                    Param.put("input", judge.getOutput());
+                    Param.put("cpuLimit", time_used);
+                    Param.put("memoryLimit", memory_used);
+                    Param.put("fileId", finalFileId);
+                    Param.put("language", finalLanguage);
+
+                    mapList.add(Param);
+                }));
+                // 开始正式运行代码
+                response = HttpRequest.post("http://101.43.48.120:6048/exec")
+                        .header("Content-Type", "application/json")
+                        .body(JSONUtil.toJsonStr(mapList))
+                        .execute();
+
+            responseBody = response.body();
+
+            runCodeAnswerList = gson.fromJson(responseBody, listType);
+        }
         for (int item = 0; item < jsonList.size(); item++) {
-            Judge judge = jsonList.get(item);
+            Judge judge = new Judge();
             String input = algorithmTestCases.get(item).getInput();
-            String output = algorithmTestCases.get(item).getOutput().trim();
+            String output = null;
+
+            if (!flag) {
+                judge = jsonList.get(item);
+                output = algorithmTestCases.get(item).getOutput().trim();
+            } else {
+                judge = runCodeAnswerList.get(item);
+                output = correctList.get(item);
+            }
 
             // 处理各个报错信息以及总时间计算
             if (judge.getTime() != null) {
@@ -928,6 +1024,12 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 
             // 寻找最先报错信息
             if ((Objects.equals(judge.getStatus(), "Accepted") && !Objects.equals(judge.getOutput().trim(), output.trim())) && isCorrect.get()) {
+                // 回到初始逻辑了
+                if (flag) {
+                    judge = jsonList.get(item);
+                    output = algorithmTestCases.get(item).getOutput().trim();
+                }
+                output = algorithmTestCases.get(item).getOutput().trim();
                 String currentOutput = judge.getOutput().trim();
                 if (input.length() > 600) {
                     input = input.substring(0, 600) + "...";
@@ -946,11 +1048,18 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
                 isCorrect.set(false);
             }
             else if ((Objects.equals(judge.getStatus(), "Nonzero Exit Status") && isCorrect.get())) {
+                if (flag) {
+                    judge = jsonList.get(item);
+                    output = algorithmTestCases.get(item).getOutput().trim();
+                }
                 lastJudge.setStatus("Nonzero Exit Status");
                 lastJudge.setInput(input);
                 lastJudge.setOutput(judge.getOutput());
                 isCorrect.set(false);
             } else if (!Objects.equals(judge.getStatus(), "Accepted") && isCorrect.get()){
+                if (flag) {
+                    judge = jsonList.get(item);
+                }
                 String currentOutput = judge.getOutput();
 
                 if (Objects.equals(judge.getStatus(), "Memory Limit Exceeded")) {
@@ -1189,7 +1298,6 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 
         // 最后一步删除fileId
         if (!language.equals("python")) {
-            List<HashMap<String, Object>> fileIdList = new ArrayList<>();
             HashMap<String, Object> fileIdInfo = new HashMap<>();
             fileIdInfo.put("fileId", fileId);
             fileIdList.add(fileIdInfo);

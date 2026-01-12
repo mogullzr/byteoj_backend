@@ -329,8 +329,8 @@ create table if not exists byteoj.problem_algorithm_bank_detailed
     md_en      text   null comment '英文md'
 )
     comment 'algorithm问题细节信息表' collate = utf8mb4_unicode_ci;
-
-create table if not exists byteoj.problem_algorithm_limit
+-- auto-generated definition
+create table problem_algorithm_limit
 (
     id             bigint auto_increment comment 'ID'
         primary key,
@@ -348,10 +348,15 @@ create table if not exists byteoj.problem_algorithm_limit
     update_by_name varchar(256)  null comment '修改人name',
     status         int           null comment '状态',
     is_delete      int default 0 not null comment '逻辑删除',
+    run_code       text          null comment '评测代码',
     constraint problem_algorithm_limit_ibfk_1
-        foreign key (problem_id) references byteoj.problem_algorithm_bank (problem_id)
+        foreign key (problem_id) references problem_algorithm_bank (problem_id)
 )
     comment 'algorithm问题信息关联表' collate = utf8mb4_unicode_ci;
+
+create index problem_id
+    on problem_algorithm_limit (problem_id);
+
 
 create index problem_id
     on byteoj.problem_algorithm_limit (problem_id);

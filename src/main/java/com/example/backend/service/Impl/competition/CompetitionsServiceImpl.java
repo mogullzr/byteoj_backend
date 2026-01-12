@@ -97,7 +97,7 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
         QueryWrapper<Competitions> queryWrapper = new QueryWrapper<>();
         Page<Competitions> page = new Page<>(PageNum, 15);
         queryWrapper.orderByDesc("start_time");
-
+        queryWrapper.eq("is_delete", 0);
         Page<Competitions> competitionsPage = competitionsMapper.selectPage(page, queryWrapper);
         List<Competitions> competitionsList = competitionsPage.getRecords();
 
@@ -117,6 +117,7 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
     public CompetitionInfoVo competitionSearchByCompetitionId(Long competition_id, Long uuid) {
         QueryWrapper<Competitions> competitionsQueryWrapper = new QueryWrapper<>();
         competitionsQueryWrapper.eq("competition_id", competition_id);
+        competitionsQueryWrapper.eq("is_delete", 0);
         Competitions competition = competitionsMapper.selectOne(competitionsQueryWrapper);
         return getCompetitionInfoVo(competition, uuid);
     }
@@ -129,8 +130,12 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
 
         QueryWrapper<Competitions> competitionsQueryWrapper = new QueryWrapper<>();
         competitionsQueryWrapper.eq("competition_id", competition_id);
+        competitionsQueryWrapper.eq("is_delete", 0);
         Competitions competition = competitionsMapper.selectOne(competitionsQueryWrapper);
 
+        if (competition == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "不存在排行榜信息");
+        }
         // 1.首先搜索出当前竞赛的各个题目的总尝试次数和通过次数
         QueryWrapper<CompetitionsProblemsAlgorithm> competitionsProblemsAlgorithmQueryWrapper = new QueryWrapper<>();
         competitionsProblemsAlgorithmQueryWrapper.eq("competition_id", competition_id);

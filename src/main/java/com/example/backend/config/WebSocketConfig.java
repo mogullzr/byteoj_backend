@@ -8,10 +8,7 @@ import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
-import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
-import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
-import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
+import org.springframework.web.socket.config.annotation.*;
 import org.springframework.web.socket.server.standard.ServerEndpointExporter;
 import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 
@@ -28,11 +25,26 @@ import java.util.List;
  */
 @Configuration
 @EnableWebSocketMessageBroker
+//WebSocketConfigurer
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
-    /**
-     * 注入ServerEndpointExporter，
-     * 这个bean会自动注册使用了@ServerEndpoint注解声明的Websocket endpoint
-     */
+//    private final AdminAlertHandler adminAlertHandler;
+//    private final WebSocketHandshakeInterceptor handshakeInterceptor;
+//
+//    public WebSocketConfig(AdminAlertHandler adminAlertHandler,
+//                           WebSocketHandshakeInterceptor handshakeInterceptor) {
+//        this.adminAlertHandler = adminAlertHandler;
+//        this.handshakeInterceptor = handshakeInterceptor;
+//    }
+//    /**
+//     * 注入ServerEndpointExporter，
+//     * 这个bean会自动注册使用了@ServerEndpoint注解声明的Websocket endpoint
+//     */
+//    @Override
+//    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+//        registry.addHandler(adminAlertHandler, "/ws/alerts")
+//                .addInterceptors(handshakeInterceptor) // ←← 关键：添加拦截器
+//                .setAllowedOriginPatterns("*"); // ←← 用 Patterns
+//    }
     @Bean
     public ServerEndpointExporter serverEndpointExporter() {
         return new ServerEndpointExporter();
