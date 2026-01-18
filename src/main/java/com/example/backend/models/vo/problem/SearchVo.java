@@ -1,14 +1,14 @@
 package com.example.backend.models.vo.problem;
 
-import com.example.backend.models.domain.spider.OjCompetition;
 import com.example.backend.models.vo.UserVo;
 import com.example.backend.models.vo.crawler.OJCompetitionVo;
 import com.example.backend.models.vo.log.LogVo;
+import com.example.backend.models.vo.log.LogWebSiteInfoVo;
 import com.example.backend.models.vo.pay.LantuPayViewVo;
 import com.example.backend.models.vo.post.PostsVo;
+import com.example.backend.models.vo.procter.ProcterInfoVo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import lombok.Data;
-import org.bouncycastle.math.ec.rfc8032.Ed448;
 
 import java.io.Serializable;
 import java.util.List;
@@ -63,9 +63,19 @@ public class SearchVo implements Serializable {
     private List<SubmissionsAlgorithmRecordsVo> recordsVos;
 
     /**
-     *
+     * 蓝图支付订单记录
      */
     private List<LantuPayViewVo> lantuPayViewVos;
+
+    /**
+     * 监控信息记录
+     */
+    private List<ProcterInfoVo> procterInfoVoList;
+
+    /**
+     * 网站更新日志记录
+     */
+    private List<LogWebSiteInfoVo> webSiteInfoVoList;
 
     /**
      * 通用数据源

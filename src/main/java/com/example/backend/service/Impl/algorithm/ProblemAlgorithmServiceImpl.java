@@ -69,6 +69,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @Slf4j
@@ -935,7 +936,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 
                 response = HttpRequest.post("http://101.43.48.120:6048/build")
                         .header("Content-Type", "application/json")
-                        .body(JSONUtil.toJsonStr(fileList))
+                         .body(JSONUtil.toJsonStr(fileList))
                         .execute();
 
                 // 处理响应
@@ -954,23 +955,29 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
                 } else {
                     problemAlgorithmBank.setTest_total(problemAlgorithmBank.getTest_total() + 1);
                     problemAlgorithmBankMapper.update(problemAlgorithmBank, queryWrapper);
-                    return infoList.get(0);
+                    Judge result = new Judge();
+                    result.setStatus("BYTEOJ_SYSTEM_ERROR");
+                    result.setOutput("请速度联系管理员898561494@qq.com！此题有严重bug！！！！！感谢您的支持！");
+                    return result;
+//                    throw new BusinessException(ErrorCode.SYSTEM_ERROR, "请速度联系管理员898561494@qq.com！此题有严重bug！！！！！感谢您的支持！");
+//                    return infoList.get(1);
                 }
 
                 //
                 List<HashMap<String, Object>> mapList = new ArrayList<>();
                 String finalLanguage = "cpp";
                 String finalFileId = fileId;
-                jsonList.forEach((judge -> {
-                    HashMap<String, Object> Param = new HashMap<>();
-                    Param.put("input", judge.getOutput());
-                    Param.put("cpuLimit", time_used);
-                    Param.put("memoryLimit", memory_used);
-                    Param.put("fileId", finalFileId);
-                    Param.put("language", finalLanguage);
-
-                    mapList.add(Param);
-                }));
+            List<Judge> finalJsonList = jsonList;
+            IntStream.range(0, algorithmTestCases.size())
+                    .forEach(i -> {
+                        var param = new HashMap<String, Object>();
+                        param.put("input", algorithmTestCases.get(i).getInput() + "\n" + finalJsonList.get(i).getOutput());
+                        param.put("cpuLimit", time_used);
+                        param.put("memoryLimit", memory_used);
+                        param.put("fileId", finalFileId);
+                        param.put("language", finalLanguage);
+                        mapList.add(param);
+                    });
                 // 开始正式运行代码
                 response = HttpRequest.post("http://101.43.48.120:6048/exec")
                         .header("Content-Type", "application/json")
@@ -1871,6 +1878,17 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
             throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "对不起，您的权限不足");
         }
 
+        // 运行代码插入
+        QueryWrapper<ProblemAlgorithmLimit> problemAlgorithmLimitQueryWrapper = new QueryWrapper<>();
+        problemAlgorithmLimitQueryWrapper.eq("problem_id", problem_id);
+        ProblemAlgorithmLimit problemAlgorithmLimit = problemAlgorithmLimitMapper.selectOne(problemAlgorithmLimitQueryWrapper);
+        if (problemAlgorithmLimit == null){
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "题目不存在");
+        } else {
+            problemAlgorithmLimit.setRun_code(problemAlgorithmTestCaseRequestList.get(0).getRunCode());
+            problemAlgorithmLimitMapper.updateById(problemAlgorithmLimit);
+        }
+
         QueryWrapper<AlgorithmTestCase> algorithmTestCaseQueryWrapper = new QueryWrapper<>();
         algorithmTestCaseQueryWrapper.eq("problem_id", problem_id);
 
@@ -1949,15 +1967,30 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
             throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "对不起，您的权限不足");
         }
 
+        // 运行代码插入
+        QueryWrapper<ProblemAlgorithmLimit> problemAlgorithmLimitQueryWrapper = new QueryWrapper<>();
+        problemAlgorithmLimitQueryWrapper.eq("problem_id", problem_id);
+        ProblemAlgorithmLimit problemAlgorithmLimit = problemAlgorithmLimitMapper.selectOne(problemAlgorithmLimitQueryWrapper);
+        if (problemAlgorithmLimit == null){
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "题目不存在");
+        }
+
+
         QueryWrapper<AlgorithmTestCase> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("problem_id", problem_id);
 
         List<AlgorithmTestCase> algorithmTestCases = algorithmTestCaseMapper.selectList(queryWrapper);
         List<ProblemAlgorithmTestCaseRequest> problemAlgorithmTestCaseRequestList = new ArrayList<>();
+
+        AtomicBoolean flag = new AtomicBoolean(true);
         algorithmTestCases.forEach((testCase)->{
             ProblemAlgorithmTestCaseRequest problemAlgorithmTestCaseRequest = new ProblemAlgorithmTestCaseRequest();
             problemAlgorithmTestCaseRequest.setInput(testCase.getInput());
             problemAlgorithmTestCaseRequest.setOutput(testCase.getOutput());
+            if (flag.get()) {
+                problemAlgorithmTestCaseRequest.setRunCode(problemAlgorithmLimit.getRun_code());
+                flag.set(false);
+            }
             problemAlgorithmTestCaseRequestList.add(problemAlgorithmTestCaseRequest);
         });
 

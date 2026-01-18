@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.backend.mapper.ProcterInfoMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.backend.models.domain.procter.ProcterInfo">
+            <id property="procter_id" column="procter_id" />
+            <result property="img_url" column="img_url" />
+            <result property="competition_id" column="competition_id" />
+            <result property="description" column="description" />
+            <result property="is_delete" column="is_delete" />
+            <result property="create_date" column="create_date" />
+            <result property="update_date" column="update_date" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        procter_id,img_url,competition_id,description,is_delete,create_date,
+        update_date
+    </sql>
+</mapper>

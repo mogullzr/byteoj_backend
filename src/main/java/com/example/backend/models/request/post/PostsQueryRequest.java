@@ -27,4 +27,9 @@ public class PostsQueryRequest implements Serializable {
      * 标签ID列表
      */
     private List<Integer> tagsList;
+
+    /**
+     * 状态
+     */
+    private Integer status;
 }

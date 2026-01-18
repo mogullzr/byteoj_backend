@@ -3,6 +3,7 @@ package com.example.backend.service.Impl.competition;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.support.ExcelTypeEnum;
 import com.alibaba.excel.write.style.column.LongestMatchColumnWidthStyleStrategy;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -13,6 +14,7 @@ import com.example.backend.models.domain.algorithm.probleminfo.ProblemAlgorithmB
 import com.example.backend.models.domain.algorithm.submission.SubmissionAlgorithmDetails;
 import com.example.backend.models.domain.algorithm.submission.SubmissionsAlgorithm;
 import com.example.backend.models.domain.competiton.*;
+import com.example.backend.models.domain.procter.ProcterInfo;
 import com.example.backend.models.domain.user.User;
 import com.example.backend.models.domain.user.UserRating;
 import com.example.backend.models.request.CompetitionAddRequest;
@@ -22,24 +24,23 @@ import com.example.backend.models.request.competition.CompetitionRecordsRequest;
 import com.example.backend.models.vo.UserRatingVo;
 import com.example.backend.models.vo.UserVo;
 import com.example.backend.models.vo.competition.*;
+import com.example.backend.models.vo.procter.ProcterInfoVo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import com.example.backend.service.competition.CompetitionsProblemsAlgorithmService;
 import com.example.backend.service.competition.CompetitionsService;
+import com.example.backend.service.procter.ProcterInfoService;
+import com.example.backend.utils.OnlineProctorUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -58,6 +59,9 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
         implements CompetitionsService{
     @Resource
     private CompetitionsProblemsAlgorithmService competitionsProblemsAlgorithmService;
+
+    @Resource
+    private ProcterInfoService procterInfoService;
 
     @Resource
     private CompetitionsMapper competitionsMapper;
@@ -88,10 +92,16 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
     @Resource
     private UserRatingMapper userRatingMapper;
 
+    @Resource
+    private OnlineProctorUtil onlineProctorUtil;
+
     /**
      * 盐值，混淆密码,不懂的去了解MD5加密方式
      */
     private static final String SALT = "Mogullzr";
+    @Autowired
+    private ProcterInfoMapper procterInfoMapper;
+
     @Override
     public List<CompetitionInfoVo> competitionSearchByPage(Long PageNum, Long uuid) {
         QueryWrapper<Competitions> queryWrapper = new QueryWrapper<>();
@@ -975,6 +985,212 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
         return problemAlgorithmBankVoList;
     }
 
+    @Override
+    public CompetitionProctorVo competitionProctorOnline(Long uuid, byte[] imageData, String image_url) throws Exception {
+        CompetitionProctorVo competitionProctorVo = onlineProctorUtil.ProcterOnlineMonitor(imageData);
+        StringBuilder descBuilder = new StringBuilder();
+        int type = 1;
+        List<ProcterBehaviorVo> procterBehaviors = competitionProctorVo.getProcterBehavior();
+        if (procterBehaviors.isEmpty()) {
+            descBuilder.append("未检测到异常行为");
+        } else {
+            for (int i = 0; i < procterBehaviors.size(); i++) {
+                ProcterBehaviorVo b = procterBehaviors.get(i);
+                // 提取核心关键词用于搜索
+                String keyword;
+                if ("multiple_faces".equals(b.getType())) {
+                    keyword = "多人";
+                    type = 3;
+                } else if ("wearing_earphone".equals(b.getType())) {
+                    keyword = "耳机";
+                    type = 3;
+                } else if ("using_cellphone".equals(b.getType())) {
+                    keyword = "手机";
+                    type = 3;
+                } else if ("abnormal_head_pose".equals(b.getType()) && type == 1) {
+                    keyword = "头部偏转";
+                    type = 2;
+                } else {
+                    keyword = b.getType();
+                }
+
+                // 构造描述片段（保留原始描述中的关键信息）
+                String snippet = b.getDescription()
+                        .replace("检测到", "")
+                        .replace("，存在通讯作弊风险", "")
+                        .replace("，疑似查看资料", "")
+                        .replace("，疑似他人协助", "")
+                        .trim();
+
+                // 格式：[关键词] 描述（不含冗余词）
+                descBuilder.append("[").append(keyword).append("] ").append(snippet);
+
+                if (i < procterBehaviors.size() - 1) {
+                    descBuilder.append("；");
+                }
+            }
+        }
+
+        // 准备插入数据库
+        ProcterInfo procterInfo = new ProcterInfo();
+        procterInfo.setType(type);
+        procterInfo.setDescription(descBuilder.toString());
+        procterInfo.setCreate_date(new Date());
+        procterInfo.setUpdate_date(new Date());
+        procterInfo.setImg_url(image_url);
+
+        // 查找当前正在进行的竞赛 + 监控开启 + 当前用户参加
+        QueryWrapper<CompetitionsUser> competitionsUserQueryWrapper = new QueryWrapper<>();
+
+        competitionsUserQueryWrapper.eq("uuid", uuid);
+        competitionsUserQueryWrapper.eq("is_participant", 0);
+
+        List<CompetitionsUser> competitionsUsers = competitionsUserMapper.selectList(competitionsUserQueryWrapper);
+        if (competitionsUsers.isEmpty()) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "出错了，请联系管理员处理？！");
+        }
+        // 1. 提取所有 competition_id
+        List<Long> competitionIds = competitionsUsers.stream()
+                .map(CompetitionsUser::getCompetition_id) // 假设字段是 competitionId（注意命名）
+                .filter(Objects::nonNull)                // 防止 null 值
+                .collect(Collectors.toList());
+
+        // 2. 如果列表为空，直接返回空结果（避免查全表）
+        if (competitionIds.isEmpty()) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "出错了，请联系管理员处理？！");
+        }
+
+        // 3. 使用 in 查询
+        LocalDateTime now = LocalDateTime.now();
+
+        LambdaQueryWrapper<Competitions> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(Competitions::getCompetition_id, competitionIds)
+                .le(Competitions::getStart_time, now)
+                .ge(Competitions::getEnd_time, now);
+        wrapper.eq(Competitions::getIs_procter, 1);
+        List<Competitions> competitions = competitionsMapper.selectList(wrapper);
+
+        //
+        if (competitions.isEmpty()) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "出错了，请联系管理员处理？！");
+        }
+        List<ProcterInfo> procterInfoList = new ArrayList<>();
+        for (Competitions competition: competitions) {
+            ProcterInfo procterInfo1 = new ProcterInfo();
+            procterInfo1.setCompetition_id(competition.getCompetition_id());
+            procterInfo1.setType(procterInfo.getType());
+            procterInfo1.setDescription(procterInfo.getDescription());
+            procterInfo1.setCreate_date(procterInfo.getCreate_date());
+            procterInfo1.setUpdate_date(procterInfo.getUpdate_date());
+            procterInfo1.setImg_url(procterInfo.getImg_url());
+            procterInfo1.setUuid(uuid);
+
+            procterInfoList.add(procterInfo1);
+        }
+        procterInfoService.saveBatch(procterInfoList);
+
+        return competitionProctorVo;
+    }
+
+    @Override
+    public boolean competitionUserStatusGet(Long uuid) {
+        QueryWrapper<CompetitionsUser> competitionsUserQueryWrapper = new QueryWrapper<>();
+
+        competitionsUserQueryWrapper.eq("uuid", uuid);
+        competitionsUserQueryWrapper.eq("is_participant", 0);
+
+        List<CompetitionsUser> competitionsUsers = competitionsUserMapper.selectList(competitionsUserQueryWrapper);
+        if (competitionsUsers.isEmpty()) {
+            return false;
+        }
+        // 1. 提取所有 competition_id
+        List<Long> competitionIds = competitionsUsers.stream()
+                .map(CompetitionsUser::getCompetition_id) // 假设字段是 competitionId（注意命名）
+                .filter(Objects::nonNull)                // 防止 null 值
+                .collect(Collectors.toList());
+
+// 2. 如果列表为空，直接返回空结果（避免查全表）
+        if (competitionIds.isEmpty()) {
+            return false;
+        }
+
+// 3. 使用 in 查询
+        LocalDateTime now = LocalDateTime.now();
+
+        LambdaQueryWrapper<Competitions> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(Competitions::getCompetition_id, competitionIds)
+                .le(Competitions::getStart_time, now)
+                .ge(Competitions::getEnd_time, now);
+        wrapper.eq(Competitions::getIs_procter, 1);
+        List<Competitions> competitions = competitionsMapper.selectList(wrapper);
+
+        return !competitions.isEmpty();
+    }
+
+    @Override
+    public List<ProcterInfoVo> procterListView(String difficulty, Integer pageNum, Integer pageSize) {
+        List<ProcterInfoVo> procterInfoVos = new ArrayList<>();
+        Page<ProcterInfo> page = new Page<>(pageNum, pageSize);
+        QueryWrapper<ProcterInfo> procterInfoQueryWrapper = new QueryWrapper<>();
+
+        procterInfoQueryWrapper.orderByDesc("create_date");
+        if (difficulty.equals("中等")) {
+            procterInfoQueryWrapper.eq("type", 2);
+        } else if (difficulty.equals("严重")) {
+            procterInfoQueryWrapper.eq("type", 3);
+        } else {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "别乱来？！");
+        }
+
+        Page<ProcterInfo> procterInfoPage = procterInfoMapper.selectPage(page, procterInfoQueryWrapper);
+        List<ProcterInfo> procterInfoList = procterInfoPage.getRecords();
+        Long pages = procterInfoPage.getPages();
+
+        QueryWrapper<Competitions> competitionsQueryWrapper = new QueryWrapper<>();
+        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
+        boolean flag = false;
+        for (ProcterInfo procterInfo : procterInfoList) {
+            competitionsQueryWrapper.eq("competition_id", procterInfo.getCompetition_id()).or();
+            userQueryWrapper.eq("uuid", procterInfo.getUuid()).or();
+
+            ProcterInfoVo procterInfoVo = new ProcterInfoVo();
+            procterInfoVo.setProcter_id(procterInfo.getProcter_id());
+            procterInfoVo.setType(procterInfo.getType());
+            procterInfoVo.setDescription(procterInfo.getDescription());
+            procterInfoVo.setCreate_date(procterInfo.getCreate_date());
+            procterInfoVo.setImg_url(procterInfo.getImg_url());
+            procterInfoVo.setUuid(procterInfo.getUuid());
+
+            if (!flag) {
+                procterInfoVo.setPages(pages);
+                flag = true;
+            }
+
+            procterInfoVos.add(procterInfoVo);
+        }
+
+        List<Competitions> competitions = competitionsMapper.selectList(competitionsQueryWrapper);
+        List<User> users = userMapper.selectList(userQueryWrapper);
+
+        // 构建 id -> name 的映射
+        Map<Long, String> competitionIdToNameMap = competitions.stream()
+                .collect(Collectors.toMap(Competitions::getCompetition_id, Competitions::getCompetition_name));
+
+        // 查找用户ID -> 用户名称
+        Map<Long, String> uuidToAccountMap = users.stream()
+                .collect(Collectors.toMap(User::getUuid, User::getAccount));
+
+        // 准备设置竞赛名称
+        for (int i = 0; i < procterInfoList.size(); i++) {
+            ProcterInfoVo procterInfoVo = procterInfoVos.get(i);
+            procterInfoVo.setCompetition_name(competitionIdToNameMap.get(procterInfoList.get(i).getCompetition_id()));
+            procterInfoVo.setAccount(uuidToAccountMap.get(procterInfoList.get(i).getUuid()));
+
+            procterInfoVos.set(i, procterInfoVo);
+        }
+        return procterInfoVos;
+    }
+
     private List<UserVo> getUserVoList(Page<User> page, String keyword) {
         QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
         userQueryWrapper.orderByDesc("rating");
@@ -1033,6 +1249,7 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
         competition.setAvatar(competitionAddRequest.getAvatar());
         competition.setDescription(competitionAddRequest.getDescription());
         competition.setPassword(competitionAddRequest.getPassword());
+        competition.setIs_procter(competitionAddRequest.getIs_procter());
 
         // MD5加密方式
         if (competitionAddRequest.getStatus() != null && competitionAddRequest.getStatus() == 1) {

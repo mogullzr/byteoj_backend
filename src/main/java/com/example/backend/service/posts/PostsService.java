@@ -149,4 +149,23 @@ public interface PostsService extends IService<Posts> {
      * @return 搜索获取帖子信息
      */
     List<PostsVo> listPostVoByPage(PostsQueryRequest postsQueryRequest);
+
+
+    /**
+     * 将帖子加入个人博客当中
+     *
+     * @param postId 帖子ID
+     * @param uuid   用户ID
+     * @return 是否添加成功
+     */
+    boolean userAddPostToBlog(Long postId, Long uuid);
+
+    /**
+     * 将帖子从个人博客中删除
+     *
+     * @param postId 帖子ID
+     * @param uuid   用户ID
+     * @return 是否添加成功
+     */
+    boolean userDeletePostToBlog(Long postId, Long uuid);
 }

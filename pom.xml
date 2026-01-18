@@ -15,6 +15,13 @@
         <maven.plugin.validation>DEFAULT</maven.plugin.validation>
     </properties>
     <dependencies>
+        <!-- Source: https://mvnrepository.com/artifact/com.aliyun/facebody20191230 -->
+        <dependency>
+            <groupId>com.aliyun</groupId>
+            <artifactId>facebody20191230</artifactId>
+            <version>6.0.0</version>
+            <scope>compile</scope>
+        </dependency>
         <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-amqp -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

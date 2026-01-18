@@ -134,7 +134,8 @@ mybatis-plus:
   configuration:
     #    会默认将下滑线转换成驼峰式
     map-underscore-to-camel-case: false
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+  #    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
       logic-delete-field: isDelete # 全局逻辑删除的实体字段名(since 3.3.0,配置后可以忽略不配置步骤2)
@@ -179,6 +180,7 @@ deepseek:
       model: ${hm.deepseek.api.v3-tenCloud.model}
       url: ${hm.deepseek.api.v3-tenCloud.url}
       key: ${hm.deepseek.api.v3-tenCloud.key}
+
 domain:
   url_1: https://www.byteoj.com/ # 自己的域名地址，替换一下
 avatar:
@@ -216,6 +218,13 @@ lantu:
   url: ${lantu.url}
   post_url: ${lantu.post_url}
   refund_url: ${lantu.refund_url}
+logging:
+  level:
+    org.springframework: WARN
+    org.apache: WARN
+    com.zaxxer: WARN
+    org.hibernate: WARN
+
 #logging:
 # 日志持久化存储文件 nohup java -jar xxx.jar > /dev/null 2>&1 &
 #  file:

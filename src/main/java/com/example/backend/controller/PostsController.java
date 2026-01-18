@@ -296,4 +296,22 @@ public class  PostsController {
         List<PostsVo> result = postsService.PostGetPostByProblemId(problem_id, pageNum, status);
         return ResultUtils.success(result);
     }
+
+    @AccessLimit(seconds = 5, maxCount=20, needLogin=true)
+    @PostMapping("/blog/add")
+    private BaseResponse<Boolean> userAddPostToBlog(Long post_id, HttpServletRequest httpServletRequest) {
+        User loginUser = userService.getLoginUser(httpServletRequest);
+
+        boolean success = postsService.userAddPostToBlog(post_id, loginUser.getUuid());
+        return ResultUtils.success(success);
+    }
+
+    @AccessLimit(seconds = 5, maxCount=20, needLogin=true)
+    @PostMapping("/blog/delete")
+    private BaseResponse<Boolean> userDeletePostToBlog(Long post_id, HttpServletRequest httpServletRequest) {
+        User loginUser = userService.getLoginUser(httpServletRequest);
+
+        boolean success = postsService.userDeletePostToBlog(post_id, loginUser.getUuid());
+        return ResultUtils.success(success);
+    }
 }

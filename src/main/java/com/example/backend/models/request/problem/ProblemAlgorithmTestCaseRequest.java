@@ -16,4 +16,9 @@ public class ProblemAlgorithmTestCaseRequest implements Serializable {
      * 输出
      */
     private String output;
+
+    /**
+     * 后置代码
+     */
+    private String runCode;
 }

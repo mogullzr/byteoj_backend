@@ -29,6 +29,10 @@ public class DataSourceRegistry {
     private RecordDataSource recordDataSource;
     @Resource
     private LantuPayDataSource lantuPayDataSource;
+    @Resource
+    private ProcterDataSource procterDataSource;
+    @Resource
+    private LogWebSiteDataSource logWebSiteDataSource;
 
     private Map<String, DataSource<?>> typeDataSourceMap;
 
@@ -44,6 +48,8 @@ public class DataSourceRegistry {
             put(SearchTypeEnum.LOG_INFO.getValue(), logDataSource);
             put(SearchTypeEnum.RECORD.getValue(), recordDataSource);
             put(SearchTypeEnum.Lantu.getValue(), lantuPayDataSource);
+            put(SearchTypeEnum.PROCTER.getValue(), procterDataSource);
+            put(SearchTypeEnum.LOG_WEBSITE.getValue(), logWebSiteDataSource);
         }};
     }
 

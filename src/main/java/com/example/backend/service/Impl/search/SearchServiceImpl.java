@@ -3,15 +3,19 @@ package com.example.backend.service.Impl.search;
 import com.example.backend.common.ErrorCode;
 import com.example.backend.common.SearchTypeEnum;
 import com.example.backend.exception.BusinessException;
+import com.example.backend.models.domain.log.LogWebsiteInfo;
+import com.example.backend.models.domain.procter.ProcterInfo;
 import com.example.backend.models.request.competition.CompetitionRecordsRequest;
 import com.example.backend.models.request.problem.SearchRequest;
 import com.example.backend.models.vo.UserVo;
 import com.example.backend.models.vo.crawler.OJCompetitionVo;
 import com.example.backend.models.vo.log.LogVo;
+import com.example.backend.models.vo.log.LogWebSiteInfoVo;
 import com.example.backend.models.vo.pay.LantuPayViewVo;
 import com.example.backend.models.vo.post.PostsVo;
 import com.example.backend.models.vo.problem.ProblemAlgorithmBankVo;
 import com.example.backend.models.vo.problem.SearchVo;
+import com.example.backend.models.vo.procter.ProcterInfoVo;
 import com.example.backend.models.vo.search.AutoCompeteVo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import com.example.backend.registry.DataSourceRegistry;
@@ -59,6 +63,12 @@ public class SearchServiceImpl implements SearchService {
 
     @Resource
     private LantuPayDataSource lantuPayDataSource;
+
+    @Resource
+    private ProcterDataSource procterDataSource;
+
+    @Resource
+    private LogWebSiteDataSource logWebSiteDataSource;
 
     private final Trie trie = new Trie();
 
@@ -173,6 +183,12 @@ public class SearchServiceImpl implements SearchService {
             // 10.交易成功的订单
             List<LantuPayViewVo> lantuPayViewVos = lantuPayDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin, module, code, is_date_order, startMilliSeconds, endMilliSeconds, recordsRequest);
 
+            // 11.监控信息查询
+            List<ProcterInfoVo> procterInfos = procterDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin, module, code, is_date_order, startMilliSeconds, endMilliSeconds, recordsRequest);
+
+            // 12.网站日志查询
+            List<LogWebSiteInfoVo> logWebsiteInfos = logWebSiteDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin, module, code, is_date_order, startMilliSeconds, endMilliSeconds, recordsRequest);
+
             // ......扩展
             // 最终聚合
             searchVo.setProblemAlgorithmBankVoList(problemAlgorithmBankVoList);
@@ -183,7 +199,9 @@ public class SearchServiceImpl implements SearchService {
             searchVo.setCompetitionUser(competitionUserVos);
             searchVo.setLogVoList(logVos);
             searchVo.setRecordsVos(recordsVos);
-
+            searchVo.setLantuPayViewVos(lantuPayViewVos);
+            searchVo.setProcterInfoVoList(procterInfos);
+            searchVo.setWebSiteInfoVoList(logWebsiteInfos);
         } else {
             DataSource<?> dataSource = dataSourceRegistry.getDataSourceByCategory(category);
             List<?> dataList = dataSource.doSearch(keyword, tagsList, sourceList,

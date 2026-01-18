@@ -7,6 +7,7 @@ import com.example.backend.common.ResultUtils;
 import com.example.backend.exception.BusinessException;
 import com.example.backend.models.domain.log.LogGetSingleInfo;
 import com.example.backend.models.domain.user.User;
+import com.example.backend.models.request.log.LogWebSiteUpdateRequest;
 import com.example.backend.models.vo.log.LogAdminBasicInfo;
 import com.example.backend.models.vo.log.LogAdminInfo;
 import com.example.backend.models.vo.log.LogUserInfoVo;
@@ -62,5 +63,16 @@ public class LogController {
 //        LogAdminInfo logUserInfoVo = logService.logAnalysisDetailGet();
 //        return ResultUtils.success(logUserInfoVo);
         return null;
+    }
+
+    @AccessLimit(seconds = 5, maxCount = 20, needLogin = true)
+    @PostMapping("/web/update")
+    private BaseResponse<Boolean> logWebInfoUpdate(@RequestBody LogWebSiteUpdateRequest logWebSiteUpdateRequest, HttpServletRequest httpServletRequest) {
+        Boolean isAdmin = userService.isAdmin(httpServletRequest);
+        if (!isAdmin) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "对不起，你没有操作权限");
+        }
+        boolean result = logService.logWebInfoUpdate(logWebSiteUpdateRequest);
+        return ResultUtils.success(result);
     }
 }

@@ -28,7 +28,11 @@ public enum SearchTypeEnum {
 
     RECORD("提交记录", "record"),
 
-    Lantu("蓝图支付", "lantu");
+    Lantu("蓝图支付", "lantu"),
+
+    PROCTER("监控信息", "procter"),
+
+    LOG_WEBSITE("网站日志", "log_website"),;
     private final String text;
 
     private final String value;

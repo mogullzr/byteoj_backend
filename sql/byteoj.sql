@@ -257,6 +257,21 @@ create table if not exists byteoj.log_operation
 )
     comment '操作日志';
 
+create table log_website_info
+(
+    id          bigint                             not null comment 'ID'
+        primary key,
+    module      varchar(1024)                      null comment '更新模块',
+    description varchar(1024)                      null comment '更新内容描述',
+    is_delete   tinyint  default 0                 null comment '逻辑删除',
+    create_date datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    update_date datetime default CURRENT_TIMESTAMP null comment '更新时间',
+    constraint log_website_info_pk_2
+        unique (id)
+)
+    comment '网站日志信息';
+
+
 create table if not exists byteoj.log_yearly_info
 (
     id                bigint auto_increment comment 'ID'

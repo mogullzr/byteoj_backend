@@ -26,7 +26,8 @@ public class PostsDataSource implements DataSource<PostsVo>{
         postsQueryRequest.setPageSize(pageSize);
         postsQueryRequest.setPageNum(pageNum);
         postsQueryRequest.setTagsList(tagsList);
-        
+        postsQueryRequest.setStatus(status);
+
         return postsService.listPostVoByPage(postsQueryRequest);
     }
 }

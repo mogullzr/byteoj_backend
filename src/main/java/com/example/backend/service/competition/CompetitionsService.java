@@ -2,17 +2,16 @@ package com.example.backend.service.competition;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.backend.models.domain.competiton.Competitions;
+import com.example.backend.models.domain.procter.ProcterInfo;
 import com.example.backend.models.domain.user.UserRating;
 import com.example.backend.models.request.CompetitionAddRequest;
 import com.example.backend.models.request.competition.CompetitionRankRequest;
 import com.example.backend.models.request.competition.CompetitionRecordsRequest;
 import com.example.backend.models.vo.UserRatingVo;
 import com.example.backend.models.vo.UserVo;
-import com.example.backend.models.vo.competition.CompetitionProblemsInfo;
-import com.example.backend.models.vo.competition.CompetitionProblemsVo;
+import com.example.backend.models.vo.competition.*;
+import com.example.backend.models.vo.procter.ProcterInfoVo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
-import com.example.backend.models.vo.competition.CompetitionInfoVo;
-import com.example.backend.models.vo.competition.CompetitionRankVo;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
@@ -162,4 +161,29 @@ public interface CompetitionsService extends IService<Competitions> {
      * @return 竞赛试题获取
      */
     List<CompetitionProblemsVo> competitionProblemsAdmingGet(Long competitionId);
+
+    /**
+     * 前端的监控请求
+     *
+     * @param uuid 用户ID
+     * @param imageData 图像数据
+     * @param image_url 图像地址
+     * @return 作弊检测的结果
+     */
+    CompetitionProctorVo competitionProctorOnline(Long uuid, byte[] imageData, String image_url) throws Exception;
+
+    /**
+     *
+     * @param uuid 用户ID
+     */
+    boolean competitionUserStatusGet(Long uuid);
+
+    /**
+     *
+     * @param difficulty 难度
+     * @param pageNum 面数
+     * @param pageSize 数量
+     * @return 信息列表
+     */
+    List<ProcterInfoVo> procterListView(String difficulty, Integer pageNum, Integer pageSize);
 }

@@ -461,7 +461,7 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts>
         Integer pageNum = postsQueryRequest.getPageNum();
         Integer pageSize = postsQueryRequest.getPageSize();
         List<Integer> tagsList = postsQueryRequest.getTagsList();
-
+        Integer status = postsQueryRequest.getStatus();
 
         if (pageNum == null || pageSize == null || pageNum <= 0 || pageSize <= 0 || pageSize > 50) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数出现错误了！！！");
@@ -485,9 +485,14 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts>
             });
         }
 
-        if (!keyword.isEmpty()) {
+        if (keyword != null && !keyword.isEmpty()) {
             postsQueryWrapper.like("title", keyword).or();
             postsQueryWrapper.like("content", keyword);
+        }
+
+        //
+        if (status != null) {
+            postsQueryWrapper.eq("status", status);
         }
         Page<Posts> page = postsMapper.selectPage(postsPage, postsQueryWrapper);
         postsList = page.getRecords();
@@ -500,6 +505,51 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts>
             postsVoList.set(0, postsVo);
         }
         return postsVoList;
+    }
+
+
+    @Override
+    public boolean userAddPostToBlog(Long postId, Long uuid) {
+        QueryWrapper<Posts> postsQueryWrapper = new QueryWrapper<>();
+        postsQueryWrapper.eq("post_id", postId);
+        Posts post = postsMapper.selectOne(postsQueryWrapper);
+        if (post == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "不存在这样的帖子");
+        }
+
+        if (!post.getUuid().equals(uuid)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN_ERROR, "这篇文章不属于你，不允许录入博客");
+        }
+
+        if (post.getStatus() == 4) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "文章已存在博客当中，请不要重复加入");
+        }
+
+        post.setStatus(4);
+
+        return postsMapper.update(post, postsQueryWrapper) == 1;
+    }
+
+    @Override
+    public boolean userDeletePostToBlog(Long postId, Long uuid) {
+        QueryWrapper<Posts> postsQueryWrapper = new QueryWrapper<>();
+        postsQueryWrapper.eq("post_id", postId);
+        Posts post = postsMapper.selectOne(postsQueryWrapper);
+        if (post == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "不存在这样的帖子");
+        }
+
+        if (!post.getUuid().equals(uuid)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN_ERROR, "这篇文章不属于你");
+        }
+
+        if (post.getStatus() != 4) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "文章还没有导入博客当中？");
+        }
+
+        post.setStatus(0);
+
+        return postsMapper.update(post, postsQueryWrapper) == 1;
     }
 
     private PostsVo getPostsVo(Posts post) {

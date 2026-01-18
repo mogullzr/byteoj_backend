@@ -6,7 +6,6 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
-import org.springframework.format.annotation.DateTimeFormat;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -70,6 +69,11 @@ public class Competitions implements Serializable {
      * 0表示无密码， 1表示有密码
      */
     private Integer status;
+
+    /**
+     * 是否开启监控0关1开
+     */
+    private Integer is_procter;
 
     /**
      * 逻辑删除

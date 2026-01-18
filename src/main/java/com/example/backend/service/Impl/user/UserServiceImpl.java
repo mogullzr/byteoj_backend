@@ -15,6 +15,7 @@ import com.example.backend.instant.IpRegionSearcher;
 import com.example.backend.mapper.*;
 import com.example.backend.models.domain.picture.UserBackgroundPicture;
 import com.example.backend.models.domain.picture.WebsiteBackgroundPictures;
+import com.example.backend.models.domain.posts.Posts;
 import com.example.backend.models.domain.user.*;
 import com.example.backend.models.request.AdminRegisterRequest;
 import com.example.backend.models.request.user.*;
@@ -31,6 +32,7 @@ import com.example.backend.utils.RedisUtils;
 import io.swagger.models.auth.In;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import com.example.backend.common.ErrorCode;
@@ -119,6 +121,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Value("${qq.app_redirect_url}")
     private String app_redirect_url;
+    @Autowired
+    private PostsMapper postsMapper;
 
     @Override
     public UserVo UserSearchByUuid(Long uuid) {

@@ -1,6 +1,7 @@
 package com.example.backend.controller;
 
 
+import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http;
 import com.example.backend.common.AccessLimit;
 import com.example.backend.common.BaseResponse;
 import com.example.backend.common.ErrorCode;
@@ -14,22 +15,23 @@ import com.example.backend.models.request.problem.ProblemAlgorithmRequest;
 import com.example.backend.models.request.problem.SearchRequest;
 import com.example.backend.models.vo.UserRatingVo;
 import com.example.backend.models.vo.UserVo;
-import com.example.backend.models.vo.competition.CompetitionProblemsInfo;
-import com.example.backend.models.vo.competition.CompetitionProblemsVo;
+import com.example.backend.models.vo.competition.*;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
-import com.example.backend.models.vo.competition.CompetitionInfoVo;
-import com.example.backend.models.vo.competition.CompetitionRankVo;
 import com.example.backend.service.algorithm.ProblemAlgorithmService;
 import com.example.backend.service.competition.CompetitionsService;
 import com.example.backend.service.user.UserService;
+import com.example.backend.utils.OssUtils;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -46,6 +48,9 @@ public class CompetitionController {
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private OssUtils ossUtils;
 
     @AccessLimit(seconds=3, maxCount=20, needLogin=false)
     @PostMapping("/search/page")
@@ -113,6 +118,41 @@ public class CompetitionController {
         return ResultUtils.success(result);
     }
 
+    @AccessLimit(seconds = 5, maxCount = 5, needLogin = true)
+    @PostMapping(value = "/procter", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public BaseResponse<CompetitionProctorVo> competitionProctorOnline(
+            @RequestParam("file") MultipartFile file,
+            HttpServletRequest httpServletRequest) {
+
+        // 1. 验证登录用户
+        User loginUser = userService.getLoginUser(httpServletRequest);
+
+        // 2. 可选：验证文件是否为空
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "上传的图片不能为空");
+        }
+
+        // 3. 获取原始文件名、大小、类型（可选）
+        String originalFilename = file.getOriginalFilename();
+        long size = file.getSize(); // 字节
+        String contentType = file.getContentType(); // 如 image/jpeg
+
+        // 4. 将 MultipartFile 转为 byte[]（如果 service 需要二进制数据）
+        try {
+            // OSS上传图像获取图像地址
+            String image_url = ossUtils.uploadOneFile(file);
+            byte[] imageData = file.getBytes(); // 这就是前端传来的二进制数据！
+
+            // 5. 调用业务逻辑（传入二进制数据 or MultipartFile）
+            CompetitionProctorVo result = competitionsService.competitionProctorOnline(loginUser.getUuid(), imageData, image_url);
+
+            return ResultUtils.success(result);
+        } catch (IOException e) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "读取上传文件失败");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
     @AccessLimit(seconds = 3,maxCount = 15,needLogin = true)
     @PostMapping("/user/add")
     private BaseResponse<Long> competitionAddByUser(@RequestBody CompetitionAddRequest competitionAddRequest,HttpServletRequest httpServletRequest){
@@ -126,6 +166,15 @@ public class CompetitionController {
         return ResultUtils.success(result);
     }
 
+    @AccessLimit(seconds = 5, maxCount = 10, needLogin = true)
+    @PostMapping("/user/status")
+    private BaseResponse<Boolean> competitionUserStatusGet(HttpServletRequest httpServletRequest) {
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        Long uuid = loginUser.getUuid();
+
+        Boolean result = competitionsService.competitionUserStatusGet(uuid);
+        return ResultUtils.success(result);
+    }
     @PostMapping("/admin/delete")
     private BaseResponse<Boolean> competitionDeleteByAdmin(Long competition_id, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {

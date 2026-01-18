@@ -27,7 +27,7 @@ public class DeepSeekRequest implements Serializable {
      * 问答模式
      * 0：一般的问答模式
      * 1：算法题目AI引导
-     * 2：.......
+     * 2：学习路线推荐引导
      */
     private Integer status;
 
@@ -41,4 +41,5 @@ public class DeepSeekRequest implements Serializable {
      * 代码
      */
     private String code;
+
 }

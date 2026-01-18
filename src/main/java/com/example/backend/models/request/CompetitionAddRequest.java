@@ -77,4 +77,9 @@ public class CompetitionAddRequest {
      * 0表示个人创建赛，1表示管理员创建赛......
      */
     private Integer type;
+
+    /**
+     * 是否开启摄像头
+     */
+    private Integer is_procter;
 }
