@@ -50,7 +50,7 @@ public class OnlineProctorUtil {
         // 构造请求：传入 InputStream
         com.aliyun.facebody20191230.models.MonitorExaminationAdvanceRequest request =
                 new com.aliyun.facebody20191230.models.MonitorExaminationAdvanceRequest()
-                        .setImageURLObject(imageStream)  // 注意：虽然叫 setImageURLObject，但实际接受 InputStream
+                        .setImageURLObject(imageStream)
                         .setType(1L); // 1 表示在线监考场景
 
         com.aliyun.teautil.models.RuntimeOptions runtime = new com.aliyun.teautil.models.RuntimeOptions();

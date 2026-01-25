@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 public enum SearchTypeEnum {
     ALGORITHM("算法", "algorithm"),
 
-    MATH_408("数学/408",  "math408"),
+    OTHER("其他类型题目",  "other"),
 
     POST("帖子", "post"),
 
@@ -32,7 +32,7 @@ public enum SearchTypeEnum {
 
     PROCTER("监控信息", "procter"),
 
-    LOG_WEBSITE("网站日志", "log_website"),;
+    LOG_WEBSITE("网站日志", "log_website");
     private final String text;
 
     private final String value;

@@ -22,11 +22,6 @@ public class SearchVo implements Serializable {
     private List<ProblemAlgorithmBankVo> problemAlgorithmBankVoList;
 
     /**
-     * 408考研试题/高等数学列表
-     */
-    private List<ProblemMath408BankVo> problemMath408BankVoList;
-
-    /**
      * 帖子列表
      */
     private List<PostsVo> postsVoList;
@@ -76,6 +71,11 @@ public class SearchVo implements Serializable {
      * 网站更新日志记录
      */
     private List<LogWebSiteInfoVo> webSiteInfoVoList;
+
+    /**
+     * 其他类型试题
+     */
+    private List<ProblemMath408BankVo> problemMath408BankVoList;
 
     /**
      * 通用数据源

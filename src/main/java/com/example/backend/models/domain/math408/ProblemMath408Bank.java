@@ -1,10 +1,10 @@
 package com.example.backend.models.domain.math408;
 
-import com.baomidou.mybatisplus.annotation.*;
-import lombok.Data;
-
-import java.io.Serializable;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import java.util.Date;
+import lombok.Data;
 
 /**
  * math题目基本信息表
@@ -12,7 +12,7 @@ import java.util.Date;
  */
 @TableName(value ="problem_math408_bank")
 @Data
-public class ProblemMath408Bank implements Serializable {
+public class ProblemMath408Bank {
     /**
      * 
      */
@@ -38,6 +38,21 @@ public class ProblemMath408Bank implements Serializable {
      * 题目描述
      */
     private String description;
+
+    /**
+     * 如果是选择题，则有多个选项（反之则为null）
+     */
+    private String options;
+
+    /**
+     * 正确答案（各个类型题目的答案格式不同）
+     */
+    private String correct_answer;
+
+    /**
+     * 解析
+     */
+    private String analysis;
 
     /**
      * 修改人id
@@ -82,9 +97,5 @@ public class ProblemMath408Bank implements Serializable {
     /**
      * 逻辑删除
      */
-    @TableLogic
     private Integer is_delete;
-
-    @TableField(exist = false)
-    private static final long serialVersionUID = 1L;
 }

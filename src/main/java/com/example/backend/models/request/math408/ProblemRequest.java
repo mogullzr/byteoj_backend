@@ -35,34 +35,9 @@ public class ProblemRequest implements Serializable {
     private String description;
 
     /**
-     * 修改人id
+     * 解析
      */
-    private Long create_by_id;
-
-    /**
-     * 修改人name
-     */
-    private String create_by_name;
-
-    /**
-     * 修改时间
-     */
-    private Date create_time;
-
-    /**
-     * 修改人id
-     */
-    private Long update_by_id;
-
-    /**
-     * 修改人name
-     */
-    private String update_by_name;
-
-    /**
-     * 修改时间
-     */
-    private Date update_time;
+    private String analysis;
 
     /**
      * 0表示该题目为数学类型题目，1表示该题目为408考研试题
@@ -75,12 +50,17 @@ public class ProblemRequest implements Serializable {
     private Integer option_type;
 
     /**
-     * 选项json
+     * 选项json字符串
      */
-    private List<Map<String, String>> options;
+    private String options;
+
+    /**
+     * 正确答案
+     */
+    private String correctAnswers;
 
     /**
      * 标签列表
      */
-    private List<Long> tag_list;
+    private List<Long> tagsList;
 }

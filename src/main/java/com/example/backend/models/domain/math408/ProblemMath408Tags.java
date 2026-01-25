@@ -1,9 +1,9 @@
 package com.example.backend.models.domain.math408;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-
-import java.io.Serializable;
 
 /**
  * math知识点存储表
@@ -11,7 +11,7 @@ import java.io.Serializable;
  */
 @TableName(value ="problem_math408_tags")
 @Data
-public class ProblemMath408Tags implements Serializable {
+public class ProblemMath408Tags {
     /**
      * ID
      */
@@ -31,10 +31,5 @@ public class ProblemMath408Tags implements Serializable {
     /**
      * 
      */
-    @TableLogic
     private Integer is_delete;
-
-    @TableField(exist = false)
-    private static final long serialVersionUID = 1L;
-
 }

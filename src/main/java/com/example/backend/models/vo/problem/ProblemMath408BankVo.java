@@ -16,7 +16,7 @@ public class ProblemMath408BankVo implements Serializable {
     private Long problem_id;
 
     /**
-     * 名称
+     * 简称
      */
     private String problem_name;
 
@@ -35,32 +35,33 @@ public class ProblemMath408BankVo implements Serializable {
      */
     private String description;
 
-
     /**
-     * 修改时间
+     * 如果是选择题，则有多个选项（反之则为null）
      */
-    private Date update_time;
+    private String options;
 
     /**
-     * 0表示该题目为数学类型题目，1表示该题目为408考研试题
+     * 正确答案（各个类型题目的答案格式不同）
      */
-    private Integer status;
+    private String correct_answer;
 
     /**
-     * 标签列表
-     */
-    private List<String> tag_list;
-
-    /**
-     * 0表示简答题，1表示单选题，2表示多选题，3表示编程大题
+     * 0表示简答题，1表示单选题，2表示多选题，3表示填空题
      */
     private Integer option_type;
 
     /**
-     * 选项json
+     * 题目标签列表
      */
-    private List<Map<String, String>> options;
+    private List<String> tagsList;
 
-    @TableField(exist = false)
-    private static final long serialVersionUID = 1L;
+    /**
+     * 解析
+     */
+    private String analysis;
+
+    /**
+     * 题目类型
+     */
+    private Integer status;
 }

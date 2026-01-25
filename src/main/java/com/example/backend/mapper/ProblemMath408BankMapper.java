@@ -1,7 +1,7 @@
 package com.example.backend.mapper;
 
-import com.example.backend.models.domain.math408.ProblemMath408Bank;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.example.backend.models.domain.math408.ProblemMath408Bank;
 
 /**
 * @author Mogullzr

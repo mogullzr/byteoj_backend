@@ -14,6 +14,7 @@ import com.example.backend.models.vo.log.LogWebSiteInfoVo;
 import com.example.backend.models.vo.pay.LantuPayViewVo;
 import com.example.backend.models.vo.post.PostsVo;
 import com.example.backend.models.vo.problem.ProblemAlgorithmBankVo;
+import com.example.backend.models.vo.problem.ProblemMath408BankVo;
 import com.example.backend.models.vo.problem.SearchVo;
 import com.example.backend.models.vo.procter.ProcterInfoVo;
 import com.example.backend.models.vo.search.AutoCompeteVo;
@@ -69,6 +70,9 @@ public class SearchServiceImpl implements SearchService {
 
     @Resource
     private LogWebSiteDataSource logWebSiteDataSource;
+
+    @Resource
+    private ProblemDataSource problemDataSource;
 
     private final Trie trie = new Trie();
 
@@ -189,6 +193,9 @@ public class SearchServiceImpl implements SearchService {
             // 12.网站日志查询
             List<LogWebSiteInfoVo> logWebsiteInfos = logWebSiteDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin, module, code, is_date_order, startMilliSeconds, endMilliSeconds, recordsRequest);
 
+            // 2.根据题目型号来查询题目
+            List<ProblemMath408BankVo> problemMath408BankVos = problemDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin, module, code, is_date_order, startMilliSeconds, endMilliSeconds, recordsRequest);
+
             // ......扩展
             // 最终聚合
             searchVo.setProblemAlgorithmBankVoList(problemAlgorithmBankVoList);
@@ -202,6 +209,8 @@ public class SearchServiceImpl implements SearchService {
             searchVo.setLantuPayViewVos(lantuPayViewVos);
             searchVo.setProcterInfoVoList(procterInfos);
             searchVo.setWebSiteInfoVoList(logWebsiteInfos);
+            searchVo.setProblemMath408BankVoList(problemMath408BankVos);
+
         } else {
             DataSource<?> dataSource = dataSourceRegistry.getDataSourceByCategory(category);
             List<?> dataList = dataSource.doSearch(keyword, tagsList, sourceList,
