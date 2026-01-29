@@ -118,16 +118,18 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         Map<Long, List<String>> problemMath408TagsWithNames = getProblemMath408TagsWithNames(problemIds);
 
         List<ProblemMath408BankVo> math408BankVos = new ArrayList<>();
-
+        boolean flag = false;
         // 设置题目VO信息
         for (ProblemMath408Bank problemMath408Bank : problemMath408BankList) {
             List<String> problemMath408Tags = problemMath408TagsWithNames.get(problemMath408Bank.getProblem_id());
-
             ProblemMath408BankVo problemMath408BankVo = getProbleMath408mVO(problemMath408Bank, problemMath408Tags);
             problemMath408BankVo.setDescription(null);
 //            problemMath408BankVo.setAnalysis(null);
 //            problemMath408BankVo.setCorrect_answer(null);
-
+            if (!flag) {
+                flag = true;
+                problemMath408BankVo.setPages(pages);
+            }
             math408BankVos.add(problemMath408BankVo);
         }
         return math408BankVos;

@@ -305,13 +305,14 @@ public class UserController {
         return ResultUtils.success(result);
     }
 
-    @AccessLimit(seconds=5, maxCount=10, needLogin=true)
+    @AccessLimit(seconds=1, maxCount=100, needLogin=false)
     @PostMapping("/upload")
     private BaseResponse<String> userUploadPicture(@RequestParam("files[]") MultipartFile file, Integer status, HttpServletRequest httpServletRequest) throws IOException {
         if (httpServletRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
         String result = userService.UserUploadPicture(file, status, httpServletRequest);
+//        String result = ossUtils.uploadOneFile(file);
         return ResultUtils.success(result);
     }
 

@@ -54,7 +54,10 @@ public class OssUtils {
             fileName += ".jpg";
         } else if (SystemConstants.getPicture_Format_WEBP.equals(originalFilename)) {
             fileName += ".webp";
-        } else {
+        } else if (SystemConstants.Picture_Format_SVG.equals(originalFilename)) {
+            fileName += ".svg";
+        }
+        else {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "上传失败！！！");
 
         }
@@ -104,7 +107,7 @@ public class OssUtils {
         } catch (IOException e) {
             e.printStackTrace();
         }finally {
-            ossClient.shutdown();
+                ossClient.shutdown();
         }
         throw new BusinessException(ErrorCode.SYSTEM_ERROR, "出现了未知的错误！！！");
     }

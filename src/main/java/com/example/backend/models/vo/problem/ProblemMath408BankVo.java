@@ -61,6 +61,11 @@ public class ProblemMath408BankVo implements Serializable {
     private String analysis;
 
     /**
+     * 面数
+     */
+    private Long pages;
+
+    /**
      * 题目类型
      */
     private Integer status;
