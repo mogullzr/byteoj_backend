@@ -486,8 +486,19 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts>
         }
 
         if (keyword != null && !keyword.isEmpty()) {
-            postsQueryWrapper.like("title", keyword).or();
-            postsQueryWrapper.like("content", keyword);
+            // 根据标签查找帖子post_id
+            QueryWrapper<PostsTags> postsTagsQueryWrapper = new QueryWrapper<>();
+            postsTagsQueryWrapper.like("tag_name", keyword);
+
+            List<PostsTags> postsTags = postsTagsMapper.selectList(postsTagsQueryWrapper);
+
+            postsQueryWrapper.and(wrapper -> {
+                wrapper.or().like("content", keyword);
+                wrapper.or().like("title", keyword);
+                for (PostsTags tag : postsTags) {
+                    wrapper.or().eq("post_id", tag.getPost_id());
+                }
+            });
         }
 
         //
