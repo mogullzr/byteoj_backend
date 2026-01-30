@@ -28,7 +28,7 @@ public class PostsDataSource implements DataSource<PostsVo>{
         postsQueryRequest.setTagsList(tagsList);
         postsQueryRequest.setStatus(status);
 
-        return postsService.listPostVoByPage(postsQueryRequest);
+        return postsService.listPostVoByPage(postsQueryRequest, uuid);
     }
 }
 

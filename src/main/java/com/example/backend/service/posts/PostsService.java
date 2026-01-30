@@ -146,9 +146,10 @@ public interface PostsService extends IService<Posts> {
      * 条件查询帖子
      *
      * @param postsQueryRequest 前端搜索信息
+     * @param uuid 用户ID
      * @return 搜索获取帖子信息
      */
-    List<PostsVo> listPostVoByPage(PostsQueryRequest postsQueryRequest);
+    List<PostsVo> listPostVoByPage(PostsQueryRequest postsQueryRequest, Long uuid);
 
 
     /**

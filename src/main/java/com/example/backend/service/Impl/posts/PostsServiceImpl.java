@@ -456,7 +456,7 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts>
     }
 
     @Override
-    public List<PostsVo> listPostVoByPage(PostsQueryRequest postsQueryRequest) {
+    public List<PostsVo> listPostVoByPage(PostsQueryRequest postsQueryRequest, Long uuid) {
         String keyword = postsQueryRequest.getKeyword();
         Integer pageNum = postsQueryRequest.getPageNum();
         Integer pageSize = postsQueryRequest.getPageSize();
@@ -504,6 +504,13 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts>
         //
         if (status != null) {
             postsQueryWrapper.eq("status", status);
+            if (status.equals(4)) {
+                if (uuid == -1) {
+                    throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "大哥请回吧！");
+                }
+                postsQueryWrapper.eq("uuid", uuid);
+            }
+
         }
         Page<Posts> page = postsMapper.selectPage(postsPage, postsQueryWrapper);
         postsList = page.getRecords();
