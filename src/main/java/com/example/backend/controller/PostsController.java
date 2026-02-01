@@ -130,7 +130,7 @@ public class  PostsController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
 
-        List<PostsVo> result = postsService.listPostVoByPage(postsQueryRequest);
+        List<PostsVo> result = postsService.listPostVoByPage(postsQueryRequest, -1L);
         return ResultUtils.success(result);
     }
 
