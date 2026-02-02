@@ -1,99 +1,141 @@
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3723, '2018年408考研真题第1题', '简单', '2018年408真题', '若栈 S1 中保存整数，栈 S2 中保存运算符，函数 F() 依次执行下述各步操作：假定 S1 中的操作数依次是 5,8,3,2（2 在栈顶），S2 中的运算符依次是 ×,−,+ （ + 在栈顶）。调用 3 次 F() 后，S1 栈顶保存的值是（ ）。', '[''-15'', ''15'', ''-20'', ''20'']', "['B']", 'B</font></strong>
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3723, '2018年408考研真题第1题', '简单', '2018年408真题', '若栈 S1 中保存整数，栈 S2 中保存运算符，函数 F() 依次执行下述各步操作：
+假定 S1 中的操作数依次是 5,8,3,2（2 在栈顶），S2 中的运算符依次是 ×,−,+ （ + 在栈顶）。调用 3 次 F() 后，S1 栈顶保存的值是（ ）。
+', '[''-15'', ''15'', ''-20'', ''20'']', "['B']", 'B</font></strong>
 本题考察后序表达式求值，调用三次`F()`栈中内容如下表所示：
 | 调用次数 | S1 初始状态（栈底 → 栈顶） | S2 初始状态（栈底 → 栈顶） | 弹出操作数 a, b | 弹出运算符 op | 执行运算 b op a | 运算结果入栈后 S1 状态（栈底 → 栈顶） |
 | --- | --- | --- | --- | --- | --- | --- |
 | 第一次 | 5, 8, 3, 2 | ×, −, + | a=2, b=3 | + | 3 + 2 = 5 | 5, 8, 5 |
 | 第二次 | 5, 8, 5 | ×, − | a=5, b=8 | − | 8 − 5 = 3 | 5, 3 |
 | 第三次 | 5, 3 | × | a=3, b=5 | × | 5 × 3 = 15 | 15 |
-调用三次`F()`后，S1 的栈顶是<strong><font color=''#2656b3''>15</font></strong>，因此选择<strong><font color=''#2656b3''>B</font></strong>。', 9, 'Mogullzr', '2026-02-01 23:10:27', 9, NULL, '2026-02-01 23:10:27', 1, 1);
+调用三次`F()`后，S1 的栈顶是<strong><font color=''#2656b3''>15</font></strong>，因此选择<strong><font color=''#2656b3''>B</font></strong>。', 9, 'Mogullzr', '2026-02-02 13:37:14', 9, NULL, '2026-02-02 13:37:14', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1288', '3723');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3724, '2018年408考研真题第2题', '简单', '2018年408真题', '现有队列 Q 与栈 S，初始时 Q 中的元素依次是 1,2,3,4,5,6（1 在队头），S 为空。若仅允许下列 3 种操作：① 出队并输出出队元素② 出队并将出队元素入栈③ 出栈并输出出栈元素则不可能得到的输出序列是（ ）。', '[''1，2，5，6，4，3'', ''2，3，4，5，6，1'', ''3，4，5，6，1，2'', ''6，5，4，3，2，1'']', "['C']", 'C</font></strong>
-本题考察入栈出栈序列：A 的操作顺序：①①②②①①③③。B 的操作顺序：②①①①①①③。D 的操作顺序：②②②②②①③③③③。对于 C：首先输出 3，说明 1 和 2 必须先依次入栈，而此后 2 肯定比 1 先输出，因此无法得到 1,2 的输出顺序。', 9, 'Mogullzr', '2026-02-01 23:10:27', 9, NULL, '2026-02-01 23:10:27', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3724, '2018年408考研真题第2题', '简单', '2018年408真题', '现有队列 Q 与栈 S，初始时 Q 中的元素依次是 1,2,3,4,5,6（1 在队头），S 为空。若仅允许下列 3 种操作：
+① 出队并输出出队元素
+② 出队并将出队元素入栈
+③ 出栈并输出出栈元素
+则不可能得到的输出序列是（ ）。
+', '[''1，2，5，6，4，3'', ''2，3，4，5，6，1'', ''3，4，5，6，1，2'', ''6，5，4，3，2，1'']', "['C']", 'C</font></strong>
+本题考察入栈出栈序列：A 的操作顺序：①①②②①①③③。B 的操作顺序：②①①①①①③。D 的操作顺序：②②②②②①③③③③。对于 C：首先输出 3，说明 1 和 2 必须先依次入栈，而此后 2 肯定比 1 先输出，因此无法得到 1,2 的输出顺序。', 9, 'Mogullzr', '2026-02-02 13:37:14', 9, NULL, '2026-02-02 13:37:14', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1088', '3724');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3725, '2018年408考研真题第3题', '简单', '2018年408真题', '设有一个$12 × 12$的对称矩阵$M$，将其上三角部分的元素$m_{i,j}(1 ≤ i ≤ j ≤ 12)$按行优先存入 C 语言的一维数组$N$中，元素$m_{6,6}$在$N$中的下标是（ ）。', '[''50'', ''51'', ''55'', ''66'']', "['A']", 'A</font></strong>
-数组$N$的下标从$0$开始，第一个元素$m_{1,1}$对应存入$n_{0}$，矩阵$M$的第一行有 12 个元素，第二行有 11 个，第三行有 10 个，第四行有 9 个，第五行有 8 个，所以$m_{6,6}$是第 12 + 11 + 10 + 9 + 8 + 1 = 51 个元素，下标应为 50, 故选 A。', 9, 'Mogullzr', '2026-02-01 23:10:27', 9, NULL, '2026-02-01 23:10:27', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3725, '2018年408考研真题第3题', '简单', '2018年408真题', '设有一个$12 × 12$的对称矩阵$M$，将其上三角部分的元素$m_{i,j}(1 ≤ i ≤ j ≤ 12)$按行优先存入 C 语言的一维数组$N$中，元素$m_{6,6}$在$N$中的下标是（ ）。
+', '[''50'', ''51'', ''55'', ''66'']', "['A']", 'A</font></strong>
+数组$N$的下标从$0$开始，第一个元素$m_{1,1}$对应存入$n_{0}$，矩阵$M$的第一行有 12 个元素，第二行有 11 个，第三行有 10 个，第四行有 9 个，第五行有 8 个，所以$m_{6,6}$是第 12 + 11 + 10 + 9 + 8 + 1 = 51 个元素，下标应为 50, 故选 A。', 9, 'Mogullzr', '2026-02-02 13:37:14', 9, NULL, '2026-02-02 13:37:14', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1258', '3725');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3726, '2018年408考研真题第4题', '简单', '2018年408真题', '设一棵非空完全二叉树 T 的所有叶结点均位于同一层，且每个非叶结点都有 2 个子结点。若 T 有 k 个叶结点，则 T 的结点总数是（ ）。', '[''$2k - 1$'', ''$2k$'', ''$k^{2}$'', ''$2^{k} - 1$'']', "['A']", 'A</font></strong>
-非叶结点的度均为 2, 且所有叶结点都位于同一层的完全二叉树就是满二叉树。对一棵高度为 h 的满二叉树（空树$h = 0$）, 其最后一层全部是叶结点，数量为$2^{h-1}$; 总结点数为$2^{h} - 1$。因此当$2^{h-1} = k$时，可以得到$2^{h} - 1 = 2k - 1$。', 9, 'Mogullzr', '2026-02-01 23:10:27', 9, NULL, '2026-02-01 23:10:27', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3726, '2018年408考研真题第4题', '简单', '2018年408真题', '设一棵非空完全二叉树 T 的所有叶结点均位于同一层，且每个非叶结点都有 2 个子结点。若 T 有 k 个叶结点，则 T 的结点总数是（ ）。
+', '[''$2k - 1$'', ''$2k$'', ''$k^{2}$'', ''$2^{k} - 1$'']', "['A']", 'A</font></strong>
+非叶结点的度均为 2, 且所有叶结点都位于同一层的完全二叉树就是满二叉树。对一棵高度为 h 的满二叉树（空树$h = 0$）, 其最后一层全部是叶结点，数量为$2^{h-1}$; 总结点数为$2^{h} - 1$。因此当$2^{h-1} = k$时，可以得到$2^{h} - 1 = 2k - 1$。', 9, 'Mogullzr', '2026-02-02 13:37:15', 9, NULL, '2026-02-02 13:37:15', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1289', '3726');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3727, '2018年408考研真题第5题', '简单', '2018年408真题', '已知字符集{a, b, c, d, e, f}，若各字符出现的次数分别为 6, 3, 8, 2, 10, 4，则对应字符集中各字符的哈夫曼编码可能是（ ）。', '[''00, 1011, 01, 1010, 11, 100'', ''00, 100, 110, 000, 0010, 01'', ''10, 1011, 11, 0011, 00, 010'', ''0011, 10, 11, 0010, 01, 000'']', "['A']", 'A</font></strong>
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3727, '2018年408考研真题第5题', '简单', '2018年408真题', '已知字符集{a, b, c, d, e, f}，若各字符出现的次数分别为 6, 3, 8, 2, 10, 4，则对应字符集中各字符的哈夫曼编码可能是（ ）。
+', '[''00, 1011, 01, 1010, 11, 100'', ''00, 100, 110, 000, 0010, 01'', ''10, 1011, 11, 0011, 00, 010'', ''0011, 10, 11, 0010, 01, 000'']', "['A']", 'A</font></strong>
 构造一棵符合题意的哈夫曼树，如下图所示。
-![图片](http://mogullzr001.oss-cn-beijing.aliyuncs.com/2026/02/f7bab8fee1ca4f98bccc0a32b5054ad4.svg)
+![图片](http://mogullzr001.oss-cn-beijing.aliyuncs.com/2026/02/5224689649c64b99bc9a9d1fddc7497f.svg)
 由此可知，左子树为 0, 右子树为 1, 故答案为 A。这题也可以<strong><font color=''#2656b3''>使用排除法</font></strong>，因为哈夫曼编码是前缀编码，所以任意编码都不能是另一个编码的前缀，根据这一点可以排除掉 B、C 选项。
-D 选项也是错误的，因为字符 e 的出现次数为 10 很高，它不能哈夫曼编码长度最短，这不合理。', 9, 'Mogullzr', '2026-02-01 23:10:27', 9, NULL, '2026-02-01 23:10:27', 1, 1);
+D 选项也是错误的，因为字符 e 的出现次数为 10 很高，它不能哈夫曼编码长度最短，这不合理。', 9, 'Mogullzr', '2026-02-02 13:37:15', 9, NULL, '2026-02-02 13:37:15', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1145', '3727');
 INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3728, '2018年408考研真题第6题', '简单', '2018年408真题', '已知二叉排序树如下图所示，元素之间应满足的大小关系是（ ）。
-![图片](http://mogullzr001.oss-cn-beijing.aliyuncs.com/2026/02/93ed26d034b047ffa59b2685d91d615e.jpg)
+
+![图片](http://mogullzr001.oss-cn-beijing.aliyuncs.com/2026/02/dcb7ecb0f280411a8856807ea77a7ebf.jpg)
+
 ', '[''$x_{1} < x_{2} < x_{3}$'', ''$x_{1} < x_{4} < x_{5}$'', ''$x_{3} < x_{5} < x_{4}$'', ''$x_{4} < x_{3} < x_{5}$'']', "['C']", 'C</font></strong>
-根据二叉排序树的特性：中序遍历（LNR）得到的是一个递增序列。图中二叉排序树的中序遍历序列为$x_{i}, x_{3}, x_{5}, x_{4}, x_{2}$, 可知$x_{3} < x_{5} < x_{4}$。', 9, 'Mogullzr', '2026-02-01 23:10:30', 9, NULL, '2026-02-01 23:10:30', 1, 1);
+根据二叉排序树的特性：中序遍历（LNR）得到的是一个递增序列。图中二叉排序树的中序遍历序列为$x_{i}, x_{3}, x_{5}, x_{4}, x_{2}$, 可知$x_{3} < x_{5} < x_{4}$。', 9, 'Mogullzr', '2026-02-02 13:37:18', 9, NULL, '2026-02-02 13:37:18', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1174', '3728');
 INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3729, '2018年408考研真题第7题', '简单', '2018年408真题', '下列选项中，不是如下有向图的拓扑序列的是（ ）
-![图片](http://mogullzr001.oss-cn-beijing.aliyuncs.com/2026/02/3d631590f29a4e2f9d3dfa8ace6661f9.svg)
+
+![图片](http://mogullzr001.oss-cn-beijing.aliyuncs.com/2026/02/9244ec3211974dd2a459c3e581c08644.svg)
+
 ', '[''1, 5, 2, 3, 6, 4'', ''5, 1, 2, 6, 3, 4'', ''5, 1, 2, 3, 6, 4'', ''5, 2, 1, 6, 3, 4'']', "['D']", 'D</font></strong>
-拓扑排序每次选取入度为 0 的结点输出，经观察不难发现拓扑序列前两位一定是 1,5 或 5,1（因为只有 1 和 5 的入度均为 0，且其他结点都不满足仅有 1 或仅有 5 作为前驱）。因此 D 显然错误。', 9, 'Mogullzr', '2026-02-01 23:10:31', 9, NULL, '2026-02-01 23:10:31', 1, 1);
+拓扑排序每次选取入度为 0 的结点输出，经观察不难发现拓扑序列前两位一定是 1,5 或 5,1（因为只有 1 和 5 的入度均为 0，且其他结点都不满足仅有 1 或仅有 5 作为前驱）。因此 D 显然错误。', 9, 'Mogullzr', '2026-02-02 13:37:19', 9, NULL, '2026-02-02 13:37:19', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1146', '3729');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3730, '2018年408考研真题第8题', '简单', '2018年408真题', '高度为 5 的 3 阶 B 树含有的关键字个数至少是（ ）', '[''15'', ''31'', ''62'', ''242'']', "['B']", 'B</font></strong>
-$m$阶B 树的基本性质：根结点以外的非叶结点最少含有$⌈m/2⌉ - 1$个关键字，代入$m = 3$得到每个非叶结点中最少包含 1 个关键字，而根结点含有 1 个关键字，因此所有非叶结点都有两个孩子。此时其树形与 h=5 的满二叉树相同，可求得关键字最少为 31 个。', 9, 'Mogullzr', '2026-02-01 23:10:32', 9, NULL, '2026-02-01 23:10:32', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3730, '2018年408考研真题第8题', '简单', '2018年408真题', '高度为 5 的 3 阶 B 树含有的关键字个数至少是（ ）
+', '[''15'', ''31'', ''62'', ''242'']', "['B']", 'B</font></strong>
+$m$阶B 树的基本性质：根结点以外的非叶结点最少含有$⌈m/2⌉ - 1$个关键字，代入$m = 3$得到每个非叶结点中最少包含 1 个关键字，而根结点含有 1 个关键字，因此所有非叶结点都有两个孩子。此时其树形与 h=5 的满二叉树相同，可求得关键字最少为 31 个。', 9, 'Mogullzr', '2026-02-02 13:37:19', 9, NULL, '2026-02-02 13:37:19', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1094', '3730');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3731, '2018年408考研真题第9题', '简单', '2018年408真题', '现有长度为 7、初始为空的散列表 HT，散列函数 H(k) = k % 7，用线性探测再散列法解决冲突。将关键字 22, 43, 15 依次插人到 HT 后，查找成功的平均查找长度是（ ）', '[''1.5'', ''1.6'', ''2'', ''3'']', "['C']", 'C</font></strong>
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3731, '2018年408考研真题第9题', '简单', '2018年408真题', '现有长度为 7、初始为空的散列表 HT，散列函数 H(k) = k % 7，用线性探测再散列法解决冲突。将关键字 22, 43, 15 依次插人到 HT 后，查找成功的平均查找长度是（ ）
+', '[''1.5'', ''1.6'', ''2'', ''3'']', "['C']", 'C</font></strong>
 可以构造得到如下的 HT：
 | 下标 | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 关键词 |  | 22 | 43 | 15 |  |  |  |
-成功时的平均查找长度 = (1+2+3)/3 = 2。', 9, 'Mogullzr', '2026-02-01 23:10:32', 9, NULL, '2026-02-01 23:10:32', 1, 1);
+成功时的平均查找长度 = (1+2+3)/3 = 2。', 9, 'Mogullzr', '2026-02-02 13:37:19', 9, NULL, '2026-02-02 13:37:19', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1165', '3731');
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1166', '3731');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3732, '2018年408考研真题第10题', '简单', '2018年408真题', '对初始数据序列 (8, 3, 9, 11, 2, 1, 4, 7, 5, 10, 6) 进行希尔排序。若第一趟排序结果为 (1, 3, 7, 5, 2, 6, 4, 9, 11, 10, 8)，第二趟排序结果为 (1, 2, 6, 4, 3, 7, 5, 8, 11, 10, 9)，则两趟排序采用的增量（间隔）依次是（ ）。', '[''3,1'', ''3,2'', ''5,2'', ''5,3'']', "['D']", 'D</font></strong>
-参考希尔排序，可以观察到，第一次排序后的数组沿 gap=5 有序，第二次排序后数组沿 gap=3 有序，所以答案选择 D。', 9, 'Mogullzr', '2026-02-01 23:10:32', 9, NULL, '2026-02-01 23:10:32', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3732, '2018年408考研真题第10题', '简单', '2018年408真题', '对初始数据序列 (8, 3, 9, 11, 2, 1, 4, 7, 5, 10, 6) 进行希尔排序。若第一趟排序结果为 (1, 3, 7, 5, 2, 6, 4, 9, 11, 10, 8)，第二趟排序结果为 (1, 2, 6, 4, 3, 7, 5, 8, 11, 10, 9)，则两趟排序采用的增量（间隔）依次是（ ）。
+', '[''3,1'', ''3,2'', ''5,2'', ''5,3'']', "['D']", 'D</font></strong>
+参考希尔排序，可以观察到，第一次排序后的数组沿 gap=5 有序，第二次排序后数组沿 gap=3 有序，所以答案选择 D。', 9, 'Mogullzr', '2026-02-02 13:37:19', 9, NULL, '2026-02-02 13:37:19', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1096', '3732');
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1230', '3732');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3733, '2018年408考研真题第11题', '简单', '2018年408真题', '在将数据序列 (6, 1, 5, 9, 8, 4, 7) 建成大根堆时，正确的序列变化过程是（）。', '[''6,1,7,9,8,4,5 → 6,9,7,1,8,4,5 → 9,6,7,1,8,4,5 → 9,8,7,1,6,4,5'', ''6,9,5,1,8,4,7 → 6,9,7,1,8,4,5 → 9,6,7,1,8,4,5 → 9,8,7,1,6,4,5'', ''6,9,5,1,8,4,7 → 9,6,5,1,8,4,7 → 9,6,7,1,8,4,5 → 9,8,7,1,6,4,5'', ''6,1,7,9,8,4,5 → 7,1,6,9,8,4,5 → 7,9,6,1,8,4,5 → 9,7,6,1,8,4,5 → 9,8,6,1,7,4,5'']', "['A']", 'A</font></strong>
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3733, '2018年408考研真题第11题', '简单', '2018年408真题', '在将数据序列 (6, 1, 5, 9, 8, 4, 7) 建成大根堆时，正确的序列变化过程是（）。
+', '[''6,1,7,9,8,4,5 → 6,9,7,1,8,4,5 → 9,6,7,1,8,4,5 → 9,8,7,1,6,4,5'', ''6,9,5,1,8,4,7 → 6,9,7,1,8,4,5 → 9,6,7,1,8,4,5 → 9,8,7,1,6,4,5'', ''6,9,5,1,8,4,7 → 9,6,5,1,8,4,7 → 9,6,7,1,8,4,5 → 9,8,7,1,6,4,5'', ''6,1,7,9,8,4,5 → 7,1,6,9,8,4,5 → 7,9,6,1,8,4,5 → 9,7,6,1,8,4,5 → 9,8,6,1,7,4,5'']', "['A']", 'A</font></strong>
 参考构造初始堆，该题的堆变化过程如下图所示：
-![图片](http://mogullzr001.oss-cn-beijing.aliyuncs.com/2026/02/154244da7ec3412fa8c40ad5aa843a2c.svg)
-答案选择 A。', 9, 'Mogullzr', '2026-02-01 23:10:32', 9, NULL, '2026-02-01 23:10:32', 1, 1);
+![图片](http://mogullzr001.oss-cn-beijing.aliyuncs.com/2026/02/3c28eb2304324afebf52f34ae5b4adfa.svg)
+答案选择 A。', 9, 'Mogullzr', '2026-02-02 13:37:19', 9, NULL, '2026-02-02 13:37:19', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1095', '3733');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3734, '2018年408考研真题第12题', '简单', '2018年408真题', '冯诺依曼结构计算机中数据采用二进制编码表示，其主要原因是（）。Ⅰ.二进制的运算规则简单Ⅱ.制造两个稳态的物理器件较容易Ⅲ.便于用逻辑门电路实现算术运算', '[''仅Ⅰ、Ⅱ'', ''仅Ⅰ、Ⅲ'', ''仅Ⅱ、Ⅲ'', ''Ⅰ、Ⅱ和Ⅲ'']', "['D']", 'D</font></strong>
-对于 I，二进制由千只有 0,1 两种数值，运算规则较简单，都是通过 ALU 部件转换成加法运算。对于 II，二进制只需要高电平和低电平两个状态就可以表示，这样的物理器件很容易制造。对于 III, 二进制与逻辑量相吻合。二进制的 0 和 1 正好与逻辑量的“真”和“假”相对应，因此用二进制数表示二值逻辑显得十分自然，采用逻辑门电路很容易实现运算。', 9, 'Mogullzr', '2026-02-01 23:10:33', 9, NULL, '2026-02-01 23:10:33', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3734, '2018年408考研真题第12题', '简单', '2018年408真题', '冯诺依曼结构计算机中数据采用二进制编码表示，其主要原因是（）。
+Ⅰ.二进制的运算规则简单
+Ⅱ.制造两个稳态的物理器件较容易
+Ⅲ.便于用逻辑门电路实现算术运算
+', '[''仅Ⅰ、Ⅱ'', ''仅Ⅰ、Ⅲ'', ''仅Ⅱ、Ⅲ'', ''Ⅰ、Ⅱ和Ⅲ'']', "['D']", 'D</font></strong>
+对于 I，二进制由千只有 0,1 两种数值，运算规则较简单，都是通过 ALU 部件转换成加法运算。对于 II，二进制只需要高电平和低电平两个状态就可以表示，这样的物理器件很容易制造。对于 III, 二进制与逻辑量相吻合。二进制的 0 和 1 正好与逻辑量的“真”和“假”相对应，因此用二进制数表示二值逻辑显得十分自然，采用逻辑门电路很容易实现运算。', 9, 'Mogullzr', '2026-02-02 13:37:21', 9, NULL, '2026-02-02 13:37:21', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1201', '3734');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3735, '2018年408考研真题第13题', '简单', '2018年408真题', '假定带符号整数采用补码表示，若 int 型变量 x 和 y 的机器数分别是 FFFF FFDFH 和 0000 0041H，则 x、y 的值以及 x-y 的机器数分别是（ ）。', '[''x=-65，y=41，x-y 的机器数溢出'', ''x=-33，y=65，x-y 的机器数为 FFFFFF9DH'', ''x=-33，y=65，x-y 的机器数为 FFFFFF9EH'', ''x=-65，y=41，x-y 的机器数为 FFFFFF96H'']', "['C']", 'C</font></strong>
-利用补码转换成原码的规则：负数符号位不变数值位取反加 1；正数补码等于原码。两个机器数对应的原码是 [x]原 = 80000021H，对应的数值是 -33，[y]原=[y]补=00000041H=65。排除 A、D 选项。x-y 直接利用补码减法准则，[x]补-[y]补 =[x]补+[-y]补，-y 的补码是连同符号位取反加 1，最终减法变成加法，得出结果为 FFFFFF9EH。', 9, 'Mogullzr', '2026-02-01 23:10:34', 9, NULL, '2026-02-01 23:10:34', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3735, '2018年408考研真题第13题', '简单', '2018年408真题', '假定带符号整数采用补码表示，若 int 型变量 x 和 y 的机器数分别是 FFFF FFDFH 和 0000 0041H，则 x、y 的值以及 x-y 的机器数分别是（ ）。
+', '[''x=-65，y=41，x-y 的机器数溢出'', ''x=-33，y=65，x-y 的机器数为 FFFFFF9DH'', ''x=-33，y=65，x-y 的机器数为 FFFFFF9EH'', ''x=-65，y=41，x-y 的机器数为 FFFFFF96H'']', "['C']", 'C</font></strong>
+利用补码转换成原码的规则：负数符号位不变数值位取反加 1；正数补码等于原码。两个机器数对应的原码是 [x]原 = 80000021H，对应的数值是 -33，[y]原=[y]补=00000041H=65。排除 A、D 选项。x-y 直接利用补码减法准则，[x]补-[y]补 =[x]补+[-y]补，-y 的补码是连同符号位取反加 1，最终减法变成加法，得出结果为 FFFFFF9EH。', 9, 'Mogullzr', '2026-02-02 13:37:21', 9, NULL, '2026-02-02 13:37:21', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1099', '3735');
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1098', '3735');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3736, '2018年408考研真题第14题', '简单', '2018年408真题', 'IEEE 754 单精度浮点格式表示的数中，最小的规格化正数是 (  )', '[''$1.0 × 2^{−126}$'', ''$1.0 × 2^{−127}$'', ''$1.0 × 2^{−128}$'', ''$1.0 × 2^{−149}$'']', "['A']", 'A</font></strong>
-IEEE754单精度浮点数的符号位、阶码位、尾数位（省去正数位 1）所占的位数分别是 1、8、23 位。最小正数，数符位取 0，移码的取值范围是 1~254，取 1，得阶码值 1-127=-126（127 为我们规定的偏置值），尾数取全 0，最终推出最小规格化正数为 A 选项。', 9, 'Mogullzr', '2026-02-01 23:10:34', 9, NULL, '2026-02-01 23:10:34', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3736, '2018年408考研真题第14题', '简单', '2018年408真题', 'IEEE 754 单精度浮点格式表示的数中，最小的规格化正数是 (  )
+', '[''$1.0 × 2^{−126}$'', ''$1.0 × 2^{−127}$'', ''$1.0 × 2^{−128}$'', ''$1.0 × 2^{−149}$'']', "['A']", 'A</font></strong>
+IEEE754单精度浮点数的符号位、阶码位、尾数位（省去正数位 1）所占的位数分别是 1、8、23 位。最小正数，数符位取 0，移码的取值范围是 1~254，取 1，得阶码值 1-127=-126（127 为我们规定的偏置值），尾数取全 0，最终推出最小规格化正数为 A 选项。', 9, 'Mogullzr', '2026-02-02 13:37:21', 9, NULL, '2026-02-02 13:37:21', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1176', '3736');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3737, '2018年408考研真题第15题', '简单', '2018年408真题', '某 32 位计算机按字节编址，采用小端（Little Endian）方式。若语句`int i=0`对应指令的机器代码为`C7 45 FC 00 00 00 00`，则语句`int i=-64`对应指令的机器代码是（ ）。', '[''C7 45 FC C0 FF FF FF'', ''C7 45 FC 0C FF FF FF'', ''C7 45 FC FF FF FF C0'', ''C7 45 FC FF FF FF 0C'']', "['A']", 'A</font></strong>
-按字节编址，采用小端序，低位的数据存储在低地址位、高位的数据存储在高地址位，并且按照一个字节相对不变的顺序存储。由题意知机器代码的地址是递减的，存储 0 的位数是后 32 位，那么我们只需要把 -64 的补码按字节存储在其中即可，而 -64 表示成 32 位的十六进制数是 FFFFFF CO, 根据小端方式的特点，高字节存储在低地址，就是 CO FF FF FF, 故选 A。', 9, 'Mogullzr', '2026-02-01 23:10:34', 9, NULL, '2026-02-01 23:10:34', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3737, '2018年408考研真题第15题', '简单', '2018年408真题', '某 32 位计算机按字节编址，采用小端（Little Endian）方式。若语句`int i=0`对应指令的机器代码为`C7 45 FC 00 00 00 00`，则语句`int i=-64`对应指令的机器代码是（ ）。
+', '[''C7 45 FC C0 FF FF FF'', ''C7 45 FC 0C FF FF FF'', ''C7 45 FC FF FF FF C0'', ''C7 45 FC FF FF FF 0C'']', "['A']", 'A</font></strong>
+按字节编址，采用小端序，低位的数据存储在低地址位、高位的数据存储在高地址位，并且按照一个字节相对不变的顺序存储。由题意知机器代码的地址是递减的，存储 0 的位数是后 32 位，那么我们只需要把 -64 的补码按字节存储在其中即可，而 -64 表示成 32 位的十六进制数是 FFFFFF CO, 根据小端方式的特点，高字节存储在低地址，就是 CO FF FF FF, 故选 A。', 9, 'Mogullzr', '2026-02-02 13:37:21', 9, NULL, '2026-02-02 13:37:21', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1265', '3737');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3738, '2018年408考研真题第16题', '简单', '2018年408真题', '整数 x 的机器数为 11011000，分别对 x 进行逻辑右移 1 位和算术右移 1 位操作，得到的机器数各是（ ）。', '[''1110 1100、1110 1100'', ''0110 1100、1110 1100'', ''1110 1100、0110 1100'', ''0110 1100、0110 1100'']', "['B']", 'B</font></strong>
-逻辑移位：左移和右移空位都补 0, 并且所有数字参与移动。算术移位：符号位不参与移动，右移空位补符号位，左移空位补 0。根据该规则，轻松选出 B 选项。', 9, 'Mogullzr', '2026-02-01 23:10:34', 9, NULL, '2026-02-01 23:10:34', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3738, '2018年408考研真题第16题', '简单', '2018年408真题', '整数 x 的机器数为 11011000，分别对 x 进行逻辑右移 1 位和算术右移 1 位操作，得到的机器数各是（ ）。
+', '[''1110 1100、1110 1100'', ''0110 1100、1110 1100'', ''1110 1100、0110 1100'', ''0110 1100、0110 1100'']', "['B']", 'B</font></strong>
+逻辑移位：左移和右移空位都补 0, 并且所有数字参与移动。算术移位：符号位不参与移动，右移空位补符号位，左移空位补 0。根据该规则，轻松选出 B 选项。', 9, 'Mogullzr', '2026-02-02 13:37:21', 9, NULL, '2026-02-02 13:37:21', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1290', '3738');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3739, '2018年408考研真题第17题', '简单', '2018年408真题', '假定 DRAM 芯片中存储阵列的行数为 r、列数为 c，对于一个 2K×1 位的 DRAM 芯片，为保证其地址引脚数最少，并尽量减少刷新开销，则 r、c 的取值分别是（ ）。', '[''2048、1'', ''64、32'', ''32、64'', ''1、2048'']', "['C']", 'C</font></strong>
-本题考察主存容量的扩展，首先根据 DRAM 采用的是行列地址线复用技术，我们尽量选用行列差值不要太大的。对于 B、C 选项，地址线只需 6 根（取行或列所需地址线的最大值），轻松排除 A、D 选项。其次，为了减小刷新开销，而 DRAM 一般是按行刷新的，所以应选行数值较少的，答案为 C。', 9, 'Mogullzr', '2026-02-01 23:10:34', 9, NULL, '2026-02-01 23:10:34', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3739, '2018年408考研真题第17题', '简单', '2018年408真题', '假定 DRAM 芯片中存储阵列的行数为 r、列数为 c，对于一个 2K×1 位的 DRAM 芯片，为保证其地址引脚数最少，并尽量减少刷新开销，则 r、c 的取值分别是（ ）。
+', '[''2048、1'', ''64、32'', ''32、64'', ''1、2048'']', "['C']", 'C</font></strong>
+本题考察主存容量的扩展，首先根据 DRAM 采用的是行列地址线复用技术，我们尽量选用行列差值不要太大的。对于 B、C 选项，地址线只需 6 根（取行或列所需地址线的最大值），轻松排除 A、D 选项。其次，为了减小刷新开销，而 DRAM 一般是按行刷新的，所以应选行数值较少的，答案为 C。', 9, 'Mogullzr', '2026-02-02 13:37:21', 9, NULL, '2026-02-02 13:37:21', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1102', '3739');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3740, '2018年408考研真题第18题', '简单', '2018年408真题', '按字节编址的计算机中，某 double 型数组 A 的首地址为 2000H，使用变址寻址和循环结构访问数组 A，保存数组下标的变址寄存器初值为 0，每次循环取一个数组元素，其偏移地址为变址值乘以 sizeof(double)，取完后变址寄存器内容自动加 1。若某次循环所取元素的地址为 2100H，则进入该次循环时变址寄存器的内容是（ ）。', '[''25'', ''32'', ''64'', ''100'']', "['B']", 'B</font></strong>
-根据变址寻址的公式 EA=(IX)+A, 则 (IX)=2100H-2000H=100H=256，sizeof(double)=8（双精度浮点数用 8 位字节表示），因此数组的下标为 256/8=32, 答案选 B。', 9, 'Mogullzr', '2026-02-01 23:10:34', 9, NULL, '2026-02-01 23:10:34', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3740, '2018年408考研真题第18题', '简单', '2018年408真题', '按字节编址的计算机中，某 double 型数组 A 的首地址为 2000H，使用变址寻址和循环结构访问数组 A，保存数组下标的变址寄存器初值为 0，每次循环取一个数组元素，其偏移地址为变址值乘以 sizeof(double)，取完后变址寄存器内容自动加 1。若某次循环所取元素的地址为 2100H，则进入该次循环时变址寄存器的内容是（ ）。
+', '[''25'', ''32'', ''64'', ''100'']', "['B']", 'B</font></strong>
+根据变址寻址的公式 EA=(IX)+A, 则 (IX)=2100H-2000H=100H=256，sizeof(double)=8（双精度浮点数用 8 位字节表示），因此数组的下标为 256/8=32, 答案选 B。', 9, 'Mogullzr', '2026-02-02 13:37:21', 9, NULL, '2026-02-02 13:37:21', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1103', '3740');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3741, '2018年408考研真题第19题', '简单', '2018年408真题', '减法指令`sub R1,R2,R3`的功能为`(R1)-(R2)→R3`，该指令执行后将生成进位/借位标志 CF 和溢出标志 OF。若`(R1)=FFFFFFFFH`，`(R2)=FFFFFFF0H`，则该减法指令执行后，CF 与 OF 分别为（ ）。', '[''CF=0，OF=0'', ''CF=1，OF=0'', ''CF=0，OF=1'', ''CF=1，OF=1'']', "['A']", 'A</font></strong>
-[x]补 = [y]补 = [x]补 + [-y]补，[-R2]补 = 00000010H, 很明显[R1]补 + [-R2]补的最高位进位和符号位进位都是 1（当最高位进位和符号位进位的 值不相同 时才产生溢出），可以判断溢出标志 OF 为 0。同时，减法操作只需判断借位标志，R1 大于 R2, 所以借位标志为 0, 综上选 A', 9, 'Mogullzr', '2026-02-01 23:10:34', 9, NULL, '2026-02-01 23:10:34', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3741, '2018年408考研真题第19题', '简单', '2018年408真题', '减法指令`sub R1,R2,R3`的功能为`(R1)-(R2)→R3`，该指令执行后将生成进位/借位标志 CF 和溢出标志 OF。若`(R1)=FFFFFFFFH`，`(R2)=FFFFFFF0H`，则该减法指令执行后，CF 与 OF 分别为（ ）。
+', '[''CF=0，OF=0'', ''CF=1，OF=0'', ''CF=0，OF=1'', ''CF=1，OF=1'']', "['A']", 'A</font></strong>
+[x]补 = [y]补 = [x]补 + [-y]补，[-R2]补 = 00000010H, 很明显[R1]补 + [-R2]补的最高位进位和符号位进位都是 1（当最高位进位和符号位进位的 值不相同 时才产生溢出），可以判断溢出标志 OF 为 0。同时，减法操作只需判断借位标志，R1 大于 R2, 所以借位标志为 0, 综上选 A', 9, 'Mogullzr', '2026-02-02 13:37:22', 9, NULL, '2026-02-02 13:37:22', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1177', '3741');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3742, '2018年408考研真题第20题', '简单', '2018年408真题', '若某计算机最复杂指令的执行需要完成 5 个子功能，分别由功能部件 A~E 实现，各功能部件所需时间分别为 80ps、50ps、50ps、70ps 和 50ps，采用流水线方式执行指令，流水段寄存器延时为 20ps，则 CPU 时钟周期至少为（ ）。', '[''60ps'', ''70ps'', ''80ps'', ''100ps'']', "['D']", 'D</font></strong>
-指令流水线的每个流水段时间单位为时钟周期，题中指令流水线的指令需要用到 A~E 五个部件，所以每个流水段时间应取：最大部件时间 80ps, 此外还有寄存器延时为 20ps, 则 CPU 时钟周期至少是 100ps。答案选 D。', 9, 'Mogullzr', '2026-02-01 23:10:34', 9, NULL, '2026-02-01 23:10:34', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3742, '2018年408考研真题第20题', '简单', '2018年408真题', '若某计算机最复杂指令的执行需要完成 5 个子功能，分别由功能部件 A~E 实现，各功能部件所需时间分别为 80ps、50ps、50ps、70ps 和 50ps，采用流水线方式执行指令，流水段寄存器延时为 20ps，则 CPU 时钟周期至少为（ ）。
+', '[''60ps'', ''70ps'', ''80ps'', ''100ps'']', "['D']", 'D</font></strong>
+指令流水线的每个流水段时间单位为时钟周期，题中指令流水线的指令需要用到 A~E 五个部件，所以每个流水段时间应取：最大部件时间 80ps, 此外还有寄存器延时为 20ps, 则 CPU 时钟周期至少是 100ps。答案选 D。', 9, 'Mogullzr', '2026-02-02 13:37:22', 9, NULL, '2026-02-02 13:37:22', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1106', '3742');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3743, '2018年408考研真题第21题', '简单', '2018年408真题', '下列选项中，可提高同步总线数据传输率的是（ ）。Ⅰ. 增加总线宽度Ⅱ. 提高总线工作频率Ⅲ. 支持突发传输Ⅳ. 采用地址/数据线复用', '[''仅Ⅰ、Ⅱ'', ''仅Ⅰ、Ⅱ、Ⅲ'', ''仅Ⅲ、Ⅳ'', ''Ⅰ、Ⅱ、Ⅲ和Ⅳ'']', "['B']", 'B</font></strong>
-总线数据传输率 ＝ 总线工作频率 x 总线带宽（＝总线宽度 / 8）, 所以 Ⅰ 和 Ⅱ 会影响总线数据传输率。采用突发总线传输事务（也称猝发传输），在一个总线周期内传输存储地址连续的多个数据字，从而提高了传输效率。采用地址 I 数据线复用只是减少了线的数量，节省了成本，并不能提高传输率。', 9, 'Mogullzr', '2026-02-01 23:10:34', 9, NULL, '2026-02-01 23:10:34', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3743, '2018年408考研真题第21题', '简单', '2018年408真题', '下列选项中，可提高同步总线数据传输率的是（ ）。
+Ⅰ. 增加总线宽度
+Ⅱ. 提高总线工作频率
+Ⅲ. 支持突发传输
+Ⅳ. 采用地址/数据线复用
+', '[''仅Ⅰ、Ⅱ'', ''仅Ⅰ、Ⅱ、Ⅲ'', ''仅Ⅲ、Ⅳ'', ''Ⅰ、Ⅱ、Ⅲ和Ⅳ'']', "['B']", 'B</font></strong>
+总线数据传输率 ＝ 总线工作频率 x 总线带宽（＝总线宽度 / 8）, 所以 Ⅰ 和 Ⅱ 会影响总线数据传输率。采用突发总线传输事务（也称猝发传输），在一个总线周期内传输存储地址连续的多个数据字，从而提高了传输效率。采用地址 I 数据线复用只是减少了线的数量，节省了成本，并不能提高传输率。', 9, 'Mogullzr', '2026-02-02 13:37:22', 9, NULL, '2026-02-02 13:37:22', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1107', '3743');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3744, '2018年408考研真题第22题', '简单', '2018年408真题', '下列关于外部 I/O 中断的叙述中，正确的是（ ）。', '[''中断控制器按所接收中断请求的先后次序进行中断优先级排队'', ''CPU 响应中断时，通过执行中断隐指令完成通用寄存器的保护'', ''CPU 只有在处于中断允许状态时，才能响应外部设备的中断请求'', ''有中断请求时，CPU 立即暂停当前指令执行，转去执行中断服务程序'']', "['C']", 'C</font></strong>
-本题考察突发总线传输事务，中断优先级由屏蔽字决定，而不是根据请求的先后次序，因此 A 错误。中断隐指令完成的工作有：① 关中断；② 保存断点；③ 引出中断服务程序，通用寄存器的保护由中断服务程序完成，B 错误。中断允许状态即开中断后，才能响应中断请求，C 正确。有中断请求时，先要由中断隐指令完成中断前程序的状态保存，D 错误。', 9, 'Mogullzr', '2026-02-01 23:10:34', 9, NULL, '2026-02-01 23:10:34', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3744, '2018年408考研真题第22题', '简单', '2018年408真题', '下列关于外部 I/O 中断的叙述中，正确的是（ ）。
+', '[''中断控制器按所接收中断请求的先后次序进行中断优先级排队'', ''CPU 响应中断时，通过执行中断隐指令完成通用寄存器的保护'', ''CPU 只有在处于中断允许状态时，才能响应外部设备的中断请求'', ''有中断请求时，CPU 立即暂停当前指令执行，转去执行中断服务程序'']', "['C']", 'C</font></strong>
+本题考察突发总线传输事务，中断优先级由屏蔽字决定，而不是根据请求的先后次序，因此 A 错误。中断隐指令完成的工作有：① 关中断；② 保存断点；③ 引出中断服务程序，通用寄存器的保护由中断服务程序完成，B 错误。中断允许状态即开中断后，才能响应中断请求，C 正确。有中断请求时，先要由中断隐指令完成中断前程序的状态保存，D 错误。', 9, 'Mogullzr', '2026-02-02 13:37:22', 9, NULL, '2026-02-02 13:37:22', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1204', '3744');
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1132', '3744');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3745, '2018年408考研真题第23题', '简单', '2018年408真题', '下列关于多任务操作系统的叙述中，正确的是（  ）。Ⅰ.具有并发和并行的特点Ⅱ.需要实现对共享资源的保护Ⅲ.需要运行在多 CPU 的硬件平台上', '[''仅Ⅰ'', ''仅Ⅱ'', ''仅Ⅰ、Ⅱ'', ''Ⅰ、Ⅱ、Ⅲ'']', "['C']", 'C</font></strong>
-多任务操作系统可以在同一时间内运行多个应用程序，故 Ⅰ 正确。多个任务必须互斥地访问共享资源，为达到这一目标必须对共享资源进行必要的保护，故 Ⅱ 正确。现代操作系统都是多任务的（主要特点是并发和并行），并不一定需要运行在多 CPU 的硬件上，单个 CPU 也可以满足要求，Ⅲ 错误。综上所述，Ⅰ、Ⅱ 正确，Ⅲ 错误，故选 C。', 9, 'Mogullzr', '2026-02-01 23:10:35', 9, NULL, '2026-02-01 23:10:35', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3745, '2018年408考研真题第23题', '简单', '2018年408真题', '下列关于多任务操作系统的叙述中，正确的是（  ）。
+Ⅰ.具有并发和并行的特点
+Ⅱ.需要实现对共享资源的保护
+Ⅲ.需要运行在多 CPU 的硬件平台上
+', '[''仅Ⅰ'', ''仅Ⅱ'', ''仅Ⅰ、Ⅱ'', ''Ⅰ、Ⅱ、Ⅲ'']', "['C']", 'C</font></strong>
+多任务操作系统可以在同一时间内运行多个应用程序，故 Ⅰ 正确。多个任务必须互斥地访问共享资源，为达到这一目标必须对共享资源进行必要的保护，故 Ⅱ 正确。现代操作系统都是多任务的（主要特点是并发和并行），并不一定需要运行在多 CPU 的硬件上，单个 CPU 也可以满足要求，Ⅲ 错误。综上所述，Ⅰ、Ⅱ 正确，Ⅲ 错误，故选 C。', 9, 'Mogullzr', '2026-02-02 13:37:22', 9, NULL, '2026-02-02 13:37:22', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1110', '3745');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3746, '2018年408考研真题第24题', '简单', '2018年408真题', '某系统采用基于优先权的非抢占式进程调度策略，完成一次进程调度和进程切换的系统时间开销为 1us。在 T 时刻就绪队列中有 3 个进程 P1、P2 和 P3，其在就绪队列中的等待时间、需要的 CPU 时间和优先权如下表所示。若优先权值大的进程优先获得 CPU，从 T 时刻起系统开始进程调度，则系统的平均周转时间为（）。', '[''54us'', ''73us'', ''74us'', ''75us'']', "['D']", 'D</font></strong>
-本题考察非抢占式优先级调度，由优先权可知，进程的执行顺序为 P2 → P3 → P1。P2 的周转时间：1 +15+24= 40μsP3 的周转时间：18+1+24+1 +36= 80μsP1 的周转时间：30+1+24 +1 +36+1 +12=105μs平均周转时间： (40+80+105) /3= 225/3= 75μs, 故选 D。', 9, 'Mogullzr', '2026-02-01 23:10:35', 9, NULL, '2026-02-01 23:10:35', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3746, '2018年408考研真题第24题', '简单', '2018年408真题', '某系统采用基于优先权的非抢占式进程调度策略，完成一次进程调度和进程切换的系统时间开销为 1us。在 T 时刻就绪队列中有 3 个进程 P1、P2 和 P3，其在就绪队列中的等待时间、需要的 CPU 时间和优先权如下表所示。若优先权值大的进程优先获得 CPU，从 T 时刻起系统开始进程调度，则系统的平均周转时间为（）。
+', '[''54us'', ''73us'', ''74us'', ''75us'']', "['D']", 'D</font></strong>
+本题考察非抢占式优先级调度，由优先权可知，进程的执行顺序为 P2 → P3 → P1。P2 的周转时间：1 +15+24= 40μsP3 的周转时间：18+1+24+1 +36= 80μsP1 的周转时间：30+1+24 +1 +36+1 +12=105μs平均周转时间： (40+80+105) /3= 225/3= 75μs, 故选 D。', 9, 'Mogullzr', '2026-02-02 13:37:22', 9, NULL, '2026-02-02 13:37:22', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1111', '3746');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3747, '2018年408考研真题第25题', '简单', '2018年408真题', '属于同一进程的两个线程 thread1 和 thread2 并发执行，共享初值为 0 的全局变量 x。thread1 和 thread2 实现对全局变量 x 加 1 的机器级代码描述如下：thread1
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3747, '2018年408考研真题第25题', '简单', '2018年408真题', '属于同一进程的两个线程 thread1 和 thread2 并发执行，共享初值为 0 的全局变量 x。thread1 和 thread2 实现对全局变量 x 加 1 的机器级代码描述如下：
+thread1
 ```c
 mov R1, x   // (x) → R1
 inc R1      // (R1) + 1 → R1
@@ -107,62 +149,94 @@ inc R2      // (R2) + 1 → R2
 mov x, R2   // (R2) → x
 ```
 
-在所有可能的指令执行序列中，使 x 的值为 2 的序列个数是（）。', '[''1'', ''2'', ''3'', ''4'']', "['B']", 'B</font></strong>
-仔细阅读两个线程代码可知，threadl 和 thread2 均是对 x 进行加 1 操作，x 初始值为 0，若要使得最终 x = 2，只有先执行 thread1 再执行 thread2，或先执行 thread2 再执行 threadl，故只有 2 种可能，选 B。', 9, 'Mogullzr', '2026-02-01 23:10:35', 9, NULL, '2026-02-01 23:10:35', 1, 1);
+
+在所有可能的指令执行序列中，使 x 的值为 2 的序列个数是（）。
+', '[''1'', ''2'', ''3'', ''4'']', "['B']", 'B</font></strong>
+仔细阅读两个线程代码可知，threadl 和 thread2 均是对 x 进行加 1 操作，x 初始值为 0，若要使得最终 x = 2，只有先执行 thread1 再执行 thread2，或先执行 thread2 再执行 threadl，故只有 2 种可能，选 B。', 9, 'Mogullzr', '2026-02-02 13:37:22', 9, NULL, '2026-02-02 13:37:22', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1183', '3747');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3748, '2018年408考研真题第26题', '简单', '2018年408真题', '假设系统中有 4 个同类资源，进程 P1、P2 和 P3 需要的资源数分别为 4、3 和 1，P1、P2 和 P3 已申请到的资源数分别为 2、1 和 0，则执行安全性检测算法的结果是（）。', '[''不存在安全序列，系统处于不安全状态'', ''存在多个安全序列，系统处于安全状态'', ''存在唯一安全序列 P3、P1、P2，系统处于安全状态'', ''存在唯一安全序列 P3、P2、P1，系统处于安全状态'']', "['A']", 'A</font></strong>
-本题考察安全性检查，由题中数据可知，仅剩最后一个同类资源，若将其分给 P1 或 P2，则均无法正常执行；若分给 P3，则 P3 正常执行完成后，释放的这个资源仍无法使 P1、P2 正常执行，故不存在安全序列，选 A。', 9, 'Mogullzr', '2026-02-01 23:10:35', 9, NULL, '2026-02-01 23:10:35', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3748, '2018年408考研真题第26题', '简单', '2018年408真题', '假设系统中有 4 个同类资源，进程 P1、P2 和 P3 需要的资源数分别为 4、3 和 1，P1、P2 和 P3 已申请到的资源数分别为 2、1 和 0，则执行安全性检测算法的结果是（）。
+', '[''不存在安全序列，系统处于不安全状态'', ''存在多个安全序列，系统处于安全状态'', ''存在唯一安全序列 P3、P1、P2，系统处于安全状态'', ''存在唯一安全序列 P3、P2、P1，系统处于安全状态'']', "['A']", 'A</font></strong>
+本题考察安全性检查，由题中数据可知，仅剩最后一个同类资源，若将其分给 P1 或 P2，则均无法正常执行；若分给 P3，则 P3 正常执行完成后，释放的这个资源仍无法使 P1、P2 正常执行，故不存在安全序列，选 A。', 9, 'Mogullzr', '2026-02-02 13:37:22', 9, NULL, '2026-02-02 13:37:22', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1185', '3748');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3749, '2018年408考研真题第27题', '简单', '2018年408真题', '下列选项中，可能导致当前进程 P 阻塞的事件是（  ）。Ⅰ.进程 P 申请临界资源Ⅱ.进程 P 从磁盘读数据Ⅲ.系统将 CPU 分配给高优先级的进程', '[''仅Ⅰ'', ''仅Ⅱ'', ''仅Ⅰ、Ⅱ'', ''Ⅰ、Ⅱ、Ⅲ'']', "['C']", 'C</font></strong>
-本题考察进程的状态转化，进程等待某资源为可用（不包括处理机）或等待输入／输出完成均会进入阻塞状态，故 I、II 正确；III 中情况发生时，进程进入就绪状态，故 III 错误，答案选 C。', 9, 'Mogullzr', '2026-02-01 23:10:35', 9, NULL, '2026-02-01 23:10:35', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3749, '2018年408考研真题第27题', '简单', '2018年408真题', '下列选项中，可能导致当前进程 P 阻塞的事件是（  ）。
+Ⅰ.进程 P 申请临界资源
+Ⅱ.进程 P 从磁盘读数据
+Ⅲ.系统将 CPU 分配给高优先级的进程
+', '[''仅Ⅰ'', ''仅Ⅱ'', ''仅Ⅰ、Ⅱ'', ''Ⅰ、Ⅱ、Ⅲ'']', "['C']", 'C</font></strong>
+本题考察进程的状态转化，进程等待某资源为可用（不包括处理机）或等待输入／输出完成均会进入阻塞状态，故 I、II 正确；III 中情况发生时，进程进入就绪状态，故 III 错误，答案选 C。', 9, 'Mogullzr', '2026-02-02 13:37:22', 9, NULL, '2026-02-02 13:37:22', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1206', '3749');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3750, '2018年408考研真题第28题', '简单', '2018年408真题', '若 x 是管程内的条件变量，则当进程执行 x.wait() 时所做的工作是（）。', '[''实现对变量 x 的互斥访问'', ''唤醒一个在 x 上阻塞的进程'', ''根据 x 的值判断该进程是否进入阻塞态'', ''阻塞该进程，并将之插入 x 的阻塞队列中'']', "['D']", 'D</font></strong>
-条件变量是管程内部说明和使用的一种特殊变量，其作用类似于信号量机制中的信号量，都是用于实现进程同步的。需要注意的是，在同一时刻，管程中只能有一个进程在执行。如果进程 A 执行了 x.wait() 操作，那么该进程会阻塞，并挂到条件变量 x 对应的阻塞队列上。这样，管程的使用权被释放，就可以有另一个进程进入管程。如果进程 B 执行了 x.signal() 操作，那么会唤醒 x 对应的阻塞队列队头进程。在 Pascal 语言的管程中，规定只有一个进程要离开管程时才能调用 signal() 操作。', 9, 'Mogullzr', '2026-02-01 23:10:35', 9, NULL, '2026-02-01 23:10:35', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3750, '2018年408考研真题第28题', '简单', '2018年408真题', '若 x 是管程内的条件变量，则当进程执行 x.wait() 时所做的工作是（）。
+', '[''实现对变量 x 的互斥访问'', ''唤醒一个在 x 上阻塞的进程'', ''根据 x 的值判断该进程是否进入阻塞态'', ''阻塞该进程，并将之插入 x 的阻塞队列中'']', "['D']", 'D</font></strong>
+条件变量是管程内部说明和使用的一种特殊变量，其作用类似于信号量机制中的信号量，都是用于实现进程同步的。需要注意的是，在同一时刻，管程中只能有一个进程在执行。如果进程 A 执行了 x.wait() 操作，那么该进程会阻塞，并挂到条件变量 x 对应的阻塞队列上。这样，管程的使用权被释放，就可以有另一个进程进入管程。如果进程 B 执行了 x.signal() 操作，那么会唤醒 x 对应的阻塞队列队头进程。在 Pascal 语言的管程中，规定只有一个进程要离开管程时才能调用 signal() 操作。', 9, 'Mogullzr', '2026-02-02 13:37:22', 9, NULL, '2026-02-02 13:37:22', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1275', '3750');
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1291', '3750');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3751, '2018年408考研真题第29题', '简单', '2018年408真题', '定时器产生时钟中断后，由时钟中断服务程序更新的部分内容是（  ）。Ⅰ.内核中时钟变量的值Ⅱ.当前进程占用 CPU 的时间Ⅲ.当前进程在时间片内的剩余执行时间', '[''仅Ⅰ、Ⅱ'', ''仅Ⅱ、Ⅲ'', ''仅Ⅰ、Ⅲ'', ''Ⅰ、Ⅱ、Ⅲ'']', "['D']", 'D</font></strong>
-时钟中断的主要工作是处理和时间有关的信息以及决定是否执行调度程序，和时间有关的所有信息，包括系统时间、进程的时间片、延时、使用 CPU 的时间、各种定时器，故 Ⅰ、Ⅱ、Ⅲ 均正确，选 D。', 9, 'Mogullzr', '2026-02-01 23:10:35', 9, NULL, '2026-02-01 23:10:35', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3751, '2018年408考研真题第29题', '简单', '2018年408真题', '定时器产生时钟中断后，由时钟中断服务程序更新的部分内容是（  ）。
+Ⅰ.内核中时钟变量的值
+Ⅱ.当前进程占用 CPU 的时间
+Ⅲ.当前进程在时间片内的剩余执行时间
+', '[''仅Ⅰ、Ⅱ'', ''仅Ⅱ、Ⅲ'', ''仅Ⅰ、Ⅲ'', ''Ⅰ、Ⅱ、Ⅲ'']', "['D']", 'D</font></strong>
+时钟中断的主要工作是处理和时间有关的信息以及决定是否执行调度程序，和时间有关的所有信息，包括系统时间、进程的时间片、延时、使用 CPU 的时间、各种定时器，故 Ⅰ、Ⅱ、Ⅲ 均正确，选 D。', 9, 'Mogullzr', '2026-02-02 13:37:23', 9, NULL, '2026-02-02 13:37:23', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1132', '3751');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3752, '2018年408考研真题第30题', '简单', '2018年408真题', '系统总是访问磁盘的某个磁道而不响应对其他磁道的访问请求，这种现象称为磁臂黏着。下列磁盘调度算法中，不会导致磁臂粘着的是（ ）。', '[''先来先服务 (FCFS)'', ''最短寻道时间优先 (SSTF)'', ''扫描算法 (SCAN)'', ''循环扫描算法 (CSCAN)'']', "['A']", 'A</font></strong>
-参考机械硬盘调度算法，当系统总是持续出现某个磁道的访问请求时，均持续满足最短寻道时间优先、扫描算法和循环扫描算法的访问条件，会一直服务该访问请求。因此，先来先服务按照请求次序进行调度，比较公平，故选 A。', 9, 'Mogullzr', '2026-02-01 23:10:35', 9, NULL, '2026-02-01 23:10:35', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3752, '2018年408考研真题第30题', '简单', '2018年408真题', '系统总是访问磁盘的某个磁道而不响应对其他磁道的访问请求，这种现象称为磁臂黏着。下列磁盘调度算法中，不会导致磁臂粘着的是（ ）。
+', '[''先来先服务 (FCFS)'', ''最短寻道时间优先 (SSTF)'', ''扫描算法 (SCAN)'', ''循环扫描算法 (CSCAN)'']', "['A']", 'A</font></strong>
+参考机械硬盘调度算法，当系统总是持续出现某个磁道的访问请求时，均持续满足最短寻道时间优先、扫描算法和循环扫描算法的访问条件，会一直服务该访问请求。因此，先来先服务按照请求次序进行调度，比较公平，故选 A。', 9, 'Mogullzr', '2026-02-02 13:37:23', 9, NULL, '2026-02-02 13:37:23', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1116', '3752');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3753, '2018年408考研真题第31题', '简单', '2018年408真题', '下列优化方法中，可以提高文件访问速度的是（ ）。Ⅰ. 提前读Ⅱ. 为文件分配连续的簇Ⅲ. 延迟写Ⅳ. 采用磁盘高速缓存', '[''仅Ⅰ、Ⅱ'', ''仅Ⅱ、Ⅲ'', ''仅Ⅰ、Ⅲ、Ⅳ'', ''Ⅰ、Ⅱ、Ⅲ、Ⅳ'']', "['D']", 'D</font></strong>
-II 和 IV 显然均能提高文件访问速度。对于 I，提前读是指在读当前盘块时，将下一个可能要访问的盘块数据读入缓冲区，以便需要时直接从缓冲区中读取，提高了文件的访问速度。对于 III，延迟写是先将写数据写入缓冲区，并置上“延迟写”标志，以备不久之后访问，当缓冲区需要再次被分配出去时才将缓冲区数据写入磁盘，减少了访问磁盘的次数，提高了文件的访问速度，III 也正确，答案选 D。', 9, 'Mogullzr', '2026-02-01 23:10:35', 9, NULL, '2026-02-01 23:10:35', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3753, '2018年408考研真题第31题', '简单', '2018年408真题', '下列优化方法中，可以提高文件访问速度的是（ ）。
+Ⅰ. 提前读
+Ⅱ. 为文件分配连续的簇
+Ⅲ. 延迟写
+Ⅳ. 采用磁盘高速缓存
+', '[''仅Ⅰ、Ⅱ'', ''仅Ⅱ、Ⅲ'', ''仅Ⅰ、Ⅲ、Ⅳ'', ''Ⅰ、Ⅱ、Ⅲ、Ⅳ'']', "['D']", 'D</font></strong>
+II 和 IV 显然均能提高文件访问速度。对于 I，提前读是指在读当前盘块时，将下一个可能要访问的盘块数据读入缓冲区，以便需要时直接从缓冲区中读取，提高了文件的访问速度。对于 III，延迟写是先将写数据写入缓冲区，并置上“延迟写”标志，以备不久之后访问，当缓冲区需要再次被分配出去时才将缓冲区数据写入磁盘，减少了访问磁盘的次数，提高了文件的访问速度，III 也正确，答案选 D。', 9, 'Mogullzr', '2026-02-02 13:37:23', 9, NULL, '2026-02-02 13:37:23', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1087', '3753');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3754, '2018年408考研真题第32题', '简单', '2018年408真题', '在下列同步机制中，可以实现让权等待的是（ ）。', '[''Peterson 方法'', ''swap 指令'', ''信号量方法'', ''TestAndSet 指令'']', "['C']", 'C</font></strong>
-硬件方法实现进程同步需要通过自旋锁，不能实现让权等待，故 B、D 错误；Peterson 算法满足有限等待但不满足让权等待，故 A 错误；记录型信号量由千引入阻塞机制，消除了不让权等待的情况，故 C 正确。', 9, 'Mogullzr', '2026-02-01 23:10:36', 9, NULL, '2026-02-01 23:10:36', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3754, '2018年408考研真题第32题', '简单', '2018年408真题', '在下列同步机制中，可以实现让权等待的是（ ）。
+', '[''Peterson 方法'', ''swap 指令'', ''信号量方法'', ''TestAndSet 指令'']', "['C']", 'C</font></strong>
+硬件方法实现进程同步需要通过自旋锁，不能实现让权等待，故 B、D 错误；Peterson 算法满足有限等待但不满足让权等待，故 A 错误；记录型信号量由千引入阻塞机制，消除了不让权等待的情况，故 C 正确。', 9, 'Mogullzr', '2026-02-02 13:37:23', 9, NULL, '2026-02-02 13:37:23', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1271', '3754');
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1154', '3754');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3755, '2018年408考研真题第33题', '简单', '2018年408真题', '下列 TCP/IP 应用层协议中，可以使用传输层无连接服务的是（ ）。', '[''FTP'', ''DNS'', ''SMTP'', ''HTTP'']', "['B']", 'B</font></strong>
-FTP 用来传输文件，SMTP 用来发送电子邮件，HTTP 用来传输网页文件，都对可靠性的要求较高，因此都用传输层有连接的 TCP 服务。无连接 UDP 服务效率更高、开销小，DNS 在传输层采用无连接的 UDP 服务。', 9, 'Mogullzr', '2026-02-01 23:10:36', 9, NULL, '2026-02-01 23:10:36', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3755, '2018年408考研真题第33题', '简单', '2018年408真题', '下列 TCP/IP 应用层协议中，可以使用传输层无连接服务的是（ ）。
+', '[''FTP'', ''DNS'', ''SMTP'', ''HTTP'']', "['B']", 'B</font></strong>
+FTP 用来传输文件，SMTP 用来发送电子邮件，HTTP 用来传输网页文件，都对可靠性的要求较高，因此都用传输层有连接的 TCP 服务。无连接 UDP 服务效率更高、开销小，DNS 在传输层采用无连接的 UDP 服务。', 9, 'Mogullzr', '2026-02-02 13:37:23', 9, NULL, '2026-02-02 13:37:23', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1292', '3755');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3756, '2018年408考研真题第34题', '简单', '2018年408真题', '下列选项中，不属于物理层接口规范定义范畴的是（）。', '[''接口形状'', ''引脚功能'', ''物理地址'', ''信号电平'']', "['C']", 'C</font></strong>
-物理层的接口规范主要分为 4 种：机械特性、电气特性、功能特性、规程特性。机械特性规定连接所用设备的规格，即 A 所说的接口形状。电气特性规定信号的电压高低、阻抗匹配等，如 D 所说的信号电平。功能特性规定线路上出现的电平代表什么意义、接口部件的信号线（数据线、控制线、定时线等）的用途，如 B 所说的引脚功能。选项 C 中的物理地址就是 MAC 地址，它属于数据链路层的范畴。', 9, 'Mogullzr', '2026-02-01 23:10:36', 9, NULL, '2026-02-01 23:10:36', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3756, '2018年408考研真题第34题', '简单', '2018年408真题', '下列选项中，不属于物理层接口规范定义范畴的是（）。
+', '[''接口形状'', ''引脚功能'', ''物理地址'', ''信号电平'']', "['C']", 'C</font></strong>
+物理层的接口规范主要分为 4 种：机械特性、电气特性、功能特性、规程特性。机械特性规定连接所用设备的规格，即 A 所说的接口形状。电气特性规定信号的电压高低、阻抗匹配等，如 D 所说的信号电平。功能特性规定线路上出现的电平代表什么意义、接口部件的信号线（数据线、控制线、定时线等）的用途，如 B 所说的引脚功能。选项 C 中的物理地址就是 MAC 地址，它属于数据链路层的范畴。', 9, 'Mogullzr', '2026-02-02 13:37:23', 9, NULL, '2026-02-02 13:37:23', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1208', '3756');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3757, '2018年408考研真题第35题', '简单', '2018年408真题', 'IEEE 802.11 无线局域网的 MAC 协议 CSMA/CA 进行信道预约的方法是（ ）。', '[''发送确认帧'', ''采用二进制指数退避'', ''使用多个 MAC 地址'', ''交换 RTS 与 CTS 帧'']', "['D']", 'D</font></strong>
-参考CSMA/CA 流程，CSMA/CA 协议进行信道预约主要使用的是请求发送帧 RTS（Request to Send）和允许发送帧 CTS（Clear to Send）。当一台主机想要发送信息时，先向无线站点发送一个 RTS 帧，说明要传输的 数据及相应的时间。当无线站点收到 RTS 帧之后，会广播一个 CTS 帧作为对此的响应，既给发送端发送许可，又指示其他主机不要在这个时间内发送数据，从而预约信道，避免碰撞。发送确认帧，主要是保证信息的可靠传输；二进制指数退避法是在 CSMA/CD 中的一种冲突处理 方法；C 选项则与预约信道无关。', 9, 'Mogullzr', '2026-02-01 23:10:36', 9, NULL, '2026-02-01 23:10:36', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3757, '2018年408考研真题第35题', '简单', '2018年408真题', 'IEEE 802.11 无线局域网的 MAC 协议 CSMA/CA 进行信道预约的方法是（ ）。
+', '[''发送确认帧'', ''采用二进制指数退避'', ''使用多个 MAC 地址'', ''交换 RTS 与 CTS 帧'']', "['D']", 'D</font></strong>
+参考CSMA/CA 流程，CSMA/CA 协议进行信道预约主要使用的是请求发送帧 RTS（Request to Send）和允许发送帧 CTS（Clear to Send）。当一台主机想要发送信息时，先向无线站点发送一个 RTS 帧，说明要传输的 数据及相应的时间。当无线站点收到 RTS 帧之后，会广播一个 CTS 帧作为对此的响应，既给发送端发送许可，又指示其他主机不要在这个时间内发送数据，从而预约信道，避免碰撞。发送确认帧，主要是保证信息的可靠传输；二进制指数退避法是在 CSMA/CD 中的一种冲突处理 方法；C 选项则与预约信道无关。', 9, 'Mogullzr', '2026-02-02 13:37:23', 9, NULL, '2026-02-02 13:37:23', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1287', '3757');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3758, '2018年408考研真题第36题', '简单', '2018年408真题', '主机甲采用停 - 等协议向主机乙发送数据，数据传输速率是 3 kbps，单向传播延时是 200 ms，忽略确认帧的传输延时。当信道利用率等于 40% 时，数据帧的长度为（ ）。', '[''240 比特'', ''400 比特'', ''480 比特'', ''800 比特'']', "['D']", 'D</font></strong>
-信道利用率= 传输帧的有效时间／传输帧的周期。假设帧的长度为 x 比特。对于有效时间，应该用帧的大小除以数据传输速率，即 x/3kbps。对于帧的传输周期，应包含 4 个部分：帧在发送端的发送时延、帧从发送端到接收端的单程传播时延、确认帧在接收端的发送时延、确认帧从接收端到发送端的单程传播时延。这 4 个时延中，由于题目中说“忽略确认帧的传输延时”，因此不计算确认帧的发送时延（注意传输时延和传播时延的区别，传输时延也称发送时延，和传播时延只有一字之差）。所以帧的传输周期由三部分组成：首先是帧在发送端的发送时延 x/3kbps，其次是帧从发送端到接收端的单程传播时延 200ms，最后是确认帧从接收端到发送端的单程传播时延 200ms，三者相加可得其周期应为 x/3kbps + 400ms。代入信道利用率的公式，求出 x = 800bit。答案选 D。', 9, 'Mogullzr', '2026-02-01 23:10:36', 9, NULL, '2026-02-01 23:10:36', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3758, '2018年408考研真题第36题', '简单', '2018年408真题', '主机甲采用停 - 等协议向主机乙发送数据，数据传输速率是 3 kbps，单向传播延时是 200 ms，忽略确认帧的传输延时。当信道利用率等于 40% 时，数据帧的长度为（ ）。
+', '[''240 比特'', ''400 比特'', ''480 比特'', ''800 比特'']', "['D']", 'D</font></strong>
+信道利用率= 传输帧的有效时间／传输帧的周期。假设帧的长度为 x 比特。对于有效时间，应该用帧的大小除以数据传输速率，即 x/3kbps。对于帧的传输周期，应包含 4 个部分：帧在发送端的发送时延、帧从发送端到接收端的单程传播时延、确认帧在接收端的发送时延、确认帧从接收端到发送端的单程传播时延。这 4 个时延中，由于题目中说“忽略确认帧的传输延时”，因此不计算确认帧的发送时延（注意传输时延和传播时延的区别，传输时延也称发送时延，和传播时延只有一字之差）。所以帧的传输周期由三部分组成：首先是帧在发送端的发送时延 x/3kbps，其次是帧从发送端到接收端的单程传播时延 200ms，最后是确认帧从接收端到发送端的单程传播时延 200ms，三者相加可得其周期应为 x/3kbps + 400ms。代入信道利用率的公式，求出 x = 800bit。答案选 D。', 9, 'Mogullzr', '2026-02-02 13:37:23', 9, NULL, '2026-02-02 13:37:23', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1122', '3758');
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1210', '3758');
 INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3759, '2018年408考研真题第37题', '简单', '2018年408真题', '路由器 R 通过以太网交换机 S1 和 S2 连接两个网络，R 的接口、主机 H1 和 H2 的 IP 地址与 MAC 地址如下图所示。若 H1 向 H2 发送一个 IP 分组 P，则 H1 发出的封装 P 的以太网帧的目的 MAC 地址、H2 收到的封装 P 的以太网帧的源 MAC 地址分别是（ ）。
-![图片](http://mogullzr001.oss-cn-beijing.aliyuncs.com/2026/02/e0c5c9a1622843ec8fb66f5e7f55a075.svg)
+
+![图片](http://mogullzr001.oss-cn-beijing.aliyuncs.com/2026/02/3cc69058e1684142a361745cedf3f849.svg)
+
 ', '[''00-a1-b2-c3-d4-62、00-1a-2b-3c-4d-52'', ''00-a1-b2-c3-d4-62、00-1a-2b-3c-4d-61'', ''00-1a-2b-3c-4d-51、00-1a-2b-3c-4d-52'', ''00-1a-2b-3c-4d-51、00-a1-b2-c3-d4-61'']', "['D']", 'D</font></strong>
-在网络的信息传递中，会经常用到两个地址：MAC 地址和 IP 地址。其中，MAC 地址会随着信息被发往不同的网络而改变，但 IP 地址当且仅当信息在私人网络中传递时才会改变。分组 P 在如题图所示的网络中传递时，首先由主机 H1 将分组发往路由器 R，此时源 MAC 地址为 1 主机本身的 MAC 地址，即 00-1a-2b-3c-4d-52，目的 MAC 地址 为路由器 R 的 MAC 地址，即 00-1a-2b-3c-4d-51。当路由器 R 收到分组 P 后，根据分组 P 的目的 IP 地址，得知应将分组从另一个端口转发出去，于是会给分组 P 更换新的 MAC 地址，此时由于从另外的端口转发出去，因此 P 的新源 MAC 地址变为负责转发的端口 MAC 地址，即 00-a1-b2-c3-d4-61, 目的 MAC 地址应为主机 H2 的 MAC 地址，即 00-a1-b2-c3-d4-62。根据分析过程，题目所问的 MAC 地址应为路由器 R 两个端口的 MAC 地址，故选 D。', 9, 'Mogullzr', '2026-02-01 23:10:37', 9, NULL, '2026-02-01 23:10:37', 1, 1);
+在网络的信息传递中，会经常用到两个地址：MAC 地址和 IP 地址。其中，MAC 地址会随着信息被发往不同的网络而改变，但 IP 地址当且仅当信息在私人网络中传递时才会改变。分组 P 在如题图所示的网络中传递时，首先由主机 H1 将分组发往路由器 R，此时源 MAC 地址为 1 主机本身的 MAC 地址，即 00-1a-2b-3c-4d-52，目的 MAC 地址 为路由器 R 的 MAC 地址，即 00-1a-2b-3c-4d-51。当路由器 R 收到分组 P 后，根据分组 P 的目的 IP 地址，得知应将分组从另一个端口转发出去，于是会给分组 P 更换新的 MAC 地址，此时由于从另外的端口转发出去，因此 P 的新源 MAC 地址变为负责转发的端口 MAC 地址，即 00-a1-b2-c3-d4-61, 目的 MAC 地址应为主机 H2 的 MAC 地址，即 00-a1-b2-c3-d4-62。根据分析过程，题目所问的 MAC 地址应为路由器 R 两个端口的 MAC 地址，故选 D。', 9, 'Mogullzr', '2026-02-02 13:37:25', 9, NULL, '2026-02-02 13:37:25', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1293', '3759');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3760, '2018年408考研真题第38题', '简单', '2018年408真题', '某路由表中有转发接口相同的 4 条路由表项，其目的网络地址分别是 35.230.32.0/21、35.230.40.0/21、35.230.48.0/21 和 35.230.56.0/21，将该 4 条路由聚合后的目的网络地址为（ ）。', '[''35.230.0.0/19'', ''35.230.0.0/20'', ''35.230.32.0/19'', ''35.230.32.0/20'']', "['C']", 'C</font></strong>
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3760, '2018年408考研真题第38题', '简单', '2018年408真题', '某路由表中有转发接口相同的 4 条路由表项，其目的网络地址分别是 35.230.32.0/21、35.230.40.0/21、35.230.48.0/21 和 35.230.56.0/21，将该 4 条路由聚合后的目的网络地址为（ ）。
+', '[''35.230.0.0/19'', ''35.230.0.0/20'', ''35.230.32.0/19'', ''35.230.32.0/20'']', "['C']", 'C</font></strong>
 对于此类题目，先分析需要聚合的 IP 地址。观察发现，题中的 4 个路由地址，前 16 位完全相同，不同之处在于第 3 段的 8 位中，将这 8 位展开写成二进制，分别如下：
-![图片](http://mogullzr001.oss-cn-beijing.aliyuncs.com/2026/02/a3451b89547343a1862c1c4cf39305a0.svg)
-观察发现，4 个地址的第 3 段中，从前向后最多有 3 位相同，因此这 3 位是能聚合的最大位数。将这些相同的位都保留，将第 3 段第 3 位之后的所有位都置 0，就得到了聚合后的 IP 地址 35.230.32.0，其网络前缀为 16+3，也即前 19 位，故聚合后的网络地址为 35.230.32.0/19，答案为 C。', 9, 'Mogullzr', '2026-02-01 23:10:38', 9, NULL, '2026-02-01 23:10:38', 1, 1);
+![图片](http://mogullzr001.oss-cn-beijing.aliyuncs.com/2026/02/0663294e179043cba39b87c6c70ed640.svg)
+观察发现，4 个地址的第 3 段中，从前向后最多有 3 位相同，因此这 3 位是能聚合的最大位数。将这些相同的位都保留，将第 3 段第 3 位之后的所有位都置 0，就得到了聚合后的 IP 地址 35.230.32.0，其网络前缀为 16+3，也即前 19 位，故聚合后的网络地址为 35.230.32.0/19，答案为 C。', 9, 'Mogullzr', '2026-02-02 13:37:25', 9, NULL, '2026-02-02 13:37:25', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1141', '3760');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3761, '2018年408考研真题第39题', '简单', '2018年408真题', 'UDP 协议实现分用 (demultiplexing) 时所依据的头部字段是（ ）。', '[''源端口号'', ''目的端口号'', ''长度'', ''校验和'']', "['B']", 'B</font></strong>
-传输层分用的定义是：接收方的传输层剥去报文首部后，能把这些数据正确交付到目的进程。C 和 D 选项显然不符。端口号是传输层服务访问点 TSAP, 用来标识主机中的应用进程。对于 A 和 B 选项，源端口号是在需要对方回信时选用，不需要时可用全 0。目的端口号是在终点交付报文时使用到，符合题意，故选 B。', 9, 'Mogullzr', '2026-02-01 23:10:39', 9, NULL, '2026-02-01 23:10:39', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3761, '2018年408考研真题第39题', '简单', '2018年408真题', 'UDP 协议实现分用 (demultiplexing) 时所依据的头部字段是（ ）。
+', '[''源端口号'', ''目的端口号'', ''长度'', ''校验和'']', "['B']", 'B</font></strong>
+传输层分用的定义是：接收方的传输层剥去报文首部后，能把这些数据正确交付到目的进程。C 和 D 选项显然不符。端口号是传输层服务访问点 TSAP, 用来标识主机中的应用进程。对于 A 和 B 选项，源端口号是在需要对方回信时选用，不需要时可用全 0。目的端口号是在终点交付报文时使用到，符合题意，故选 B。', 9, 'Mogullzr', '2026-02-02 13:37:26', 9, NULL, '2026-02-02 13:37:26', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1242', '3761');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3762, '2018年408考研真题第40题', '简单', '2018年408真题', '无需转换即可由 SMTP 协议直接传输的内容是（ ）。', '[''JPEG 图形'', ''MPEG 视频'', ''EXE 文件'', ''ASCII 文本'']', "['D']", 'D</font></strong>
-电子邮件出现得较早，当时的数据传输能力较弱，使用者们往往也不需要传输较大的图片、视频等，因此 SMTP 具有一些目前来看较为老旧的性质，例如限制所有邮件报文的体部分，只能采用 7 位 ASCII 来表示。在如今的传输过程中，如果传输了非文本文件，往往需要将这些多媒体文件重新编码为 ASCII 再传输。因此无须转换即可传输的是 ASCII 文本，答案为 D。', 9, 'Mogullzr', '2026-02-01 23:10:39', 9, NULL, '2026-02-01 23:10:39', 1, 1);
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3762, '2018年408考研真题第40题', '简单', '2018年408真题', '无需转换即可由 SMTP 协议直接传输的内容是（ ）。
+', '[''JPEG 图形'', ''MPEG 视频'', ''EXE 文件'', ''ASCII 文本'']', "['D']", 'D</font></strong>
+电子邮件出现得较早，当时的数据传输能力较弱，使用者们往往也不需要传输较大的图片、视频等，因此 SMTP 具有一些目前来看较为老旧的性质，例如限制所有邮件报文的体部分，只能采用 7 位 ASCII 来表示。在如今的传输过程中，如果传输了非文本文件，往往需要将这些多媒体文件重新编码为 ASCII 再传输。因此无须转换即可传输的是 ASCII 文本，答案为 D。', 9, 'Mogullzr', '2026-02-02 13:37:26', 9, NULL, '2026-02-02 13:37:26', 1, 1);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1212', '3762');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3763, '2018年408考研真题第41题', '简单', '2018年408真题', '给定一个含 n(n≥1) 个整数的数组，请设计一个在时间上尽可能高效的算法，找出数组中未出现的最小正整数。例如，数组{-5, 3, 2, 3}中未出现的最小正整数是 1；数组{1, 2, 3}中未出现的最小正整数是 4。要求：(1) 给出算法的基本设计思想。(2) 根据设计思想，采用 C 或 C++ 语言描述算法，关键之处给出注释。(3) 说明你所设计算法的时间复杂度和空间复杂度。', '[]', '', '1）题目要求算法时间上尽可能高效，因此采用空间换时间的办法。分配一个用于标记的数组$B \\lbrack n \\rbrack$，用来记录$A$中是否出现了$1 ∼ n$中的正整数，$B \\lbrack 0 \\rbrack$对应正整数$1$，$B \\lbrack n - 1 \\rbrack$对应正整数$n$，初始化$B$中全部为$0$。由于$A$中含有$n$个整数，因此可能返回的值是$1 ∼ n + 1$，当$A$中$n$个数恰好为$1 ∼ n$时返回$n + 1$。当数组$A$中出现了小于等于$0$或大于$n$的值时，会导致$1 ∼ n$中出现空余位置，返回结果必然在$1 ∼ n$中，因此对于$A$中出现了小于等于$0$或大于$n$的值可以不采取任何操作。
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3763, '2018年408考研真题第41题', '简单', '2018年408真题', '给定一个含 n(n≥1) 个整数的数组，请设计一个在时间上尽可能高效的算法，找出数组中未出现的最小正整数。例如，数组{-5, 3, 2, 3}中未出现的最小正整数是 1；数组{1, 2, 3}中未出现的最小正整数是 4。要求：
+(1) 给出算法的基本设计思想。
+(2) 根据设计思想，采用 C 或 C++ 语言描述算法，关键之处给出注释。
+(3) 说明你所设计算法的时间复杂度和空间复杂度。
+', '[]', '', '1）题目要求算法时间上尽可能高效，因此采用空间换时间的办法。分配一个用于标记的数组$B \\lbrack n \\rbrack$，用来记录$A$中是否出现了$1 ∼ n$中的正整数，$B \\lbrack 0 \\rbrack$对应正整数$1$，$B \\lbrack n - 1 \\rbrack$对应正整数$n$，初始化$B$中全部为$0$。由于$A$中含有$n$个整数，因此可能返回的值是$1 ∼ n + 1$，当$A$中$n$个数恰好为$1 ∼ n$时返回$n + 1$。当数组$A$中出现了小于等于$0$或大于$n$的值时，会导致$1 ∼ n$中出现空余位置，返回结果必然在$1 ∼ n$中，因此对于$A$中出现了小于等于$0$或大于$n$的值可以不采取任何操作。
 经过以上分析可以得出算法流程：从$A \\lbrack 0 \\rbrack$开始遍历$A$，若$0 < A \\lbrack i \\rbrack  ≤ n$，则令$B \\lbrack A \\lbrack i \\rbrack  - 1 \\rbrack  = 1$；否则不进行操作。对$A$遍历结束后，开始遍历数组$B$，若能查找到第一个满足$B \\lbrack i \\rbrack  = 0$的下标$i$，返回$i + 1$即为结果，此时说明$A$中未出现的最小正整数在$1 ∼ n$之间。若$B \\lbrack i \\rbrack$全部不为$0$，返回$i + 1$（跳出循环时$i = n$，$i + 1$等于$n + 1$），此时说明$A$中未出现的最小正整数是$n + 1$。
 2）算法实现
 
@@ -191,29 +265,46 @@ int findMissMin(int a[], int n) {
 ```
 3）时间复杂度：遍历$A$一次，遍历$B$一次，两次循环内操作步骤为$O(1)$量级，因此时间
 复杂度为$O(n)$。空间复杂度：额外分配了$B \\lbrack n \\rbrack$, 空间复杂度为$O(n)$。
-', 9, 'Mogullzr', '2026-02-01 23:10:39', 9, NULL, '2026-02-01 23:10:39', 1, 0);
+', 9, 'Mogullzr', '2026-02-02 13:37:26', 9, NULL, '2026-02-02 13:37:26', 1, 0);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1167', '3763');
 INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3764, '2018年408考研真题第42题', '简单', '2018年408真题', '拟建设一个光通信骨干网络连通 BJ、CS、XA、QD、JN、NJ、TL 和 WH 等 8 个城市，题 42 图中无向边上的权值表示两个城市间备选光缆的铺设费用。
-![图片](http://mogullzr001.oss-cn-beijing.aliyuncs.com/2026/02/f727302ff16349108f3366a909cf5bd5.svg)
-请回答下列问题。(1) 仅从铺设费用角度出发，给出所有可能的最经济的光缆铺设方案（用带权图表示），并计算相应方案的总费用。(2) 题 42 图可采用图的哪一种存储结构？给出求解问题 (1) 所使用的算法名称。(3) 假设每个城市采用一个路由器按 (1) 中得到的最经济方案组网，主机 H1 直接连接在 TL 的路由器上，主机 H2 直接连接在 BJ 的路由器上。若 H1 向 H2 发送一个 TTL=5 的 IP 分组，则 H2 是否可以收到该 IP 分组？', '[]', '', '1）为了求解最经济的方案，可以把问题抽象为求无向带权图的最小生成树。可以采用手动 Prim 算法或 Kruskal 算法作图。注意本题最小生成树有两种构造，如下图所示。
+
+![图片](http://mogullzr001.oss-cn-beijing.aliyuncs.com/2026/02/b5444d9b9af346aa87187bf3a6845301.svg)
+
+请回答下列问题。
+(1) 仅从铺设费用角度出发，给出所有可能的最经济的光缆铺设方案（用带权图表示），并计算相应方案的总费用。
+(2) 题 42 图可采用图的哪一种存储结构？给出求解问题 (1) 所使用的算法名称。
+(3) 假设每个城市采用一个路由器按 (1) 中得到的最经济方案组网，主机 H1 直接连接在 TL 的路由器上，主机 H2 直接连接在 BJ 的路由器上。若 H1 向 H2 发送一个 TTL=5 的 IP 分组，则 H2 是否可以收到该 IP 分组？
+', '[]', '', '1）为了求解最经济的方案，可以把问题抽象为求无向带权图的最小生成树。可以采用手动 Prim 算法或 Kruskal 算法作图。注意本题最小生成树有两种构造，如下图所示。
 htmlXABJWHCSQDTLJNNJ2222233XABJWHCSQDTLJNNJ2222233方案 1方案 2
 方案的总费用为 16。
 2）存储题中的图可以采用邻接矩阵（或邻接表）。构造最小生成树采用 Prim 算法（或 Kruskal
 算法）。
 3）TTL= 5，即 IP 分组的生存时间（最大传递距离）为 5，方案 1 中 TL 和 BJ 的距离过远，TTL = 5 不足以让 IP 分组从 H1 传送到 H2，因此 H2 不能收到 IP 分组。而方案 2 中 TL 和 BJ 邻近，H2 可以收到 IP 分组。
-', 9, 'Mogullzr', '2026-02-01 23:10:41', 9, NULL, '2026-02-01 23:10:41', 1, 0);
+', 9, 'Mogullzr', '2026-02-02 13:37:28', 9, NULL, '2026-02-02 13:37:28', 1, 0);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1200', '3764');
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1262', '3764');
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1139', '3764');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3765, '2018年408考研真题第43题', '简单', '2018年408真题', '假定计算机的主频为 500MHz，CPI 为 4。现有设备 A 和 B，其数据传输率分别为 2MBps 和 40MBps，对应 I/O 接口中各有一个 32 位数据缓冲寄存器。请回答下列问题，要求给出计算过程。(1) 若设备 A 采用定时查询 I/O 方式，每次输入/输出都至少执行 10 条指令。设备 A 最多间隔多长时间查询一次才能不丢失数据？CPU 用于设备 A 输入/输出的时间占 CPU 总时间的百分比至少是多少？(2) 在中断 I/O 方式下，若每次中断响应和中断处理的总时钟周期数至少为 400，则设备 B 能否采用中断 I/O 方式？为什么？(3) 若设备 B 采用 DMA 方式，每次 DMA 传送的数据块大小 1000B，CPU 用于 DMA 预处理和后处理的总时钟周期数为 500，则 CPU 用于设备 B 输入/输出的时间占 CPU 总时间的百分比最大是多少？', '[]', '', '1）程序定时向缓存端口查询数据，由于缓存端口大小有限，必须在传输完端口大小的数据时访问端口，以防止部分数据未被及时读取而丢失。设备 A 准备 32 位数据所用的时间为 4B/2MB=2μs，所以最多每隔 2μs 必须查询一次，每秒的查询次数至少是 1s / 2μs =$5 × 10^{5}$，每秒 CPU 用于设备 A 输入/输出的时间至少为$5 × 10^{5} × 10 × 4 = 2 × 10^{7}$个时钟周期，占整个 CPU 时间的百分比至少是$2 × 10/500M = 4%$。
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3765, '2018年408考研真题第43题', '简单', '2018年408真题', '假定计算机的主频为 500MHz，CPI 为 4。现有设备 A 和 B，其数据传输率分别为 2MBps 和 40MBps，对应 I/O 接口中各有一个 32 位数据缓冲寄存器。请回答下列问题，要求给出计算过程。
+(1) 若设备 A 采用定时查询 I/O 方式，每次输入/输出都至少执行 10 条指令。设备 A 最多间隔多长时间查询一次才能不丢失数据？CPU 用于设备 A 输入/输出的时间占 CPU 总时间的百分比至少是多少？
+(2) 在中断 I/O 方式下，若每次中断响应和中断处理的总时钟周期数至少为 400，则设备 B 能否采用中断 I/O 方式？为什么？
+(3) 若设备 B 采用 DMA 方式，每次 DMA 传送的数据块大小 1000B，CPU 用于 DMA 预处理和后处理的总时钟周期数为 500，则 CPU 用于设备 B 输入/输出的时间占 CPU 总时间的百分比最大是多少？
+', '[]', '', '1）程序定时向缓存端口查询数据，由于缓存端口大小有限，必须在传输完端口大小的数据时访问端口，以防止部分数据未被及时读取而丢失。设备 A 准备 32 位数据所用的时间为 4B/2MB=2μs，所以最多每隔 2μs 必须查询一次，每秒的查询次数至少是 1s / 2μs =$5 × 10^{5}$，每秒 CPU 用于设备 A 输入/输出的时间至少为$5 × 10^{5} × 10 × 4 = 2 × 10^{7}$个时钟周期，占整个 CPU 时间的百分比至少是$2 × 10/500M = 4%$。
 2）中断响应和中断处理的时间为 400×(1/500M)=0.8μs，这时只需判断设备 B 准备 32 位数据要多久，如果准备数据的时间小于中断响应和中断处理的时间，那么数据就会被刷新，造成丢失。经过计算，设备 B 准备 32 位数据所用的时间为 4B/40MB=0.1us，因此设备 B 不适合采用中断 I/O 方式。
 3）在 DMA 方式中，只有预处理和后处理需要 CPU 处理，数据的传送过程是由 DMA 控制的。设备 B 每秒的 DMA 次数最多为 40MB/1000B=40000，CPU 用于设备 B 输入/输出的时间最多为$40000 × 500 = 2 × 10^{7}$个时钟周期，占 CPU 总时间的百分比最多为$2 × 10^{7}/500M = 4%$。
-', 9, 'Mogullzr', '2026-02-01 23:10:41', 9, NULL, '2026-02-01 23:10:41', 1, 0);
+', 9, 'Mogullzr', '2026-02-02 13:37:28', 9, NULL, '2026-02-02 13:37:28', 1, 0);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1131', '3765');
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1294', '3765');
 INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3766, '2018年408考研真题第44题', '简单', '2018年408真题', '某计算机采用页式虚拟存储管理方式，按字节编址。CPU 进行存储访问的过程如题 44 图所示。
-![图片](http://mogullzr001.oss-cn-beijing.aliyuncs.com/2026/02/f456a77f077143bf96add2d9c926e1e1.svg)
-根据题 44 图回答下列问题。(1) 主存物理地址占多少位？(2) TLB 采用什么映射方式？TLB 用 SRAM 还是 DRAM 实现？(3) Cache 采用什么映射方式？若 Cache 采用 LRU 替换算法和回写（Write Back）策略，则 Cache 每行中除数据（Data）、Tag 和有效位外，还应有哪些附加位？Cache 总容量是多少？Cache 中有效位的作用是什么？(4) 若 CPU 给出的虚拟地址为 0008C040H，则对应的物理地址是多少？是否在 Cache 中命中？说明理由。若 CPU 给出的虚拟地址为 0007C260H，则该地址所在主存块映射到的 Cache 组号是多少？', '[]', '', '1）物理地址由实页号和页内地址拼接，因此其位数为 16+12=28 或直接可得 20+3+5=28。
+
+![图片](http://mogullzr001.oss-cn-beijing.aliyuncs.com/2026/02/089302eb9a9a4430bc9233012c9e2220.svg)
+
+根据题 44 图回答下列问题。
+(1) 主存物理地址占多少位？
+(2) TLB 采用什么映射方式？TLB 用 SRAM 还是 DRAM 实现？
+(3) Cache 采用什么映射方式？若 Cache 采用 LRU 替换算法和回写（Write Back）策略，则 Cache 每行中除数据（Data）、Tag 和有效位外，还应有哪些附加位？Cache 总容量是多少？Cache 中有效位的作用是什么？
+(4) 若 CPU 给出的虚拟地址为 0008C040H，则对应的物理地址是多少？是否在 Cache 中命中？说明理由。若 CPU 给出的虚拟地址为 0007C260H，则该地址所在主存块映射到的 Cache 组号是多少？
+', '[]', '', '1）物理地址由实页号和页内地址拼接，因此其位数为 16+12=28 或直接可得 20+3+5=28。
 2）TLB采用全相联映射，可以把页表内容调入任一块空 TLB 项中，TLB 中每项都有一个比较器，没有映射规则，只要空闲就行。TLB 采用静态存储器 SRAM，读写速度快，但成本高，多用于容量较小的高速缓冲存储器。
 3）从图中可以看到，Cache 中每组有两行，故采用 2 路组相联映射。因为是 2 路组相联并采用 LRU 替换算法，所以每行（或每组）需要 1 位 LRU 位；因为采用回写策略，所以每行有 1 位修改位（脏位），根据脏位判断数据是否被更新，若脏位为 1 则需要写回内存。
 28 位物理地址中 Tag 字段占 20 位，组索引字段占 3 位，块内偏移地址占 5 位，故 Cache
@@ -222,27 +313,40 @@ Cache 中有效位用来指出所在 Cache 行中的信息是否有效。
 4）虚拟地址分为两部分：虚页号、页内地址；物理地址分为两部分：实页号、页内地址。利用虚拟地址的虚页号部分去查找 TLB 表（缺失时从页表调入），将实页号取出后和虚拟地址的页内地址拼接，就形成了物理地址。虚页号 008CH 恰好在 TLB 表中对应实页号 0040H（有效位为 1，说明存在），虚拟地址的后 3 位为页内地址 040H，则对应的物理地址是 0040040H。
 物理地址为 0040040H，其中高 20 位 00400H 为标志字段，低 5 位 00000B 为块内偏移量，中间 3 位 010B 为组号 2，因此将 00400H 与 Cache 中的第 2 组两行中的标志字段同时比较，可以看出，虽然有一个 Cache 行中的标志字段与 00400H 相等，但对应的有效位为 0，而另一 Cache 行的标志字段与 00400H 不相等，故访问 Cache 不命中。
 因为物理地址的低 12 位与虚拟地址低 12 位相同，即为 001001100000B。根据物理地址的结构，物理地址的后八位 01100000B 的前三位 011B 是组号，因此该地址所在的主存映射到 Cache 的组号为 3。
-', 9, 'Mogullzr', '2026-02-01 23:10:43', 9, NULL, '2026-02-01 23:10:43', 1, 0);
+', 9, 'Mogullzr', '2026-02-02 13:37:30', 9, NULL, '2026-02-02 13:37:30', 1, 0);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1138', '3766');
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1136', '3766');
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1101', '3766');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3767, '2018年408考研真题第45题', '简单', '2018年408真题', '请根据题 44 图给出的虚拟存储管理方式，回答下列问题。(1) 某虚拟地址对应的页目录号为 6，在相应的页表中对应的页号为 6，页内偏移量为 8，该虚拟地址的十六进制表示是什么？(2) 寄存器 PDBR 用于保存当前进程的页目录起始地址，该地址是物理地址还是虚拟地址？进程切换时，PDBR 的内容是否会变化？说明理由。同一进程的线程切换时，PDBR 的内容是否会变化？说明理由。(3) 为了支持改进型 CLOCK 置换算法，需要在页表项中设置哪些字段？', '[]', '', '1）由图可知，地址总长度为 32 位，高 20 位为虚页号，低 12 位为页内地址，且虚页号高 10 位为页目录号，低 10 位为页号。十六进制表示为 01806008H。
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3767, '2018年408考研真题第45题', '简单', '2018年408真题', '请根据题 44 图给出的虚拟存储管理方式，回答下列问题。
+(1) 某虚拟地址对应的页目录号为 6，在相应的页表中对应的页号为 6，页内偏移量为 8，该虚拟地址的十六进制表示是什么？
+(2) 寄存器 PDBR 用于保存当前进程的页目录起始地址，该地址是物理地址还是虚拟地址？进程切换时，PDBR 的内容是否会变化？说明理由。同一进程的线程切换时，PDBR 的内容是否会变化？说明理由。
+(3) 为了支持改进型 CLOCK 置换算法，需要在页表项中设置哪些字段？
+', '[]', '', '1）由图可知，地址总长度为 32 位，高 20 位为虚页号，低 12 位为页内地址，且虚页号高 10 位为页目录号，低 10 位为页号。十六进制表示为 01806008H。
 2）PDBR 为页目录基址地址寄存器（Page-Directory Base Register），其存储页目录表物理内存基地址。进程切换时，PDBR 的内容会变化；同一进程的线程切换时，PDBR 的内容不会变化。每个进程的地址空间、页目录和 PDBR 的内容存在一一对应的关系。进程切换时，地址空间发生了变化，对应的页目录及其起始地址也相应变化，因此需要用进程切换后当前进程的页目录起始地址刷新 PDBR。同一进程中的线程共享该进程的地址空间，其线程发生切换时，地址空间不变，线程使用的页目录不变，因此 PDBR 的内容也不变。
 3）改进型 Clock置换算法需要用到使用位和修改位，故需要设置访问字段（使用位）和修改字段（脏位）。
-', 9, 'Mogullzr', '2026-02-01 23:10:43', 9, NULL, '2026-02-01 23:10:43', 1, 0);
+', 9, 'Mogullzr', '2026-02-02 13:37:30', 9, NULL, '2026-02-02 13:37:30', 1, 0);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1137', '3767');
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1270', '3767');
-INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3768, '2018年408考研真题第46题', '简单', '2018年408真题', '某文件系统采用索引节点存放文件的属性和地址信息，簇大小为 4KB。每个文件索引节点占 64B，有 11 个地址项，其中直接地址项 8 个，一级、二级和三级间接地址项各 1 个，每个地址项长度为 4B。请回答下列问题。(1) 该文件系统能支持的最大文件长度是多少？（给出计算表达式即可）(2) 文件系统用 1M（1M=$2^{20}$）个簇存放文件索引节点，用 512M 个簇存放文件数据。若一个图像文件的大小为 5600B，则该文件系统最多能存放多少个这样的图像文件？(3) 若文件 F1 的大小为 6KB，文件 F2 的大小为 40KB，则该文件系统获取 F1 和 F2 最后一个簇的簇号需要的时间是否相同？为什么？', '[]', '', '1）簇大小为 4KB，每个地址项长度为 4B，故每簇有 4KB/4B = 1024 个地址项。最大文件的物理块数可达$8 + 1 × 1024 + 1 × 1024^{2} + 1 × 1024^{3}$，每个物理块（簇）大小为 4KB，故最大文件长度为$(8 + 1 × 1024 + 1 × 1024^{2} + 1 × 1024^{3}) × 4KB = 32KB + 4MB + 4GB + 4TB$。
+INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3768, '2018年408考研真题第46题', '简单', '2018年408真题', '某文件系统采用索引节点存放文件的属性和地址信息，簇大小为 4KB。每个文件索引节点占 64B，有 11 个地址项，其中直接地址项 8 个，一级、二级和三级间接地址项各 1 个，每个地址项长度为 4B。请回答下列问题。
+(1) 该文件系统能支持的最大文件长度是多少？（给出计算表达式即可）
+(2) 文件系统用 1M（1M=$2^{20}$）个簇存放文件索引节点，用 512M 个簇存放文件数据。若一个图像文件的大小为 5600B，则该文件系统最多能存放多少个这样的图像文件？
+(3) 若文件 F1 的大小为 6KB，文件 F2 的大小为 40KB，则该文件系统获取 F1 和 F2 最后一个簇的簇号需要的时间是否相同？为什么？
+', '[]', '', '1）簇大小为 4KB，每个地址项长度为 4B，故每簇有 4KB/4B = 1024 个地址项。最大文件的物理块数可达$8 + 1 × 1024 + 1 × 1024^{2} + 1 × 1024^{3}$，每个物理块（簇）大小为 4KB，故最大文件长度为$(8 + 1 × 1024 + 1 × 1024^{2} + 1 × 1024^{3}) × 4KB = 32KB + 4MB + 4GB + 4TB$。
 2）文件索引节点总个数为 1M×4KB/64B=64M，5600B 的文件占 2 个簇，512M 个簇可存放的文件总个数为 512M/2=256M。可表示的文件总个数受限于文件索引节点总个数，故能存储 64M 个大小为 5600B 的图像文件。
 3）文件 F1 的大小为$6KB < 4KB × 8 = 32KB$，故获取文件 F1 的最后一个簇的簇号只需要访问索引节点的直接地址项。文件 F2 的大小为 40KB，$4KB × 8 < 40KB < 4KB × 8 + 4KB × 1024$，故获取 F2 的最后一个簇的簇号还需要读一级索引表。综上，需要的时间不相同。
-', 9, 'Mogullzr', '2026-02-01 23:10:43', 9, NULL, '2026-02-01 23:10:43', 1, 0);
+', 9, 'Mogullzr', '2026-02-02 13:37:30', 9, NULL, '2026-02-02 13:37:30', 1, 0);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1295', '3768');
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1115', '3768');
 INSERT INTO byteoj.problem_math408_bank (problem_id, problem_name, difficulty_name, source_name, description, options, correct_answer, analysis, create_by_id, create_by_name, create_time, update_by_id, update_by_name, update_time, status, option_type) VALUES (3769, '2018年408考研真题第47题', '简单', '2018年408真题', '某公司网络如题 47 图所示。IP 地址空间 192.168.1.0/24 被均分给销售部和技术部两个子网，并已分别为部分主机和路由器接口分配了 IP 地址，销售部子网的 MTU=1500 B，技术部子网的 MTU=800 B。
-![图片](http://mogullzr001.oss-cn-beijing.aliyuncs.com/2026/02/9337b9f0d299428d99def6478cec9d9a.svg)
-请回答下列问题。(1) 销售部子网的广播地址是什么？技术部子网的子网地址是什么？若每个主机仅分配一个 IP 地址，则技术部子网还可以连接多少台主机？(2) 假设主机 192.168.1.1 向主机 192.168.1.208 发送一个总长度为 1500 B 的 IP 分组，IP 分组的头部长度为 20 B，路由器在通过接口 F1 转发该 IP 分组时进行了分配。若分片时尽可能分为最大片，则一个最大 IP 分片封装数据的字节数是多少？至少需要分为几个分片？每个分片的片偏移量是多少？', '[]', '', '1）广播地址是网络地址中主机号全 1 的地址（主机号全 0 的地址代表网络本身）。销售部和技术部均分配了 192.168.1.0/24 的 P 地址空间，P 地址的前 24 位为子网的网络号。于是在后 8 位中划分部门的子网，选择前 1 位作为部门子网的网络号。令销售部子网的网络号为 0，技术部子网的网络号为 1，则技术部子网的完整地址为 192.168.1.128；令销售部子网的主机号全 1，可以得到该部门的广播地址为 192.168.1.127。
+
+![图片](http://mogullzr001.oss-cn-beijing.aliyuncs.com/2026/02/aaa341573b114b46bb3ae22f549ba73c.svg)
+
+请回答下列问题。
+(1) 销售部子网的广播地址是什么？技术部子网的子网地址是什么？若每个主机仅分配一个 IP 地址，则技术部子网还可以连接多少台主机？
+(2) 假设主机 192.168.1.1 向主机 192.168.1.208 发送一个总长度为 1500 B 的 IP 分组，IP 分组的头部长度为 20 B，路由器在通过接口 F1 转发该 IP 分组时进行了分配。若分片时尽可能分为最大片，则一个最大 IP 分片封装数据的字节数是多少？至少需要分为几个分片？每个分片的片偏移量是多少？
+', '[]', '', '1）广播地址是网络地址中主机号全 1 的地址（主机号全 0 的地址代表网络本身）。销售部和技术部均分配了 192.168.1.0/24 的 P 地址空间，P 地址的前 24 位为子网的网络号。于是在后 8 位中划分部门的子网，选择前 1 位作为部门子网的网络号。令销售部子网的网络号为 0，技术部子网的网络号为 1，则技术部子网的完整地址为 192.168.1.128；令销售部子网的主机号全 1，可以得到该部门的广播地址为 192.168.1.127。
 每个主机仅分配一个 P 地址，计算目前还可以分配的主机数，用技术部可以分配的主机数减去已分配的主机数，技术部总共可以分配给计算机的主机数为 2-2=126（减去全 0 和全 1 的主机号）。已经分配了 208-129+1=80 个，此外还有 1 个 P 地址分配给了路由器的端口（192.168.1.254），因此还可以分配 126-80-1=45 台。
 2）判断分片的大小，需要考虑各个网段的 MTU，而且注意分片的数据长度必须是 8B 的整数倍。由题可知，在技术部子网内，MTU=800B，P 分组头部长 20B，最大 IP 分片封装数据的字节数为$⌊(800 - 20)/8 × 8 = 776⌋$。至少需要的分片数为$⌈(1500 - 20)/776 = 2⌉$。第 1 个分片的偏移量为 0；第 2 个分片的偏移量为 776/8=97。
-', 9, 'Mogullzr', '2026-02-01 23:10:45', 9, NULL, '2026-02-01 23:10:45', 1, 0);
+', 9, 'Mogullzr', '2026-02-02 13:37:31', 9, NULL, '2026-02-02 13:37:31', 1, 0);
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1140', '3769');
 INSERT INTO byteoj.problem_math408_tags (tag_id, problem_id)VALUES ('1296', '3769');
