@@ -43,7 +43,7 @@ public class OJCompetitionCrawlerUtils {
         CodeForcesCrawler();
 
         // 2.Acwing
-        AcwingCrawler();
+//        AcwingCrawler();
 
         // 3.nowCoder
         NowCoderCrawler();
