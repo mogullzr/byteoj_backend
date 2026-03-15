@@ -32,7 +32,10 @@ public enum SearchTypeEnum {
 
     PROCTER("监控信息", "procter"),
 
-    LOG_WEBSITE("网站日志", "log_website");
+    LOG_WEBSITE("网站日志", "log_website"),
+
+    EXAM("考试", "exam");
+
     private final String text;
 
     private final String value;

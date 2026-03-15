@@ -89,30 +89,32 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
     @Resource
     private ProblemAlgorithmTagsClassifyMapper problemAlgorithmTagsClassifyMapper;
 
-    @Resource ProblemAlgorithmTagsClassifyRelationMapper problemAlgorithmTagsClassifyRelationMapper;
+    @Resource
+    ProblemAlgorithmTagsClassifyRelationMapper problemAlgorithmTagsClassifyRelationMapper;
+
     @Resource
     private ProblemAlgorithmBankMapper problemAlgorithmBankMapper;
     @Resource
-    ProblemAlgorithmLimitMapper problemAlgorithmLimitMapper;
+    private ProblemAlgorithmLimitMapper problemAlgorithmLimitMapper;
 
     @Resource
-    CompetitionAcProblemsAlgorithmMapper competitionAcProblemsAlgorithmMapper;
+    private CompetitionAcProblemsAlgorithmMapper competitionAcProblemsAlgorithmMapper;
     @Resource
-    AlgorithmTestCaseMapper algorithmTestCaseMapper;
+    private AlgorithmTestCaseMapper algorithmTestCaseMapper;
     @Resource
-    SubmissionsAlgorithmMapper submissionsAlgorithmMapper;
+    private SubmissionsAlgorithmMapper submissionsAlgorithmMapper;
 
     @Resource
-    CompetitionsProblemsAlgorithmMapper competitionsProblemsAlgorithmMapper;
+    private CompetitionsProblemsAlgorithmMapper competitionsProblemsAlgorithmMapper;
     @Resource
-    CompetitionsMapper competitionsMapper;
+    private CompetitionsMapper competitionsMapper;
     @Resource
     CompetitionsUserMapper competitionsUserMapper;
     @Resource
-    SubmissionAlgorithmDetailsMapper submissionAlgorithmDetailsMapper;
+    private SubmissionAlgorithmDetailsMapper submissionAlgorithmDetailsMapper;
 
     @Resource
-    SubmissionAlgorithmRecordsMapper submissionAlgorithmRecordsMapper;
+    private SubmissionAlgorithmRecordsMapper submissionAlgorithmRecordsMapper;
     @Resource
     private UserMapper userMapper;
     @Resource

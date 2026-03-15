@@ -1,7 +1,6 @@
 package com.example.backend.controller;
 
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.backend.common.AccessLimit;
 import com.example.backend.common.BaseResponse;
 import com.example.backend.common.ResultUtils;
@@ -10,7 +9,6 @@ import com.example.backend.models.request.problem.SearchRequest;
 import com.example.backend.models.vo.problem.SearchVo;
 import com.example.backend.models.vo.search.AutoCompeteVo;
 import com.example.backend.service.search.SearchService;
-import com.example.backend.service.source.trie.trie.Trie;
 import com.example.backend.service.user.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

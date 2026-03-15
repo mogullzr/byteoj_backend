@@ -78,6 +78,11 @@ public class SearchVo implements Serializable {
     private List<ProblemMath408BankVo> problemMath408BankVoList;
 
     /**
+     * 考试试题
+     */
+    private List<ProblemExamVo> problemExamVoList;
+
+    /**
      * 通用数据源
      */
     private List<?> dataList;

@@ -2,8 +2,12 @@ package com.example.backend.service.math408;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.backend.models.domain.math408.ProblemMath408Bank;
+import com.example.backend.models.domain.user.User;
 import com.example.backend.models.request.math408.ProblemRequest;
 import com.example.backend.models.request.problem.Math408QueryRequest;
+import com.example.backend.models.request.problem.ProblemExamEditRequest;
+import com.example.backend.models.request.problem.ProblemExamRequest;
+import com.example.backend.models.vo.problem.ProblemExamVo;
 import com.example.backend.models.vo.problem.ProblemMath408BankVo;
 
 import java.util.List;
@@ -41,4 +45,38 @@ public interface ProblemMath408BankService extends IService<ProblemMath408Bank> 
      * @return 是否更新成功
      */
     Boolean problemUpdate(ProblemRequest problemRequest, Long uuid, String account);
+
+
+    /**
+     * 分页查找考试信息
+     *
+     * @param problemExamRequest 请求信息
+     * @return 考试信息
+     */
+    List<ProblemExamVo> problemExamSearch(ProblemExamRequest problemExamRequest);
+
+    /**
+     * 查看考试详细信息
+     *
+     * @param examId 考试ID
+     * @return 考试题目信息
+     */
+    ProblemExamVo problemSearchExamId(Long examId);
+
+    /**
+     * 查找考试详细试题
+     *
+     * @param examId 考试ID
+     * @return 考试试题列表
+     */
+    List<ProblemMath408BankVo> problemExamSearchDetail(Long examId);
+
+    /**
+     * 添加/修改考试信息
+     *
+     * @param problemExamEditRequest 考试编辑信息请求
+     * @param user 用户
+     * @return 是否编辑成功
+     */
+    Boolean problemExamEdit(ProblemExamEditRequest problemExamEditRequest, User user);
 }

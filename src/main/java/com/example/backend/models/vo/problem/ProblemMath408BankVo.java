@@ -46,7 +46,7 @@ public class ProblemMath408BankVo implements Serializable {
     private String correct_answer;
 
     /**
-     * 0表示简答题，1表示单选题，2表示多选题，3表示填空题
+     * 0表示简答题，1表示单选题，2表示多选题，3表示填空题,4表示算法题
      */
     private Integer option_type;
 
@@ -54,6 +54,11 @@ public class ProblemMath408BankVo implements Serializable {
      * 题目标签列表
      */
     private List<String> tagsList;
+
+    /**
+     * 分数
+     */
+    private Integer score;
 
     /**
      * 解析
@@ -66,7 +71,7 @@ public class ProblemMath408BankVo implements Serializable {
     private Long pages;
 
     /**
-     * 题目类型
+     * 题目类型，0数学，1 408，2 政治，3算法
      */
     private Integer status;
 }

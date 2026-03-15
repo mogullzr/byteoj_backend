@@ -14,6 +14,7 @@ import com.example.backend.models.vo.log.LogWebSiteInfoVo;
 import com.example.backend.models.vo.pay.LantuPayViewVo;
 import com.example.backend.models.vo.post.PostsVo;
 import com.example.backend.models.vo.problem.ProblemAlgorithmBankVo;
+import com.example.backend.models.vo.problem.ProblemExamVo;
 import com.example.backend.models.vo.problem.ProblemMath408BankVo;
 import com.example.backend.models.vo.problem.SearchVo;
 import com.example.backend.models.vo.procter.ProcterInfoVo;
@@ -74,6 +75,9 @@ public class SearchServiceImpl implements SearchService {
     @Resource
     private ProblemDataSource problemDataSource;
 
+    @Resource
+    private ProblemExamSource problemExamSource;
+
     private final Trie trie = new Trie();
 
     // 自动注入所有Extractor
@@ -81,6 +85,7 @@ public class SearchServiceImpl implements SearchService {
     private List<DataSourceExtractor<?>> extractors;
 
     private final AtomicBoolean initialized = new AtomicBoolean(false);
+
 
     @PostConstruct
     public void initTrie() {
@@ -196,6 +201,8 @@ public class SearchServiceImpl implements SearchService {
             // 2.根据题目型号来查询题目
             List<ProblemMath408BankVo> problemMath408BankVos = problemDataSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin, module, code, is_date_order, startMilliSeconds, endMilliSeconds, recordsRequest);
 
+            // 13.试卷搜索接口
+            List<ProblemExamVo> problemExamVos = problemExamSource.doSearch(keyword, tagsList, sourceList, difficulty, pageNum, pageSize, uuid, status, isAdmin, module, code, is_date_order, startMilliSeconds, endMilliSeconds, recordsRequest);
             // ......扩展
             // 最终聚合
             searchVo.setProblemAlgorithmBankVoList(problemAlgorithmBankVoList);
@@ -210,6 +217,7 @@ public class SearchServiceImpl implements SearchService {
             searchVo.setProcterInfoVoList(procterInfos);
             searchVo.setWebSiteInfoVoList(logWebsiteInfos);
             searchVo.setProblemMath408BankVoList(problemMath408BankVos);
+            searchVo.setProblemExamVoList(problemExamVos);
 
         } else {
             DataSource<?> dataSource = dataSourceRegistry.getDataSourceByCategory(category);

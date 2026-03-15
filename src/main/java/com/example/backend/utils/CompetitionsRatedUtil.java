@@ -122,7 +122,7 @@ public class CompetitionsRatedUtil {
                 // 【关键修复】传入 uuid 而不是 index，防止列表顺序不一致
                 double newRatingVal = searchRating(m_i, userMap, uuid);
 
-                double d_i = (newRatingVal - r_i) / 2.0;
+                double d_i = getK(r_i) + (newRatingVal - r_i);
                 dList.add(d_i);
 
                 // 准备日志
@@ -184,6 +184,33 @@ public class CompetitionsRatedUtil {
 
             // 7. 批量插入日志
             userRatingService.saveBatch(userRatingList);
+        }
+    }
+
+    /**
+     * 获取当前分段的K值
+     * @param rating 当前的分数
+     * @return K动态因子
+     */
+    private double getK(int rating) {
+        if (rating >= 0 && rating < 1200) {
+            return 0.6;
+        } else if (rating >= 1200 && rating < 1350) {
+            return 0.5;
+        } else if (rating >= 1350 && rating < 1500) {
+            return 0.4;
+        } else if (rating >= 1500 && rating < 1700) {
+            return 0.3;
+        } else if (rating >= 1700 && rating < 1900) {
+            return 0.25;
+        } else if (rating >= 1900 && rating < 2050) {
+            return 0.2;
+        } else if (rating >= 2050 && rating < 2200) {
+            return 0.15;
+        } else if (rating >= 2200 && rating < 2600) {
+            return 0.1;
+        } else {
+            return 0.1;
         }
     }
 

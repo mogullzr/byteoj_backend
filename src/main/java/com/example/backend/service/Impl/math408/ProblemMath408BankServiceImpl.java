@@ -5,21 +5,25 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.backend.common.ErrorCode;
 import com.example.backend.exception.BusinessException;
-import com.example.backend.mapper.ProblemMath408BankMapper;
-import com.example.backend.mapper.ProblemMath408TagsMapper;
-import com.example.backend.mapper.ProblemMath408TagsRelationMapper;
+import com.example.backend.mapper.*;
+import com.example.backend.models.domain.algorithm.AcAlgorithmProblem;
 import com.example.backend.models.domain.algorithm.probleminfo.ProblemAlgorithmBank;
-import com.example.backend.models.domain.algorithm.tag.ProblemAlgorithmTags;
-import com.example.backend.models.domain.algorithm.tag.ProblemAlgorithmTagsRelation;
-import com.example.backend.models.domain.math408.ProblemMath408Bank;
-import com.example.backend.models.domain.math408.ProblemMath408Tags;
-import com.example.backend.models.domain.math408.ProblemMath408TagsRelation;
+import com.example.backend.models.domain.algorithm.probleminfo.ProblemAlgorithmLimit;
+import com.example.backend.models.domain.math408.*;
+import com.example.backend.models.domain.user.User;
 import com.example.backend.models.request.math408.ProblemRequest;
 import com.example.backend.models.request.problem.Math408QueryRequest;
+import com.example.backend.models.request.problem.ProblemExamEditRequest;
+import com.example.backend.models.request.problem.ProblemExamProblemInfo;
+import com.example.backend.models.request.problem.ProblemExamRequest;
 import com.example.backend.models.vo.problem.ProblemAlgorithmBankVo;
+import com.example.backend.models.vo.problem.ProblemExamVo;
 import com.example.backend.models.vo.problem.ProblemMath408BankVo;
+import com.example.backend.service.math408.ProblemExamTissueService;
 import com.example.backend.service.math408.ProblemMath408BankService;
 import com.example.backend.service.math408.ProblemMath408TagsService;
+import com.example.backend.service.user.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -48,7 +52,24 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
     private ProblemMath408TagsService problemMath408TagsService;
 
     @Resource
+    private ProblemExamMapper problemExamMapper;
+
+    @Resource
+    private ProblemExamTissueMapper problemExamTissueMapper;
+
+    @Resource
+    private ProblemAlgorithmLimitMapper problemAlgorithmLimitMapper;
+
+    @Resource
+    private ProblemExamTissueService problemExamTissueService;
+
+    @Resource
+    private UserService userService;
+
+    @Resource
     private JdbcTemplate jdbcTemplate;
+    @Autowired
+    private ProblemAlgorithmBankMapper problemAlgorithmBankMapper;
 
     @Override
     public List<ProblemMath408BankVo> problemSearch(Math408QueryRequest math408QueryRequest, boolean isAdmin) {
@@ -123,7 +144,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         for (ProblemMath408Bank problemMath408Bank : problemMath408BankList) {
             List<String> problemMath408Tags = problemMath408TagsWithNames.get(problemMath408Bank.getProblem_id());
             ProblemMath408BankVo problemMath408BankVo = getProbleMath408mVO(problemMath408Bank, problemMath408Tags);
-            problemMath408BankVo.setDescription(null);
+//            problemMath408BankVo.setDescription(null);
 //            problemMath408BankVo.setAnalysis(null);
 //            problemMath408BankVo.setCorrect_answer(null);
             if (!flag) {
@@ -225,6 +246,323 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
 
 
         return problemMath408TagsService.saveBatch(problemMath408TagsList);
+    }
+
+    @Override
+    public List<ProblemExamVo> problemExamSearch(ProblemExamRequest problemExamRequest) {
+        String source = problemExamRequest.getSource();
+        Page<ProblemExam> page = new Page<>(problemExamRequest.getPageNum(), 9);
+        QueryWrapper<ProblemExam> queryWrapper = new QueryWrapper<>();
+
+        if (source == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "必要参数不允许为空");
+        }
+
+        if (!source.isEmpty()) {
+            queryWrapper.like("exam_name", source);
+        }
+
+        Page<ProblemExam> pageInfo = problemExamMapper.selectPage(page, queryWrapper);
+        List<ProblemExam> problemExams = pageInfo.getRecords();
+        List<ProblemExamVo> problemExamVos = new ArrayList<>();
+
+        Long pages = pageInfo.getTotal();
+        final boolean[] flag = {true};
+        problemExams.forEach(problemExam -> {
+            ProblemExamVo problemExamVo = new ProblemExamVo();
+            problemExamVo.setExam_id(problemExam.getId());
+            problemExamVo.setExam_name(problemExam.getExam_name());
+            problemExamVo.setPicture(problemExam.getPicture());
+            problemExamVo.setAuthor(problemExam.getAuthor());
+            problemExamVo.setStart_time(problemExam.getStart_time());
+            problemExamVo.setEnd_time(problemExam.getEnd_time());
+            problemExamVo.setTime(problemExam.getTime());
+            problemExamVo.setStatus(problemExam.getStatus());
+            problemExamVo.setJoins(problemExam.getJoins());
+
+            if (flag[0]) {
+                flag[0] = false;
+                problemExamVo.setPages(pages);
+            }
+            problemExamVos.add(problemExamVo);
+        });
+        return problemExamVos;
+    }
+
+    @Override
+    public ProblemExamVo problemSearchExamId(Long examId) {
+        QueryWrapper<ProblemExam> problemExamQueryWrapper = new QueryWrapper<>();
+        ProblemExamVo problemExamVo = new ProblemExamVo();
+
+        problemExamQueryWrapper.eq("id", examId);
+
+        ProblemExam problemExam = problemExamMapper.selectOne(problemExamQueryWrapper);
+        problemExamVo.setExam_id(examId);
+        problemExamVo.setExam_name(problemExam.getExam_name());
+        problemExamVo.setStart_time(problemExam.getStart_time());
+        problemExamVo.setEnd_time(problemExam.getEnd_time());
+        problemExamVo.setTime(problemExam.getTime());
+        problemExamVo.setAuthor(problemExam.getAuthor());
+        problemExamVo.setPicture(problemExam.getPicture());
+        problemExamVo.setStatus(problemExam.getStatus());
+        problemExamVo.setJoins(problemExam.getJoins());
+        return problemExamVo;
+    }
+
+    @Override
+    public List<ProblemMath408BankVo> problemExamSearchDetail(Long examId) {
+        QueryWrapper<ProblemExamTissue> problemExamTissueQueryWrapper = new QueryWrapper<>();
+        problemExamTissueQueryWrapper.eq("exam_id", examId);
+
+        List<ProblemExamTissue> problemExamTissues = problemExamTissueMapper.selectList(problemExamTissueQueryWrapper);
+
+        // 脱敏处理
+        List<ProblemMath408BankVo> problemMath408BankVos = new ArrayList<>();
+        QueryWrapper<ProblemMath408Bank> problemMath408BankQueryWrapper = new QueryWrapper<>();
+        QueryWrapper<ProblemAlgorithmBank> problemAlgorithmBankQueryWrapper = new QueryWrapper<>();
+        List<Long> AlgorithmProblemIds = new ArrayList<>();
+        List<Long> Math408ProblemIds = new ArrayList<>();
+
+        problemExamTissues.forEach(problemExamTissue -> {
+            Long problem_id = problemExamTissue.getProblem_id();
+            Integer status = problemExamTissue.getStatus();
+
+            // 开始查询条件组合
+            if (status.equals(3)) {
+                problemAlgorithmBankQueryWrapper.eq("problem_id", problem_id).or();
+                AlgorithmProblemIds.add(problem_id);
+            } else {
+                problemMath408BankQueryWrapper.eq("problem_id", problem_id).or();
+                Math408ProblemIds.add(problem_id);
+            }
+        });
+
+        List<ProblemAlgorithmBank> problemAlgorithmBankList = problemAlgorithmBankMapper.selectList(problemAlgorithmBankQueryWrapper);
+        List<ProblemMath408Bank> problemMath408BankList = problemMath408BankMapper.selectList(problemMath408BankQueryWrapper);
+
+        // 标签获取
+        Map<Long, List<String>> problemAlgorithmTagsMap = getProblemAlgorithmTagsWithNames(AlgorithmProblemIds);
+        Map<Long, List<String>> problemMath408TagsWithNames = getProblemMath408TagsWithNames(Math408ProblemIds);
+
+        List<ProblemAlgorithmBankVo> problemAlgorithmVoList = getAlgorithmProblem(problemAlgorithmBankList, problemAlgorithmTagsMap);
+        List<ProblemMath408BankVo> problemMath408BankVoList = getProblemMath408(problemMath408BankList, problemMath408TagsWithNames);
+
+        // 设置考试试题详细信息
+        problemExamTissues.forEach(problemExamTissue -> {
+            Long problem_id = problemExamTissue.getProblem_id();
+            Integer status = problemExamTissue.getStatus();
+            ProblemMath408BankVo problemMath408BankVo = new ProblemMath408BankVo();
+            problemMath408BankVo.setProblem_id(problem_id);
+            problemMath408BankVo.setScore(problemExamTissue.getScore());
+            problemMath408BankVo.setStatus(status);
+
+            // 开始查询条件组合
+            if (status.equals(3)) {
+                ProblemAlgorithmBankVo problemAlgorithmBankVo = problemAlgorithmVoList.stream()
+                        .filter(vo -> problem_id.equals(vo.getProblem_id()))
+                        .findFirst() // 返回 Optional<ProblemAlgorithmBankVo>
+                        .orElse(null); // 如果没找到，返回 null（或抛异常、设默认值等）
+
+                assert problemAlgorithmBankVo != null;
+                problemMath408BankVo.setProblem_name(problemAlgorithmBankVo.getChinese_name());
+                problemMath408BankVo.setDescription(problemAlgorithmBankVo.getDescription());
+                problemMath408BankVo.setSource_name(problemAlgorithmBankVo.getSource());
+                problemMath408BankVo.setTagsList(problemAlgorithmBankVo.getAlgorithm_tags());
+            } else {
+                ProblemMath408BankVo math408BankVo = problemMath408BankVoList.stream()
+                        .filter(vo -> problem_id.equals(vo.getProblem_id()))
+                        .findFirst()
+                        .orElse(null);
+                assert math408BankVo != null;
+                problemMath408BankVo.setProblem_name(math408BankVo.getProblem_name());
+                problemMath408BankVo.setDescription(math408BankVo.getDescription());
+                problemMath408BankVo.setSource_name(math408BankVo.getSource_name());
+                problemMath408BankVo.setTagsList(math408BankVo.getTagsList());
+                problemMath408BankVo.setOptions(math408BankVo.getOptions());
+                problemMath408BankVo.setOption_type(math408BankVo.getOption_type());
+            }
+
+            problemMath408BankVos.add(problemMath408BankVo);
+        });
+
+        return problemMath408BankVos;
+    }
+
+    @Override
+    public Boolean problemExamEdit(ProblemExamEditRequest problemExamEditRequest, User user) {
+        Long startDate = problemExamEditRequest.getStart_date();
+        Long endDate = problemExamEditRequest.getEnd_date();
+        String picture = problemExamEditRequest.getPicture();
+        String password = problemExamEditRequest.getPassword();
+        String examName = problemExamEditRequest.getExam_name();
+        Long examId = problemExamEditRequest.getExam_id();
+        Integer time = problemExamEditRequest.getTime();
+        Integer status = problemExamEditRequest.getStatus();
+        List<ProblemExamProblemInfo> problemExamProblemInfos = problemExamEditRequest.getProblemExamProblemInfos();
+
+        QueryWrapper<ProblemExam> problemExamQueryWrapper = new QueryWrapper<>();
+        ProblemExam problemExam = new ProblemExam();
+
+        problemExamProblemInfos.forEach(problemExamProblemInfo -> {
+            if (problemExamProblemInfo.getProblem_id() == null || problemExamProblemInfo.getProblem_id() == 0 || problemExamProblemInfo.getStatus() == null) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数错误");
+            }
+        });
+
+        if (examName == null || examName == "") {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "参数错误");
+        }
+        boolean isNew = true;
+        if (examId != null) {
+            problemExamQueryWrapper.eq("id", examId);
+            problemExam = problemExamMapper.selectOne(problemExamQueryWrapper);
+            if (problemExam == null) {
+                throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "不存在这样的考试");
+            }
+            isNew = false;
+        }
+
+        problemExam.setAuthor(user.getUsername());
+        problemExam.setExam_name(examName);
+        problemExam.setPicture(picture);
+        problemExam.setPassword(password);
+        problemExam.setTime(time);
+        problemExam.setStatus(status);
+        problemExam.setUpdate_time(new Date());
+        if (startDate != null && endDate != null) {
+            problemExam.setStart_time(new Date(startDate));
+            problemExam.setEnd_time(new Date(endDate));
+        }
+
+        if (isNew) {
+            problemExamMapper.insert(problemExam);
+        } else {
+            problemExamMapper.updateById(problemExam);
+        }
+
+
+        // 插题目信息(先删后加)
+        QueryWrapper<ProblemExamTissue> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("exam_id", problemExam.getId());
+        problemExamTissueMapper.delete(queryWrapper);
+
+        List<ProblemExamTissue> problemExamTissues = new ArrayList<>();
+        ProblemExam finalProblemExam = problemExam;
+        problemExamProblemInfos.forEach(problemExamProblemInfo -> {
+            ProblemExamTissue problemExamTissue = new ProblemExamTissue();
+            problemExamTissue.setProblem_id(problemExamProblemInfo.getProblem_id());
+            problemExamTissue.setExam_id(finalProblemExam.getId());
+            problemExamTissue.setScore(problemExamProblemInfo.getScore());
+            problemExamTissue.setStatus(problemExamProblemInfo.getStatus());
+
+            problemExamTissues.add(problemExamTissue);
+        });
+
+        problemExamTissueService.saveBatch(problemExamTissues);
+        return true;
+    }
+
+    private Map<Long, List<String>> getProblemAlgorithmTagsWithNames(List<Long> problemIds) {
+        // 1. 检查 problemIds 是否为空，如果为空，则直接返回空结果
+        if (problemIds == null || problemIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        // 2. 创建结果容器
+        Map<Long, List<String>> result = new HashMap<>();
+
+        // 3. 循环查询每个 problem_id 对应的标签
+        for (Long problemId : problemIds) {
+            // 4. 构建查询语句：根据每个 problem_id 查找对应的标签
+            String query = "SELECT t.tag_name " +
+                    "FROM problem_algorithm_tags p " +
+                    "JOIN problem_algorithm_tags_relation t ON p.tag_id = t.tag_id " +
+                    "WHERE p.problem_id = ? " +
+                    "AND p.is_delete = 0";
+
+            List<String> tags = new ArrayList<>();
+            try {
+                // 5. 执行查询，获取该 problem_id 对应的所有标签
+                tags = jdbcTemplate.queryForList(query, String.class, problemId);
+            } catch (Exception e) {
+                // 6. 捕获异常并处理
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "查询标签时发生错误: " + e.getMessage());
+            }
+
+            // 7. 将该 problem_id 和标签列表存入结果 Map
+            result.put(problemId, tags);
+        }
+
+        // 8. 返回最终结果
+        return result;
+    }
+
+    private List<ProblemMath408BankVo> getProblemMath408(List<ProblemMath408Bank> problemMath408BankList,
+                                                         Map<Long, List<String>> problemMath408TagsWithNames) {
+        // 设置题目VO信息
+        List<ProblemMath408BankVo> math408BankVos = new ArrayList<>();
+
+        for (ProblemMath408Bank problemMath408Bank : problemMath408BankList) {
+            List<String> problemMath408Tags = problemMath408TagsWithNames.get(problemMath408Bank.getProblem_id());
+            ProblemMath408BankVo problemMath408BankVo = getProbleMath408mVO(problemMath408Bank, problemMath408Tags);
+            problemMath408BankVo.setAnalysis(null);
+            problemMath408BankVo.setCorrect_answer(null);
+            math408BankVos.add(problemMath408BankVo);
+        }
+
+        return math408BankVos;
+    }
+
+    private List<ProblemAlgorithmBankVo> getAlgorithmProblem(List<ProblemAlgorithmBank> problemAlgorithmBankList,  Map<Long, List<String>> problemAlgorithmTagsMap) {
+        List<ProblemAlgorithmBankVo> problemAlgorithmVoList = new ArrayList<>();
+        for (ProblemAlgorithmBank problemAlgorithmBank : problemAlgorithmBankList) {
+
+            List<String> problemAlgorithmTags = problemAlgorithmTagsMap.get(problemAlgorithmBank.getProblem_id());
+            String description = problemAlgorithmBank.getDescription();
+            ProblemAlgorithmBankVo problemAlgorithmVO = getProblemAlgorithmVO(problemAlgorithmBank, problemAlgorithmTags);
+
+            // 设置描述
+            problemAlgorithmVO.setDescription(description);
+            problemAlgorithmVoList.add(problemAlgorithmVO);
+        }
+
+        return problemAlgorithmVoList;
+    }
+
+    /**
+     * 脱敏加工后的题目信息
+     *
+     * @param problemAlgorithmBank 脱敏前的题目信息
+     * @param problemAlgorithmTags 题目对应算法标签
+     * @return 脱敏加工后的题目信息
+     */
+    private ProblemAlgorithmBankVo getProblemAlgorithmVO(ProblemAlgorithmBank problemAlgorithmBank, List<String> problemAlgorithmTags) {
+        ProblemAlgorithmBankVo problemAlgorithmBankVo = new ProblemAlgorithmBankVo();
+        problemAlgorithmBankVo.setProblem_id(problemAlgorithmBank.getProblem_id());
+        problemAlgorithmBankVo.setShort_name(problemAlgorithmBank.getShort_name());
+        problemAlgorithmBankVo.setChinese_name(problemAlgorithmBank.getChinese_name());
+        problemAlgorithmBankVo.setEnglish_name(problemAlgorithmBank.getEnglish_name());
+        problemAlgorithmBankVo.setDifficulty_name(problemAlgorithmBank.getDifficulty_name());
+        problemAlgorithmBankVo.setSource(problemAlgorithmBank.getSource_name());
+        problemAlgorithmBankVo.setAlgorithm_tags(problemAlgorithmTags);
+        problemAlgorithmBankVo.setTest_total(problemAlgorithmBank.getTest_total());
+        problemAlgorithmBankVo.setAc_total(problemAlgorithmBank.getAc_total());
+        problemAlgorithmBankVo.setIs_delete(problemAlgorithmBank.getIs_delete());
+
+        QueryWrapper<ProblemAlgorithmLimit> problemAlgorithmLimitQueryWrapper = new QueryWrapper<>();
+        problemAlgorithmLimitQueryWrapper.eq("problem_id", problemAlgorithmBank.getProblem_id());
+        problemAlgorithmLimitQueryWrapper.eq("is_delete", problemAlgorithmBank.getIs_delete());
+        ProblemAlgorithmLimit problemAlgorithmLimit = problemAlgorithmLimitMapper.selectOne(problemAlgorithmLimitQueryWrapper);
+        if (problemAlgorithmLimit != null) {
+            problemAlgorithmBankVo.setMemory_limit(problemAlgorithmLimit.getMemory_limit());
+            problemAlgorithmBankVo.setCpu_limit(problemAlgorithmLimit.getCpu_limit());
+        }
+
+
+        QueryWrapper<AcAlgorithmProblem> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("problem_id", problemAlgorithmBank.getProblem_id());
+
+        return problemAlgorithmBankVo;
     }
 
     // 提取的批量查询标签方法，包括标签名称
