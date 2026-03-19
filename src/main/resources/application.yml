@@ -151,6 +151,9 @@ aliyun:
   vod:
     accessKeyId: ${hm.aliyun.vod.accessKeyId} # 阿里云vod的OSS账号
     accessKeySecret: ${hm.aliyun.vod.accessKeySecret} # 阿里云void的OSS密钥
+  embedding:
+    url: ${hm.aliyun.embedding.url}
+    acccessKeyId: ${hm.aliyun.embedding.accessKeyId}
 
 interfaceAccess:
   second: 60        # 接口访问second秒内最多只能访问requestCount次
