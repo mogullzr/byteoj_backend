@@ -16,7 +16,28 @@ services:
     networks:
       - byteoj
     restart: always
-
+  postgres:
+    image: pgvector/pgvector:pg16  # 使用官方预装 pgvector 的镜像
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      TZ: "Asia/Shanghai"
+      POSTGRES_DB: "postgres"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "3hwTJ7Rd2Zawm5hcEutdBRKGncNkExbW"
+    volumes:
+      # 建议更换一个目录名，以免和标准 postgres 镜像的数据格式冲突
+      - "/root/opt/pgvector/data:/var/lib/postgresql/data"
+      - "/root/opt/pgvector/logs:/var/log/postgresql"
+    networks:
+      - byteoj
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   # RabbitMQ 服务
   rabbitmq:
     image: rabbitmq:3.12.1-management
@@ -68,6 +89,7 @@ services:
       - byteoj
     depends_on:
       - mysql
+      - postgres
       - rabbitmq
       - redis
     restart: always

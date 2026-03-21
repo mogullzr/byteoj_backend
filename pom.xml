@@ -15,6 +15,21 @@
         <maven.plugin.validation>DEFAULT</maven.plugin.validation>
     </properties>
     <dependencies>
+        <!-- PostgreSQL 驱动 (新增) -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.3</version> <!-- 完美支持 PG 16 -->
+        </dependency>
+
+        <!-- 动态数据源插件 (关键！用于轻松管理多数据源) -->
+        <!-- 如果不使用此插件，需要手动写大量 Configuration 类，建议直接使用 -->
+        <!-- 适用于 Spring Boot 2.x 的动态数据源 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>dynamic-datasource-spring-boot-starter</artifactId>
+            <version>3.6.1</version> <!-- 推荐稳定版本，兼容 Boot 2 -->
+        </dependency>
         <!-- Source: https://mvnrepository.com/artifact/com.aliyun/facebody20191230 -->
         <dependency>
             <groupId>com.aliyun</groupId>

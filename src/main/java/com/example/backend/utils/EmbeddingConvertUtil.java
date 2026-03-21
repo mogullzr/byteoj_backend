@@ -1,10 +1,9 @@
 package com.example.backend.utils;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.example.backend.common.ErrorCode;
-import com.example.backend.exception.BusinessException;
 import com.example.backend.mapper.ProblemEmbeddingsMapper;
 import com.example.backend.mapper.ProblemMath408BankMapper;
+import com.example.backend.models.domain.math408.ProblemEmbeddingSearch;
 import com.example.backend.models.domain.math408.ProblemEmbeddings;
 import com.example.backend.models.domain.math408.ProblemMath408Bank;
 import com.example.backend.models.vo.problem.ProblemMath408BankVo;
@@ -13,27 +12,29 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.postgresql.util.PGobject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-
 import javax.annotation.Resource;
 import java.io.IOException;
+import java.net.SocketTimeoutException;
+import java.sql.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+
+
 @Service
 public class EmbeddingConvertUtil {
+
     @Resource
     private ProblemEmbeddingsMapper problemEmbeddingsMapper;
 
     @Resource
     private ProblemMath408BankMapper problemMath408BankMapper;
-
-    @Resource
-    private JdbcTemplate jdbcTemplate;
 
     @Resource
     private ProblemMath408BankService problemMath408BankService;
@@ -47,7 +48,127 @@ public class EmbeddingConvertUtil {
     @Value("${hm.aliyun.embedding.model}")
     private String model;
 
-    public List<String> ContentConvertToEmbedding(List<Long> problem_id_list) {
+    @Value("${spring.datasource.dynamic.datasource.pg.username}")
+    private String dbUsername;
+
+    @Value("${spring.datasource.dynamic.datasource.pg.password}")
+    private String dbPassword;
+
+    @Value("${spring.datasource.dynamic.datasource.pg.url}")
+    private String dbUrl;
+    /**
+     * 搜索 Top 5 相似内容
+     * @param queryVector 题目的向量 (float 数组，长度应为 2048)
+     * @return 相似结果列表
+     */
+    public List<ProblemEmbeddingSearch> findTop5Similar(float[] queryVector, Long problem_id) {
+        List<ProblemEmbeddingSearch> results = new ArrayList<>();
+
+        // 1. 将 float[] 转换为 pgvector 需要的字符串格式: "[0.1, 0.2, ...]"
+        StringBuilder vectorBuilder = new StringBuilder("[");
+        for (int i = 0; i < queryVector.length; i++) {
+            vectorBuilder.append(queryVector[i]);
+            if (i < queryVector.length - 1) {
+                vectorBuilder.append(",");
+            }
+        }
+        vectorBuilder.append("]");
+        String vectorStr = vectorBuilder.toString();
+
+        // 2. SQL 语句
+        // 注意：这里使用 <=> 计算余弦距离。距离越小越相似。
+        // 我们顺便计算一下 (1 - 距离) 作为相似度得分 (0~1之间)，方便理解
+        String sql = "SELECT id, problem_id, (1 - (embedding <=> (?::vector))) AS similarity_score " +
+                "FROM problem_embeddings " +
+                "WHERE problem_id != ? " +
+                "ORDER BY embedding <=> (?::vector) " +
+                "LIMIT 6";
+
+        try (Connection conn = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            // 3. 设置参数 (两次出现向量，一次用于计算分数，一次用于排序)
+            pstmt.setString(1, vectorStr);
+            pstmt.setLong(2, problem_id);
+            pstmt.setString(3, vectorStr);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    int id = rs.getInt("id");
+                    Long problemId = rs.getLong("problem_id");
+                    double score = rs.getDouble("similarity_score");
+
+                    results.add(new ProblemEmbeddingSearch(id, problemId, score));
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("向量搜索失败", e);
+        }
+
+        return results;
+    }
+
+    /**
+     * 根据试题向量数据查询相似度最高的5道题目
+     *
+     * @param problem_id 问题ID
+     * @return 相似题目
+     */
+    public List<Long> EmbeddingSearch(Long problem_id) throws SQLException {
+        float[] myQuestionVector = new float[2048];
+
+        myQuestionVector = getEmbedding(problem_id);
+
+        List<ProblemEmbeddingSearch> top5 = findTop5Similar(myQuestionVector, problem_id);
+
+        // 获取相似度最高的 5 道题目
+        List<Long> problemIds = new ArrayList<>();
+        for (ProblemEmbeddingSearch res : top5) {
+            System.out.printf("ID: %d, 相似度: %.4f, 题目ID: %s%n",
+                    res.id, res.similarityScore, res.problem_id);
+            problemIds.add(res.problem_id);
+        }
+
+        return problemIds;
+    }
+
+    /**
+     * 获取向量数据
+     *
+     * @param problemId 问题ID
+     * @return 返回向量数据
+     * @throws SQLException
+     */
+    private float[] getEmbedding(Long problemId) throws SQLException {
+        String sql = "SELECT embedding FROM problem_embeddings WHERE problem_id = ?";
+
+        try (Connection conn = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setLong(1, problemId);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                String vecStr = rs.getString("embedding");
+                // 去掉首尾方括号，按逗号分割，转为 float 数组
+                String[] parts = vecStr.substring(1, vecStr.length() - 1).split(",");
+                float[] vector = new float[parts.length];
+                for (int i = 0; i < parts.length; i++) {
+                    vector[i] = Float.parseFloat(parts[i]);
+                }
+                return vector;
+            }
+            return null; // 没找到
+        }
+    }
+    /**
+     * 将题目转为向量信息并且插入pg当众
+     * @param problem_id_list 问题ID列表
+     * @return 是否插入成功
+     */
+    public Boolean InsertEmbedding(List<Long> problem_id_list) {
         QueryWrapper<ProblemEmbeddings> problemEmbeddingsQueryWrapper = new QueryWrapper<>();
         QueryWrapper<ProblemMath408Bank> problemMath408BankQueryWrapper = new QueryWrapper<>();
 
@@ -77,7 +198,7 @@ public class EmbeddingConvertUtil {
             // 标签
             description.append("标签:").append(problemMath408BankVo.getTagsList());
             description = new StringBuilder(compressMathProblem(String.valueOf(description)));
-            String embedding = getEmebddingInfo(model, description.toString());
+            PGobject embedding = getEmebddingInfo(model, description.toString());
             ProblemEmbeddings problemEmbeddings = new ProblemEmbeddings();
             problemEmbeddings.setProblem_id(problemMath408Bank.getProblem_id());
             problemEmbeddings.setModel(model);
@@ -87,8 +208,15 @@ public class EmbeddingConvertUtil {
             problemEmbeddingsMapper.insert(problemEmbeddings);
             System.out.println(count.get());
             count.getAndIncrement();
+
+            // 限速
+//            try {
+//                Thread.sleep(1000L);
+//            } catch (InterruptedException e) {
+//                throw new RuntimeException(e);
+//            }
         });
-        return Collections.singletonList("");
+        return true;
     }
 
     public List<String> parseOptionString(String input) {
@@ -130,66 +258,106 @@ public class EmbeddingConvertUtil {
                 .trim();
     }
 
-    private Map<Long, List<String>> getProblemMath408TagsWithNames(List<Long> problemIds) {
-        // 1. 检查 problemIds 是否为空，如果为空，则直接返回空结果
-        if (problemIds == null || problemIds.isEmpty()) {
-            return new HashMap<>();
-        }
-
-        // 2. 创建结果容器
-        Map<Long, List<String>> result = new HashMap<>();
-
-        // 3. 循环查询每个 problem_id 对应的标签
-        for (Long problemId : problemIds) {
-            // 4. 构建查询语句：根据每个 problem_id 查找对应的标签
-            String query = "SELECT t.tag_name " +
-                    "FROM problem_math408_tags p " +
-                    "JOIN problem_math408_tags_relation t ON p.tag_id = t.tag_id " +
-                    "WHERE p.problem_id = ? " +
-                    "AND p.is_delete = 0";
-
-            List<String> tags = new ArrayList<>();
-            try {
-                // 5. 执行查询，获取该 problem_id 对应的所有标签
-                tags = jdbcTemplate.queryForList(query, String.class, problemId);
-            } catch (Exception e) {
-                // 6. 捕获异常并处理
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "查询标签时发生错误: " + e.getMessage());
-            }
-
-            // 7. 将该 problem_id 和标签列表存入结果 Map
-            result.put(problemId, tags);
-        }
-
-        // 8. 返回最终结果
-        return result;
-    }
-    private String getEmebddingInfo(String model, String description) {
-        // 开始转换为向量
+    /**
+     * 向量数据转换请求
+     *
+     * @param model 模型名称
+     * @param description 需要转换的描述信息
+     * @return 转换后的向量数据
+     */
+    private PGobject getEmebddingInfo(String model, String description) {
+        // 构建请求参数 (只构建一次)
         String jsonParams = String.format(
-                "{\"model\":\"%s\",\"input\":\"%s\",\"encoding_format\":\"%s\"}",
+                "{\"model\":\"%s\",\"input\":\"%s\",\"dimension\": 2048, \"encoding_format\": \"float\"\n}",
                 model,
-                escapeJson(description),
-                "float"
+                escapeJson(description)
         );
-        try {
-            Document doc = Jsoup.connect(url)
-                    .header("Content-Type", "application/json")
-                    .header("Authorization", "Bearer " + accessKeyId)
-                    .ignoreContentType(true) // 忽略内容类型检查
-                    .requestBody(jsonParams)
-                    .post();
-            String jsonData = doc.text();
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode root = mapper.readTree(jsonData);
-            JsonNode embeddingArray = root.get("data").get(0).get("embedding");
 
-            return mapper.writeValueAsString(embeddingArray);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        int fastRetries = 0;
+        int maxFastRetries = 3;
+        int totalAttempts = 0;
+
+        while (true) { // 无限循环，直到成功返回
+            totalAttempts++;
+            try {
+                System.out.println("🚀 正在尝试获取 Embedding (第 " + totalAttempts + " 次请求)...");
+
+                // --- 核心配置：设置 30 秒超时 ---
+                Document doc = Jsoup.connect(url)
+                        .header("Content-Type", "application/json")
+                        .header("Authorization", "Bearer " + accessKeyId)
+                        .ignoreContentType(true)
+                        .requestBody(jsonParams)
+                        .timeout(120000) // 30秒超时，给大模型足够的计算时间
+                        .post();
+
+                // --- 解析响应 ---
+                String jsonData = doc.text();
+                ObjectMapper mapper = new ObjectMapper();
+                JsonNode root = mapper.readTree(jsonData);
+
+                // 检查业务错误 (如 API Key 无效、配额用完等)
+                if (root.has("error")) {
+                    String errorMsg = root.get("error").toString();
+                    System.err.println("❌ API 返回业务错误 (不重试): " + errorMsg);
+                    // 如果是业务错误 (如 401, 403)，重试通常没用，直接抛出异常停止
+                    throw new RuntimeException("API 业务错误: " + errorMsg);
+                }
+
+                JsonNode embeddingArray = root.get("data").get(0).get("embedding");
+
+                // --- 构建向量字符串 ---
+                StringBuilder sb = new StringBuilder();
+                sb.append("[");
+                for (int i = 0; i < embeddingArray.size(); i++) {
+                    if (i > 0) sb.append(",");
+                    sb.append(embeddingArray.get(i).asDouble());
+                }
+                sb.append("]");
+
+                // --- 创建 PGobject ---
+                PGobject pGobject = new PGobject();
+                pGobject.setType("vector");
+                pGobject.setValue(sb.toString());
+
+                System.out.println("✅ 获取 Embedding 成功！(总共尝试了 " + totalAttempts + " 次)");
+                return pGobject; // 成功！跳出无限循环
+
+            } catch (IOException e) {
+                // 只有网络异常或超时才重试，业务异常上面已经抛出了
+                String errorMsg = e.getMessage();
+                boolean isTimeout = e instanceof SocketTimeoutException || (errorMsg != null && errorMsg.contains("timed out"));
+
+                System.err.println("⚠️ 第 " + totalAttempts + " 次请求失败: " + (isTimeout ? "超时" : "网络错误") + " - " + e.getMessage());
+
+                // --- 智能退避策略 ---
+                long waitTimeSeconds;
+
+                if (fastRetries < maxFastRetries) {
+                    // 阶段 1: 快速重试 (前 3 次)
+                    fastRetries++;
+                    waitTimeSeconds = 1;
+                    System.out.println("⏳ 进入快速重试模式，等待 " + waitTimeSeconds + " 秒后重试... (快速重试剩余: " + (maxFastRetries - fastRetries) + ")");
+                } else {
+                    // 阶段 2: 长等待重试 (3 次失败后)
+                    waitTimeSeconds = 30;
+                    System.out.println("⏳ 进入长等待模式，等待 " + waitTimeSeconds + " 秒后再次尝试... (已持续尝试 " + totalAttempts + " 次)");
+                }
+
+                try {
+                    Thread.sleep(waitTimeSeconds * 1000);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    System.err.println("❌ 重试过程被外部中断，停止尝试。");
+                    throw new RuntimeException("获取 Embedding 过程中断", ie);
+                }
+                // 循环继续，进行下一次尝试
+            } catch (SQLException e) {
+                // PGobject 构造错误通常不是网络问题，直接抛出
+                throw new RuntimeException("向量对象构造失败", e);
+            }
         }
     }
-
     // 简单的 JSON 字符串转义（处理引号、换行等）
     private static String escapeJson(String str) {
         if (str == null) return "";

@@ -5,8 +5,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
 * @author Mogullzr
-* @description 针对表【problem_embeddings(向量数据表)】的数据库操作Service
-* @createDate 2026-03-18 23:18:15
+* @description 针对表【problem_embeddings】的数据库操作Service
+* @createDate 2026-03-19 20:38:49
 */
 public interface ProblemEmbeddingsService extends IService<ProblemEmbeddings> {
 

@@ -1,6 +1,7 @@
 package com.example.backend.service.Impl.math408;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.backend.common.ErrorCode;
@@ -19,15 +20,20 @@ import com.example.backend.models.request.problem.ProblemExamRequest;
 import com.example.backend.models.vo.problem.ProblemAlgorithmBankVo;
 import com.example.backend.models.vo.problem.ProblemExamVo;
 import com.example.backend.models.vo.problem.ProblemMath408BankVo;
+import com.example.backend.models.vo.problem.ProblemSimilarityVo;
 import com.example.backend.service.math408.ProblemExamTissueService;
 import com.example.backend.service.math408.ProblemMath408BankService;
 import com.example.backend.service.math408.ProblemMath408TagsService;
+import com.example.backend.service.math408.ProblemSimilarityService;
 import com.example.backend.service.user.UserService;
+import com.example.backend.utils.EmbeddingConvertUtil;
+import com.example.backend.models.domain.usage.UsagePlans;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -61,13 +67,26 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
     private ProblemAlgorithmLimitMapper problemAlgorithmLimitMapper;
 
     @Resource
+    private ProblemSimilarityMapper problemSimilarityMapper;
+
+    @Resource
+    private UsagePlansMapper usagePlansMapper;
+
+    @Resource
     private ProblemExamTissueService problemExamTissueService;
 
     @Resource
     private UserService userService;
 
     @Resource
+    private ProblemSimilarityService problemSimilarityService;
+
+    @Resource
+    private EmbeddingConvertUtil embeddingConvertUtil;
+
+    @Resource
     private JdbcTemplate jdbcTemplate;
+
     @Autowired
     private ProblemAlgorithmBankMapper problemAlgorithmBankMapper;
 
@@ -244,8 +263,11 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
             problemMath408TagsList.add(problemMath408Tags);
         }
 
+        // 最后，重新设置向量数据信息
+        List<Long> problem_id_list = new ArrayList<>();
+        problem_id_list.add(problemId);
 
-        return problemMath408TagsService.saveBatch(problemMath408TagsList);
+        return problemMath408TagsService.saveBatch(problemMath408TagsList) && embeddingConvertUtil.InsertEmbedding(problem_id_list);
     }
 
     @Override
@@ -388,6 +410,42 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         return problemMath408BankVos;
     }
 
+    // 提取的批量查询标签方法，包括标签名称
+    private Map<Long, List<String>> getProblemAlgorithmTagsWithNames(List<Long> problemIds) {
+        // 1. 检查 problemIds 是否为空，如果为空，则直接返回空结果
+        if (problemIds == null || problemIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        // 2. 创建结果容器
+        Map<Long, List<String>> result = new HashMap<>();
+
+        // 3. 循环查询每个 problem_id 对应的标签
+        for (Long problemId : problemIds) {
+            // 4. 构建查询语句：根据每个 problem_id 查找对应的标签
+            String query = "SELECT t.tag_name " +
+                    "FROM problem_algorithm_tags p " +
+                    "JOIN problem_algorithm_tags_relation t ON p.tag_id = t.tag_id " +
+                    "WHERE p.problem_id = ? " +
+                    "AND p.is_delete = 0";
+
+            List<String> tags = new ArrayList<>();
+            try {
+                // 5. 执行查询，获取该 problem_id 对应的所有标签
+                tags = jdbcTemplate.queryForList(query, String.class, problemId);
+            } catch (Exception e) {
+                // 6. 捕获异常并处理
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "查询标签时发生错误: " + e.getMessage());
+            }
+
+            // 7. 将该 problem_id 和标签列表存入结果 Map
+            result.put(problemId, tags);
+        }
+
+        // 8. 返回最终结果
+        return result;
+    }
+
     @Override
     public Boolean problemExamEdit(ProblemExamEditRequest problemExamEditRequest, User user) {
         Long startDate = problemExamEditRequest.getStart_date();
@@ -409,7 +467,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
             }
         });
 
-        if (examName == null || examName == "") {
+        if (examName == null || examName.isEmpty()) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "参数错误");
         }
         boolean isNew = true;
@@ -462,41 +520,164 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         return true;
     }
 
-    private Map<Long, List<String>> getProblemAlgorithmTagsWithNames(List<Long> problemIds) {
-        // 1. 检查 problemIds 是否为空，如果为空，则直接返回空结果
-        if (problemIds == null || problemIds.isEmpty()) {
-            return new HashMap<>();
+    @Override
+    public List<ProblemSimilarityVo> problemSearchSimilarity(List<Long> problemIdList, Long uuid) {
+        // 1. 参数校验
+        if (problemIdList == null || problemIdList.isEmpty() || problemIdList.size() > 10) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数错误，每次最多查询10题");
         }
 
-        // 2. 创建结果容器
-        Map<Long, List<String>> result = new HashMap<>();
+        // 2.查看次数是否够用
+        QueryWrapper<UsagePlans> usagePlansQueryWrapper = new QueryWrapper<>();
+        usagePlansQueryWrapper.eq("uuid", uuid);
+        usagePlansQueryWrapper.eq("feature_code", "SIMILAR");
+        UsagePlans usagePlans = usagePlansMapper.selectOne(usagePlansQueryWrapper);
+        if (usagePlans == null || usagePlans.getMax_count() < problemIdList.size()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "对不起，您已经没有使用次数了");
+        }
+        // ---------------------------------------------------------
+        // 第一步：获取完整的相似度关系数据 (复用之前的优化逻辑)
+        // ---------------------------------------------------------
 
-        // 3. 循环查询每个 problem_id 对应的标签
-        for (Long problemId : problemIds) {
-            // 4. 构建查询语句：根据每个 problem_id 查找对应的标签
-            String query = "SELECT t.tag_name " +
-                    "FROM problem_algorithm_tags p " +
-                    "JOIN problem_algorithm_tags_relation t ON p.tag_id = t.tag_id " +
-                    "WHERE p.problem_id = ? " +
-                    "AND p.is_delete = 0";
+        // 1.1 批量查询已有的缓存
+        List<ProblemSimilarity> existingList = problemSimilarityMapper.selectList(
+                Wrappers.<ProblemSimilarity>lambdaQuery()
+                        .in(ProblemSimilarity::getProblem_id, problemIdList)
+                        .orderByAsc(ProblemSimilarity::getRank) // 确保按排名排序
+        );
 
-            List<String> tags = new ArrayList<>();
-            try {
-                // 5. 执行查询，获取该 problem_id 对应的所有标签
-                tags = jdbcTemplate.queryForList(query, String.class, problemId);
-            } catch (Exception e) {
-                // 6. 捕获异常并处理
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "查询标签时发生错误: " + e.getMessage());
+        // 1.2 分组已有数据，判断哪些题目缺数据
+        Map<Long, List<ProblemSimilarity>> existingMap = existingList.stream()
+                .collect(Collectors.groupingBy(ProblemSimilarity::getProblem_id));
+
+        List<ProblemSimilarity> allSimilarityRecords = new ArrayList<>(existingList);
+        List<ProblemSimilarity> toInsertList = new ArrayList<>();
+
+        // 1.3 补缺：对没有缓存的题目进行向量搜索
+        for (Long pid : problemIdList) {
+            List<ProblemSimilarity> cached = existingMap.get(pid);
+            if (cached == null || cached.isEmpty()) {
+                try {
+                    // 调用向量搜索，获取相似的ID列表
+                    List<Long> similarIds = embeddingConvertUtil.EmbeddingSearch(pid);
+
+                    // 构建待插入对象
+                    for (int i = 0; i < similarIds.size(); i++) {
+                        ProblemSimilarity ps = new ProblemSimilarity();
+                        ps.setProblem_id(pid);
+                        ps.setProblem_id_similarity(similarIds.get(i));
+                        ps.setRank(i + 1);
+                        toInsertList.add(ps);
+
+                        // 同时也加入内存总列表，方便后续直接处理
+                        allSimilarityRecords.add(ps);
+                    }
+                } catch (SQLException e) {
+                    throw new RuntimeException("向量搜索失败: " + pid, e);
+                }
+            }
+        }
+
+        // 1.4 批量插入新产生的数据
+        if (!toInsertList.isEmpty()) {
+            problemSimilarityService.saveBatch(toInsertList);
+        }
+
+        // ---------------------------------------------------------
+        // 第二步：重组数据为 Vo 结构 (核心修改部分)
+        // ---------------------------------------------------------
+
+        // 2.1 将所有的相似度记录按 "主题目ID" 分组
+        // Key: problem_id_main (前端传的ID), Value: 该主题目对应的所有相似记录列表
+        Map<Long, List<ProblemSimilarity>> groupedByMain = allSimilarityRecords.stream()
+                .collect(Collectors.groupingBy(ProblemSimilarity::getProblem_id));
+
+        List<ProblemSimilarityVo> resultVoList = new ArrayList<>();
+
+        // 2.2 遍历前端传入的每一个 problemId，构建 Vo
+        for (Long mainPid : problemIdList) {
+            List<ProblemSimilarity> simRecords = groupedByMain.get(mainPid);
+
+            // 理论上经过上面的补缺逻辑，这里一定不为空，但为了安全做个判断
+            if (simRecords == null || simRecords.isEmpty()) {
+                // 如果连向量搜索都没返回结果（极端情况），则返回空列表
+                ProblemSimilarityVo vo = new ProblemSimilarityVo();
+                vo.setProblem_id(mainPid);
+                vo.setTop5_similarity(new ArrayList<>());
+                resultVoList.add(vo);
+                continue;
             }
 
-            // 7. 将该 problem_id 和标签列表存入结果 Map
-            result.put(problemId, tags);
+            // 按 Rank 排序，确保取前5个是准确的
+            simRecords.sort(Comparator.comparingInt(ProblemSimilarity::getRank));
+
+            // 提取前5个相似题目的 ID (假设数据库里存了多于5个，或者只存了5个)
+            List<Long> targetSimilarIds = simRecords.stream()
+                    .limit(6)
+                    .map(ProblemSimilarity::getProblem_id_similarity)
+                    .collect(Collectors.toList());
+
+            // 2.3 【关键优化】批量查询相似题目的详情 (ProblemMath408BankVo)
+            // 避免在循环中调用 problemSearchByProblemId (那是单次查库)，改为一次性查出所有
+            List<ProblemMath408BankVo> similarVos = batchGetProblemVoList(targetSimilarIds);
+
+            // 2.4 组装最终 Vo
+            ProblemSimilarityVo vo = new ProblemSimilarityVo();
+            vo.setProblem_id(mainPid);
+            vo.setTop5_similarity(similarVos);
+
+            resultVoList.add(vo);
         }
 
-        // 8. 返回最终结果
-        return result;
+        // 最后，减去次数然后重新更新数据
+        usagePlans.setMax_count(usagePlans.getMax_count() - problemIdList.size());
+        usagePlansMapper.updateById(usagePlans);
+
+        return resultVoList;
     }
 
+
+    /**
+     * 辅助方法：批量获取题目详情 Vo
+     * 避免 N+1 查询问题
+     */
+    private List<ProblemMath408BankVo> batchGetProblemVoList(List<Long> problemIds) {
+        if (problemIds == null || problemIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 1. 批量查询数据库实体
+        List<ProblemMath408Bank> bankList = problemMath408BankMapper.selectList(
+                Wrappers.<ProblemMath408Bank>lambdaQuery()
+                        .in(ProblemMath408Bank::getProblem_id, problemIds) // 假设字段名是 problemId，如果是 problem_id 请调整
+        );
+
+        // 2. 转为 Map 方便快速匹配 (ID -> Entity)
+        Map<Long, ProblemMath408Bank> bankMap = bankList.stream()
+                .collect(Collectors.toMap(ProblemMath408Bank::getProblem_id, item -> item));
+
+        // 3. 构建 Vo 列表
+        // 注意：这里需要保持入参 problemIds 的顺序，或者根据业务需求排序
+        // 如果 EmbeddingSearch 返回的顺序很重要，这里必须按照 targetSimilarIds 的顺序来构建列表
+        List<ProblemMath408BankVo> voList = new ArrayList<>();
+
+        for (Long pid : problemIds) {
+            ProblemMath408Bank bank = bankMap.get(pid);
+            if (bank != null) {
+                // 复用你现有的转换逻辑
+                // 注意：getProblemMath408Tags 和 getProbleMath408mVO 是你已有的方法
+                List<String> tags = getProblemMath408Tags(pid);
+                ProblemMath408BankVo vo = getProbleMath408mVO(bank, tags);
+                vo.setStatus(bank.getStatus());
+                // 如果需要隐藏答案，可以在这里设置
+                // vo.setCorrect_answer(null);
+
+                voList.add(vo);
+            }
+        }
+
+        return voList;
+    }
     private List<ProblemMath408BankVo> getProblemMath408(List<ProblemMath408Bank> problemMath408BankList,
                                                          Map<Long, List<String>> problemMath408TagsWithNames) {
         // 设置题目VO信息

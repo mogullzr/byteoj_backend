@@ -34,23 +34,49 @@ spring:
     active: local
     name: backend
   datasource:
-    docker:
-      container:
-        name: mysql
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${hm.db.host}:3306/${hm.db.table}?rewriteBatchedStatements=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
-    username: ${hm.db.name}
-    password: ${hm.db.pwd}
-    hikari:
-      maximum-pool-size: 20  # 🔥 增加到20（原来10太少）
-      minimum-idle: 5
-      connection-timeout: 30000
-      idle-timeout: 600000   # 空闲连接10分钟后释放
-      max-lifetime: 1800000  # 连接最大存活30分钟
-    # session失效时间(分钟)和存储工作配置
-    # session:
-    # timeout: 86400
-    # store-type: redis # 默认为none
+    dynamic:
+      # 1. 设置默认数据源：保持原有逻辑，默认走 mysql
+      primary: mysql
+      # 2. 严格模式：如果指定了不存在的數據源是否报错，建议 false (找不到则回退到主库)
+      strict: false
+
+      datasource:
+        # ================= MySQL 配置 (原有逻辑迁移) =================
+        mysql:
+          # 注意：dynamic-datasource 不需要在这里写 driver-class-name，它会自动识别 url
+          # 但为了清晰或旧版本兼容，写上也没问题
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: jdbc:mysql://${hm.db.host}:3306/${hm.db.table}?rewriteBatchedStatements=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+          username: ${hm.db.name}
+          password: ${hm.db.pwd}
+          # HikariCP 连接池优化配置 (保留你原有的调优参数)
+          hikari:
+            maximum-pool-size: 20
+            minimum-idle: 5
+            connection-timeout: 30000
+            idle-timeout: 600000
+            max-lifetime: 1800000
+          # 如果你之前的 docker 配置是自定义属性，可以放在这里，或者作为元数据
+          # 注意：standard dynamic-datasource config doesn't use 'docker' node directly inside datasource
+          # 如果这是你项目的自定义逻辑，请确保你的代码能读取到它，标准配置通常不需要这个节点
+
+        # ================= PostgreSQL 配置 (新增) =================
+        pg:
+          # PostgreSQL 驱动
+          driver-class-name: org.postgresql.Driver
+          # URL 格式：jdbc:postgresql://host:port/database
+          # 假设 PG 也在本地或同个 Docker 网络，端口通常是 5432
+          # 你需要定义新的环境变量：hm.pg.host, hm.pg.db, hm.pg.user, hm.pg.pwd
+          url: jdbc:postgresql://${hm.pg.host}:5432/${hm.pg.db}
+          username: ${hm.pg.user}
+          password: ${hm.pg.pwd}
+          # 应用相同的 HikariCP 优化配置，保证高并发下性能一致
+          hikari:
+            maximum-pool-size: 20
+            minimum-idle: 5
+            connection-timeout: 30000
+            idle-timeout: 600000
+            max-lifetime: 1800000
   # 支持 swagger3
   mvc:
     pathmatch:
@@ -134,8 +160,8 @@ mybatis-plus:
   configuration:
     #    会默认将下滑线转换成驼峰式
     map-underscore-to-camel-case: false
-    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
-  #    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+#    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
       logic-delete-field: isDelete # 全局逻辑删除的实体字段名(since 3.3.0,配置后可以忽略不配置步骤2)

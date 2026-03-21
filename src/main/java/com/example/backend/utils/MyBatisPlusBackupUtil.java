@@ -23,13 +23,13 @@ import java.util.stream.Collectors;
 public class MyBatisPlusBackupUtil {
     private static final Logger logger = LoggerFactory.getLogger(MyBatisPlusBackupUtil.class);
 
-    @Value("${spring.datasource.username}")
+    @Value("${spring.datasource.dynamic.datasource.mysql.username}")
     private String dbUsername;
 
-    @Value("${spring.datasource.password}")
+    @Value("${spring.datasource.dynamic.datasource.mysql.password}")
     private String dbPassword;
 
-    @Value("${spring.datasource.url}")
+    @Value("${spring.datasource.dynamic.datasource.mysql.url}")
     private String dbUrl;
 
     @Value("${backup.batch.size:10000}")

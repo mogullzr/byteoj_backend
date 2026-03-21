@@ -11,6 +11,7 @@ import com.example.backend.models.request.problem.ProblemExamEditRequest;
 import com.example.backend.models.request.math408.ProblemRequest;
 import com.example.backend.models.vo.problem.ProblemExamVo;
 import com.example.backend.models.vo.problem.ProblemMath408BankVo;
+import com.example.backend.models.vo.problem.ProblemSimilarityVo;
 import com.example.backend.service.math408.ProblemMath408BankService;
 import com.example.backend.service.user.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +32,13 @@ public class ProblemsController {
     @Resource
     private UserService userService;
 
+    @AccessLimit(seconds = 1, maxCount = 5, needLogin = true)
+    @PostMapping("/similar")
+    private BaseResponse<List<ProblemSimilarityVo>> ProblemSearchSimilarity(@RequestBody List<Long> problem_id_list, HttpServletRequest request) {
 
+        List<ProblemSimilarityVo> result = problemsService.problemSearchSimilarity(problem_id_list, userService.getLoginUser(request).getUuid());
+        return ResultUtils.success(result);
+    }
     @GetMapping("/exam")
     private BaseResponse<ProblemExamVo> ProblemSearchExamId(@Param("exam_id") Long exam_id, HttpServletRequest request) {
 

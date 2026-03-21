@@ -9,6 +9,7 @@ import com.example.backend.models.request.problem.ProblemExamEditRequest;
 import com.example.backend.models.request.problem.ProblemExamRequest;
 import com.example.backend.models.vo.problem.ProblemExamVo;
 import com.example.backend.models.vo.problem.ProblemMath408BankVo;
+import com.example.backend.models.vo.problem.ProblemSimilarityVo;
 
 import java.util.List;
 
@@ -79,4 +80,13 @@ public interface ProblemMath408BankService extends IService<ProblemMath408Bank> 
      * @return 是否编辑成功
      */
     Boolean problemExamEdit(ProblemExamEditRequest problemExamEditRequest, User user);
+
+    /**
+     * 查询相似试题
+     *
+     * @param problemIdList 问题ID列表
+     * @param uuid 用户ID
+     * @return 问题列表信息
+     */
+    List<ProblemSimilarityVo> problemSearchSimilarity(List<Long> problemIdList, Long uuid);
 }

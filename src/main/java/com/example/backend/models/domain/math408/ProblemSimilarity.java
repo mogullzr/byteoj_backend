@@ -6,16 +6,14 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.util.Date;
 import lombok.Data;
-import org.apache.ibatis.type.JdbcType;
-import org.postgresql.util.PGobject;
 
 /**
- * 
- * @TableName problem_embeddings
+ * 相似问题关系表
+ * @TableName problem_similarity
  */
-@TableName(value ="problem_embeddings")
+@TableName(value ="problem_similarity")
 @Data
-public class ProblemEmbeddings {
+public class ProblemSimilarity {
     /**
      * ID
      */
@@ -23,28 +21,33 @@ public class ProblemEmbeddings {
     private Long id;
 
     /**
-     * 问题ID
+     * 原问题ID
      */
     private Long problem_id;
 
     /**
-     * 模型
+     * 相似问题ID
      */
-    private String model;
+    private Long problem_id_similarity;
 
     /**
-     * 0数学，1 408，2政治
+     * 相似度排名
      */
-    private Integer status;
-
-    /**
-     * 向量数据
-     */
-    @TableField(jdbcType = JdbcType.OTHER, typeHandler = org.apache.ibatis.type.ObjectTypeHandler.class)
-    private PGobject embedding;
+    @TableField("`Rank`")
+    private Integer Rank;
 
     /**
      * 创建时间
      */
-    private Date created_date;
+    private Date create_date;
+
+    /**
+     * 更新时间
+     */
+    private Date update_date;
+
+    /**
+     * 逻辑删除
+     */
+    private Integer is_delete;
 }
