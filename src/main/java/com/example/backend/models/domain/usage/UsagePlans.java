@@ -30,6 +30,11 @@ public class UsagePlans {
     private Integer max_count;
 
     /**
+     * 用户ID
+     */
+    private Long uuid;
+
+    /**
      * 逻辑删除
      */
     private Integer is_delete;

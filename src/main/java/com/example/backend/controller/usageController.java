@@ -40,6 +40,7 @@ public class usageController {
     private BaseResponse<Integer> UsageMaxCountGet(HttpServletRequest request) {
 
         QueryWrapper<UsagePlans> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("uuid", userService.getLoginUser(request).getUuid());
         queryWrapper.eq("feature_code", "SIMILAR");
         UsagePlans usagePlans = usagePlansMapper.selectOne(queryWrapper);
         if (usagePlans == null) {
