@@ -7,8 +7,10 @@ import com.example.backend.common.ErrorCode;
 import com.example.backend.common.ResultUtils;
 import com.example.backend.exception.BusinessException;
 import com.example.backend.models.domain.user.User;
+import com.example.backend.models.request.math408.ProblemExamSubmitRequest;
 import com.example.backend.models.request.problem.ProblemExamEditRequest;
 import com.example.backend.models.request.math408.ProblemRequest;
+import com.example.backend.models.vo.problem.ProblemExamSubmitVo;
 import com.example.backend.models.vo.problem.ProblemExamVo;
 import com.example.backend.models.vo.problem.ProblemMath408BankVo;
 import com.example.backend.models.vo.problem.ProblemSimilarityVo;
@@ -49,6 +51,14 @@ public class ProblemsController {
     @GetMapping("/exam/problem")
     private BaseResponse<List<ProblemMath408BankVo>> ProblemExamSearchDetail(@Param("exam_id") Long exam_id) {
         List<ProblemMath408BankVo> result = problemsService.problemExamSearchDetail(exam_id);
+        return ResultUtils.success(result);
+    }
+
+    @AccessLimit(seconds = 1, maxCount = 5, needLogin = true)
+    @PostMapping("/exam/submit")
+    private BaseResponse<ProblemExamSubmitVo> ProblemExamSubmit(@RequestBody ProblemExamSubmitRequest problemExamRequest, HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        ProblemExamSubmitVo result = problemsService.problemExamSubmit(problemExamRequest, loginUser.getUuid(), loginUser.getUsername());
         return ResultUtils.success(result);
     }
 

@@ -11,41 +11,50 @@ import java.util.Map;
 @Component
 public class DeepSeekChatModeRegistry {
 
-    @Value("${deepseek.api.v3-1.model}")
+    @Value("${ai.api.v3-1.model}")
     private String v3_1Model;
 
-    @Value("${deepseek.api.v3-1.url}")
+    @Value("${ai.api.v3-1.url}")
     private String v3_1ApiUrl;
 
-    @Value("${deepseek.api.v3-1.key}")
+    @Value("${ai.api.v3-1.key}")
     private String v3_1ApiKey;
 
-    @Value("${deepseek.api.v3-2.model}")
+    @Value("${ai.api.v3-2.model}")
     private String v3_2Model;
 
-    @Value("${deepseek.api.v3-2.url}")
+    @Value("${ai.api.v3-2.url}")
     private String v3_2ApiUrl;
 
-    @Value("${deepseek.api.v3-2.key}")
+    @Value("${ai.api.v3-2.key}")
     private String v3_2ApiKey;
 
-    @Value("${deepseek.api.r1_1.model}")
+    @Value("${ai.api.r1_1.model}")
     private String r1_Model;
 
-    @Value("${deepseek.api.r1_1.url}")
+    @Value("${ai.api.r1_1.url}")
     private String r1_ApiUrl;
 
-    @Value("${deepseek.api.r1_1.key}")
+    @Value("${ai.api.r1_1.key}")
     private String r1_ApiKey;
 
-    @Value("${deepseek.api.v3-tenCloud.model}")
+    @Value("${ai.api.v3-tenCloud.model}")
     private String v3_tenCloudModel;
 
-    @Value("${deepseek.api.v3-tenCloud.url}")
+    @Value("${ai.api.v3-tenCloud.url}")
     private String v3_tenCloudUrl;
 
-    @Value("${deepseek.api.v3-tenCloud.key}")
+    @Value("${ai.api.v3-tenCloud.key}")
     private String v3_tenCloudApiKey;
+
+    @Value("${ai.api.Qwen-VL.model}")
+    private String QwenVLModel;
+
+    @Value("${ai.api.Qwen-VL.url}")
+    private String QwenVLUrl;
+
+    @Value("${ai.api.Qwen-VL.key}")
+    private String QwenVLKey;
 
     private Map<String, List<String>> modelInfo;
 
@@ -76,6 +85,12 @@ public class DeepSeekChatModeRegistry {
         keyInfo_v3_tengCloud.add(v3_tenCloudUrl);
         keyInfo_v3_tengCloud.add(v3_tenCloudApiKey);
         modelInfo.put(v3_tenCloudModel, keyInfo_v3_tengCloud);
+
+        // Qwen模型
+        List<String> qwen_keyInfo = new ArrayList<>();
+        qwen_keyInfo.add(QwenVLUrl);
+        qwen_keyInfo.add(QwenVLKey);
+        modelInfo.put(QwenVLModel, qwen_keyInfo);
     }
 
     public List<String> getChatModeInfo(String model) {

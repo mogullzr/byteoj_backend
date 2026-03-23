@@ -3,10 +3,12 @@ package com.example.backend.service.math408;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.backend.models.domain.math408.ProblemMath408Bank;
 import com.example.backend.models.domain.user.User;
+import com.example.backend.models.request.math408.ProblemExamSubmitRequest;
 import com.example.backend.models.request.math408.ProblemRequest;
 import com.example.backend.models.request.problem.Math408QueryRequest;
 import com.example.backend.models.request.problem.ProblemExamEditRequest;
 import com.example.backend.models.request.problem.ProblemExamRequest;
+import com.example.backend.models.vo.problem.ProblemExamSubmitVo;
 import com.example.backend.models.vo.problem.ProblemExamVo;
 import com.example.backend.models.vo.problem.ProblemMath408BankVo;
 import com.example.backend.models.vo.problem.ProblemSimilarityVo;
@@ -89,4 +91,14 @@ public interface ProblemMath408BankService extends IService<ProblemMath408Bank> 
      * @return 问题列表信息
      */
     List<ProblemSimilarityVo> problemSearchSimilarity(List<Long> problemIdList, Long uuid);
+
+    /**
+     * 考试提交信息判题
+     *
+     * @param problemExamSubmitRequest 考试请求
+     * @param uuid 用户ID
+     * @param username 用户名
+     * @return 获取考试信息
+     */
+    ProblemExamSubmitVo problemExamSubmit(ProblemExamSubmitRequest problemExamSubmitRequest, Long uuid, String username);
 }

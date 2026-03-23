@@ -21,7 +21,30 @@ public class AIChatAlgorithmMode implements AIChatMode{
     @Override
     public List<DeepSeekMessage> doPrompt(Long problem_id, String model, Integer status, List<DeepSeekMessage> messageList, String code) {
         DeepSeekMessage deepSeekMessage = messageList.get(messageList.size() - 1);
-        String content = deepSeekMessage.getContent();
+        Object contentObj = deepSeekMessage.getContent();
+        String content;
+
+        if (contentObj instanceof String) {
+            // 情况 A：如果是纯文本模式（旧代码兼容）
+            content = (String) contentObj;
+        } else if (contentObj instanceof List) {
+            // 情况 B：如果是多模态模式（新代码）
+            // 注意：这里不能直接转成 String，因为它是 [{type:"text"...}, {type:"image"...}]
+            // 如果你只是想简单看看，可以转成 JSON 字符串打印，或者提取其中的文本
+            List<DeepSeekMessage.ContentItem> contentList = (List<DeepSeekMessage.ContentItem>) contentObj;
+
+            // 示例：提取所有文本部分拼接起来（忽略图片）
+            StringBuilder sb = new StringBuilder();
+            for (DeepSeekMessage.ContentItem item : contentList) {
+                if ("text".equals(item.getType()) && item.getText() != null) {
+                    sb.append(item.getText());
+                }
+            }
+            content = sb.toString();
+        } else {
+            content = contentObj != null ? contentObj.toString() : "";
+        }
+
 
         if (status == 1) {
             // 设定Prompt

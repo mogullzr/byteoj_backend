@@ -219,7 +219,7 @@ public class EmbeddingConvertUtil {
         return true;
     }
 
-    public List<String> parseOptionString(String input) {
+    private List<String> parseOptionString(String input) {
         List<String> result = new ArrayList<>();
         // 匹配所有 '...' 内容（支持跨行）
         Pattern pattern = Pattern.compile("'([^']*)'");

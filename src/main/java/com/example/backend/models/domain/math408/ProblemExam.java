@@ -58,6 +58,12 @@ public class ProblemExam {
      * 时间(min)
      */
     private Integer time;
+
+    /**
+     * 总分
+     */
+    private Integer total_score;
+
     /**
      * 0表示自由考试(可多次提交)，1表示开启监控(仅允许提交一次)
      */

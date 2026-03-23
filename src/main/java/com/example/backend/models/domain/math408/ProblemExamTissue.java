@@ -40,6 +40,11 @@ public class ProblemExamTissue {
     private Integer status;
 
     /**
+     * 0简答，1单选，2多选，3填空，4算法
+     */
+    private Integer type;
+
+    /**
      * 创建时间
      */
     private Date create_date;

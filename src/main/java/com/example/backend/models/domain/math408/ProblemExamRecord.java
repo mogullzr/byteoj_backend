@@ -40,6 +40,11 @@ public class ProblemExamRecord {
     private String answer;
 
     /**
+     * AI建议
+     */
+    private String ai_advise;
+
+    /**
      * 创建时间
      */
     private Date create_date;

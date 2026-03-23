@@ -15,6 +15,16 @@ public class DeepSeekRequest implements Serializable {
     private List<DeepSeekMessage> messageList;
 
     /**
+     * 温度参数
+     */
+    private Float temperature;
+
+    /**
+     *
+     */
+    private Float top_p;
+
+    /**
      * 选择模型
      * DeepSeek/V3线路一 官网不稳定，但是快;
      * DeepSeek/V3线路二 菲官网，但是稳定;
@@ -41,5 +51,4 @@ public class DeepSeekRequest implements Serializable {
      * 代码
      */
     private String code;
-
 }

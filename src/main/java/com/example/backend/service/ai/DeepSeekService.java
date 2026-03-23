@@ -15,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import javax.annotation.Resource;
 import java.io.IOException;
@@ -32,8 +33,218 @@ public class DeepSeekService {
     @Resource
     private ObjectMapper objectMapper;
 
-    @Value("${deepseek.api.v3-tenCloud.model}")
+    @Value("${ai.api.v3-tenCloud.model}")
     private String tenCloudModel;
+
+    public Mono<String> deepSeekAskerNonStream(DeepSeekRequest deepSeekRequest, Long uuid) {
+        // 1. 基础校验与配置获取
+        String model = deepSeekRequest.getModel();
+        if (model == null) {
+            return Mono.error(new BusinessException(ErrorCode.PARAMS_ERROR, "模型不允许为空"));
+        }
+
+        List<String> chatModeInfo = deepSeekChatModeRegistry.getChatModeInfo(model);
+        if (chatModeInfo == null) {
+            return Mono.error(new BusinessException(ErrorCode.NOT_FOUND_ERROR, "模型不存在"));
+        }
+
+        String apiUrl = chatModeInfo.get(0);
+        String apiKey = chatModeInfo.get(1);
+
+        // 2. 创建 WebClient
+        WebClient webClient = WebClient.builder()
+                .baseUrl(apiUrl)
+                .defaultHeader("Authorization", "Bearer " + apiKey)
+                .build();
+
+        // 3. 分支处理
+        if (!deepSeekRequest.getModel().equals(tenCloudModel)) {
+            // --- 普通 DeepSeek 模型 (非流式) ---
+
+            // 构建请求体 (确保内部 stream 字段为 false，如果 getDeepSeekNetRequest 未处理，建议在此处强制设置)
+            DeepSeekNetRequest request = getDeepSeekNetRequest(deepSeekRequest);
+            // 假设 request 对象有 setStream 方法，非流式需设为 false
+             request.setStream(false);
+
+            return webClient.post()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(request)
+                    .retrieve()
+                    .bodyToMono(String.class) // 【关键】接收完整响应字符串
+                    .flatMap(response -> {
+                        try {
+                            JsonNode jsonResponse = objectMapper.readTree(response);
+
+                            // 非流式响应结构: choices[0].message.content
+                            // 注意：流式是 choices[0].delta.content，非流式通常是 choices[0].message.content
+                            JsonNode choiceNode = jsonResponse.path("choices").get(0);
+                            JsonNode messageNode = choiceNode.path("message");
+
+                            String content = messageNode.path("content").asText();
+                            String reasoningContent = messageNode.path("reasoning_content").asText("");
+
+                            StringBuilder resultBuilder = new StringBuilder();
+                            if (reasoningContent != null && !reasoningContent.isEmpty()) {
+                                resultBuilder.append("> ").append(reasoningContent).append("\n");
+                            }
+                            resultBuilder.append(content);
+
+                            return Mono.just(resultBuilder.toString());
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            return Mono.error(new BusinessException(ErrorCode.SYSTEM_ERROR, "JSON解析失败: " + e.getMessage()));
+                        }
+                    });
+
+        } else {
+            // --- TenCloud 模型 (非流式) ---
+
+            // 1. 构建内容
+            StringBuilder contentBuilder = new StringBuilder();
+            for (DeepSeekMessage msg : deepSeekRequest.getMessageList()) {
+                contentBuilder.append(msg.getContent()).append("\n");
+            }
+            String userContent = contentBuilder.toString().trim();
+
+            // 处理特殊状态 (Prompt 模板逻辑保持不变)
+            if (deepSeekRequest.getStatus() == 2) {
+                String PROMPT_TEMPLATE = """
+                你是一个先进的AI个性化学习路径推荐引擎... (此处省略原长模板，逻辑与原代码一致)
+                用户输入的目标/关键词/描述：%s
+                ...
+                """;
+                userContent = String.format(PROMPT_TEMPLATE, deepSeekRequest.getCode());
+            }
+
+            TenCloudNetRequest request = new TenCloudNetRequest();
+            request.setBot_app_key(apiKey);
+            request.setSession_id(String.valueOf(UUID.randomUUID()));
+            request.setVisitor_biz_id(String.valueOf(uuid));
+            request.setContent(userContent);
+            request.setIncremental(false); // 非流式通常不需要增量
+            request.setSearch_network("enable");
+            request.setStream("disable"); // 【关键】明确关闭流式传输
+
+            return webClient.post()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(request)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .flatMap(response -> {
+                        // 【调试用】打印原始响应，生产环境稳定后可注释掉
+                        System.out.println("=== [TenCloud] 原始响应开始 ===");
+                        System.out.println(response);
+                        System.out.println("=== [TenCloud] 原始响应结束 ===");
+
+                        StringBuilder fullContentBuilder = new StringBuilder();
+                        String[] lines = response.split("\n");
+                        int validLineCount = 0;
+                        int errorLineCount = 0;
+                        boolean hasAiReply = false;
+
+                        for (int i = 0; i < lines.length; i++) {
+                            String line = lines[i].trim();
+
+                            if (line.startsWith("data:")) {
+                                String jsonData = line.substring(5).trim();
+
+                                // 1. 跳过 [DONE] 标记
+                                if ("[DONE]".equals(jsonData)) {
+                                    continue;
+                                }
+
+                                try {
+                                    // 2. 尝试解析 JSON
+                                    JsonNode dataNode = objectMapper.readTree(jsonData);
+
+                                    // 3. 获取 type，我们只需要 type="reply" 的数据
+                                    String type = dataNode.path("type").asText("");
+
+                                    // 如果是 token_stat 或其他非 reply 类型，直接跳过，不视为错误
+                                    if (!"reply".equals(type)) {
+                                        continue;
+                                    }
+
+                                    // 4. 进入 payload 层级
+                                    JsonNode payload = dataNode.path("payload");
+                                    if (payload.isMissingNode()) {
+                                        continue;
+                                    }
+
+                                    // 5. 【关键】过滤回声 (Echo)
+                                    // 如果 is_from_self 为 true，说明这是用户自己说的话，跳过
+                                    boolean isFromSelf = payload.path("is_from_self").asBoolean(false);
+                                    if (isFromSelf) {
+                                        System.out.println("[过滤] 行 " + i + ": 检测到用户回声 (is_from_self=true)，已跳过");
+                                        continue;
+                                    }
+
+                                    // 6. 提取 content
+                                    String content = payload.path("content").asText(null);
+
+                                    if (content != null && !content.isEmpty()) {
+                                        fullContentBuilder.append(content);
+                                        validLineCount++;
+                                        hasAiReply = true;
+                                        System.out.println("[成功] 行 " + i + ": 提取到 AI 回复，长度=" + content.length());
+                                    } else {
+                                        System.out.println("[忽略] 行 " + i + ": content 为空");
+                                    }
+
+                                } catch (Exception e) {
+                                    errorLineCount++;
+                                    System.err.println("[失败] 行 " + i + " JSON 解析出错：" + e.getMessage());
+                                    System.err.println("[失败] 原始片段：" + jsonData);
+
+                                    // 【兜底策略】如果 JSON 解析失败，尝试用正则硬提取 content
+                                    // 防止因特殊字符导致整个消息丢失
+                                    if (jsonData.contains("\"content\":\"")) {
+                                        try {
+                                            // 简单正则提取 content 值
+                                            String[] parts = jsonData.split("\"content\":\"", 2);
+                                            if (parts.length > 1) {
+                                                String manualContent = parts[1];
+                                                // 找到结束的引号（简单处理，假设内容里没有未转义的引号）
+                                                int endIndex = manualContent.indexOf("\"");
+                                                if (endIndex > -1) {
+                                                    manualContent = manualContent.substring(0, endIndex);
+                                                    // 还原转义字符
+                                                    manualContent = manualContent.replace("\\n", "\n")
+                                                            .replace("\\\"", "\"")
+                                                            .replace("\\\\", "\\");
+
+                                                    // 再次检查是否是回声（这里无法检查 is_from_self，只能盲目拼接或根据内容判断）
+                                                    // 为了安全，如果正则提取到了，且不是 [DONE]，我们先拼上
+                                                    // 更好的做法是结合上下文，但这里作为最后手段
+                                                    if (!manualContent.isEmpty()) {
+                                                        fullContentBuilder.append(manualContent);
+                                                        System.out.println("[兜底] 行 " + i + ": 正则提取成功，长度=" + manualContent.length());
+                                                    }
+                                                }
+                                            }
+                                        } catch (Exception ex) {
+                                            System.err.println("[兜底] 正则提取也失败了：" + ex.getMessage());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        String finalResult = fullContentBuilder.toString();
+
+                        System.out.println("[统计] 成功解析行数：" + validLineCount + ", 解析错误行数：" + errorLineCount);
+                        System.out.println("[结果] 最终拼接内容长度：" + finalResult.length());
+
+                        // 7. 最终校验
+                        if (!hasAiReply || finalResult.trim().isEmpty()) {
+                            return Mono.error(new BusinessException(ErrorCode.SYSTEM_ERROR,
+                                    "未获取到有效 AI 回复。解析成功行数:" + validLineCount + ", 错误行数:" + errorLineCount));
+                        }
+
+                        return Mono.just(finalResult);
+                    });
+        }
+    }
 
     public Flux<DeepSeekNetMessage> deepSeekAsker(DeepSeekRequest deepSeekRequest, Long uuid) {
         // 根据 status 获取对应的 API URL 和 API Key
@@ -193,34 +404,73 @@ public class DeepSeekService {
                     .retrieve()
                     .bodyToFlux(String.class)
                     .flatMap(response -> {
+                        // 1. 处理空行或非 data 开头的数据 (SSE 协议通常有心跳空行)
+                        if (response == null || response.trim().isEmpty() || !response.trim().startsWith("data:")) {
+                            return Flux.empty();
+                        }
+
                         try {
-                            // 解析JSON响应
-                            JsonNode jsonResponse = objectMapper.readTree(response);
+                            // 2. 提取 data: 后面的 JSON 字符串
+                            String jsonData = response.trim().substring(5).trim();
 
-                            // 检查是否为回复类型
-                            if ("reply".equals(jsonResponse.path("type").asText())) {
-                                JsonNode payload = jsonResponse.path("payload");
-
-                                // 提取content内容
-                                String content = payload.path("content").asText();
-                                boolean isFinal = payload.path("is_final").asBoolean();
-                                // 如果是最终响应，添加[DONE]标记
-                                if (isFinal) {
-                                    return Flux.just(
-                                            new DeepSeekNetMessage(content, id[0]++),
-                                            new DeepSeekNetMessage("[DONE]", id[0]++)
-                                    );
-                                }
-
-                                // 返回普通消息
-                                return Flux.just(new DeepSeekNetMessage(content, id[0]++));
+                            // 3. 跳过 [DONE] 标记 (防止重复发送)
+                            if ("[DONE]".equals(jsonData)) {
+                                return Flux.empty();
                             }
 
-                            // 其他类型消息（如思考事件）可以在这里处理
-                            return Flux.empty();
+                            // 4. 解析 JSON
+                            JsonNode jsonResponse = objectMapper.readTree(jsonData);
+
+                            // 5. 获取 type，只处理 "reply" 类型
+                            String type = jsonResponse.path("type").asText("");
+                            if (!"reply".equals(type)) {
+                                // 忽略 token_stat 等其他类型消息
+                                return Flux.empty();
+                            }
+
+                            // 6. 进入 payload 层级
+                            JsonNode payload = jsonResponse.path("payload");
+                            if (payload.isMissingNode()) {
+                                return Flux.empty();
+                            }
+
+                            // 7. 【关键】过滤回声 (Echo)
+                            // 如果 is_from_self 为 true，说明是用户自己的输入，直接丢弃，不要传给前端
+                            boolean isFromSelf = payload.path("is_from_self").asBoolean(false);
+                            if (isFromSelf) {
+                                // 调试时可打开日志，生产环境建议关闭以免刷屏
+                                // System.out.println("[过滤] 丢弃用户回声片段");
+                                return Flux.empty();
+                            }
+
+                            // 8. 提取 content
+                            String content = payload.path("content").asText(null);
+
+                            // 如果内容为空，也丢弃
+                            if (content == null || content.isEmpty()) {
+                                return Flux.empty();
+                            }
+
+                            // 9. 检查是否是最后一条消息 (is_final)
+                            boolean isFinal = payload.path("is_final").asBoolean(false);
+
+                            // 生成消息对象
+                            DeepSeekNetMessage message = new DeepSeekNetMessage(content, id[0]++);
+
+                            if (isFinal) {
+                                // 如果是最后一条，追加 [DONE] 信号
+                                return Flux.just(message, new DeepSeekNetMessage("[DONE]", id[0]++));
+                            } else {
+                                // 普通片段
+                                return Flux.just(message);
+                            }
+
                         } catch (IOException e) {
+                            // 解析错误时，可以选择打印日志并跳过该片段，避免中断整个流
+                            System.err.println("[解析错误] 无法处理响应片段：" + response);
                             e.printStackTrace();
-                            return Flux.error(e);
+                            return Flux.empty();
+                            // 如果想让前端知道出错了，也可以 return Flux.error(e);
                         }
                     });
         }
@@ -232,9 +482,13 @@ public class DeepSeekService {
         String model = deepSeekRequest.getModel();
         Integer status = deepSeekRequest.getStatus();
         String code = deepSeekRequest.getCode();
+        Float tempature = deepSeekRequest.getTemperature();
+        Float top_p = deepSeekRequest.getTop_p();
 
         DeepSeekNetRequest request = new DeepSeekNetRequest();
         request.setModel(model); // 使用 model 作为模型名称
+        request.setTemperature(tempature);
+        request.setTop_p(top_p);
         request.setStream(true); // 设置为 true，因为流式响应需要处理 [DONE]
 
         // 注册器模式

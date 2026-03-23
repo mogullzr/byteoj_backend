@@ -9,5 +9,7 @@ import java.util.List;
 public class DeepSeekNetRequest {
     private String model;
     private Boolean stream;
+    private Float temperature;
+    private Float top_p;
     private List<DeepSeekMessage> messages;
 }

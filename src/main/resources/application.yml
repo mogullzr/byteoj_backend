@@ -31,7 +31,7 @@ spring:
     #    解决升级Spring Boot2.6后,因依赖循环引用导致启动时报错的问题
     allow-circular-references: true
   profiles:
-    active: dev
+    active: local
     name: backend
   datasource:
     dynamic:
@@ -191,24 +191,28 @@ hanlp:
 
 ROLE_MAX:
   UUID: 9
-deepseek:
+ai:
   api:
     v3-1:
-      model: ${hm.deepseek.api.v3-1.model}
-      url: ${hm.deepseek.api.v3-1.url}
-      key: ${hm.deepseek.api.v3-1.key}
+      model: ${hm.ai.api.v3-1.model}
+      url: ${hm.ai.api.v3-1.url}
+      key: ${hm.ai.api.v3-1.key}
     v3-2:
-      model: ${hm.deepseek.api.v3-2.model}
-      url: ${hm.deepseek.api.v3-2.url}
-      key: ${hm.deepseek.api.v3-2.key}
+      model: ${hm.ai.api.v3-2.model}
+      url: ${hm.ai.api.v3-2.url}
+      key: ${hm.ai.api.v3-2.key}
     r1_1:
-      model: ${hm.deepseek.api.r1_1.model}
-      url: ${hm.deepseek.api.r1_1.url}
-      key: ${hm.deepseek.api.r1_1.key}
+      model: ${hm.ai.api.r1_1.model}
+      url: ${hm.ai.api.r1_1.url}
+      key: ${hm.ai.api.r1_1.key}
     v3-tenCloud:
-      model: ${hm.deepseek.api.v3-tenCloud.model}
-      url: ${hm.deepseek.api.v3-tenCloud.url}
-      key: ${hm.deepseek.api.v3-tenCloud.key}
+      model: ${hm.ai.api.v3-tenCloud.model}
+      url: ${hm.ai.api.v3-tenCloud.url}
+      key: ${hm.ai.api.v3-tenCloud.key}
+    Qwen-VL:
+      model: ${hm.ai.api.Qwen-VL.model}
+      url: ${hm.ai.api.Qwen-VL.url}
+      key: ${hm.ai.api.Qwen-VL.key}
 
 domain:
   url_1: https://www.byteoj.com/ # 自己的域名地址，替换一下
