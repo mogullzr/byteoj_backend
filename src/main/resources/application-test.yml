@@ -1,39 +1,60 @@
 hm:
   mail:
-    username: "xxxxxxx" # QQ邮箱
-    password: "xxxxxxxxx"  # 这里就是我前面提到的授权码了
+    username: "xxxxxxxxxxxx"  # 你的QQ号
+    password: "xxxxxxxxxxxx"  # 这里就是我前面提到的授权码了
   db:
     host: localhost
-    name: root # 用户名
-    table: xxxxxx # 表名
-    pwd: "xxxxxxxxxxxx" # 密码，使用字符串可防止SQL注入
+    name: root
+    table: byteoj
+    pwd: "xxxxxxxxxxxx"
+  pg:
+    host: localhost
+    db: postgres
+    user: postgres
+    pwd: "xxxxxxxxxxxx"
   redis:
     host: 127.0.0.1
-    pwd: "xxxxxxxxxx" # 密码，使用字符串可防止SQL注入
-  deepseek:
+    pwd: "xxxxxxxxxxxx" # redis密码
+  ai:
     api:
       v3-1:
-        model: deepseek-chat # 这个是具体的模型名称
-        url: https://api.deepseek.com/chat/completions # 官网的API接口，自己的没钱了
-        key: xxxxxx # v3_1模型
+        model: deepseek-chat
+        url: https://api.deepseek.com/chat/completions
+        key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # deepseek官网的密钥
       v3-2:
-        model: deepseek-ai/DeepSeek-V3 # 这个是具体的模型
-        url: https://api.siliconflow.cn/v1/chat/completions # 这个是siliconflow的API接口
-        key: xxxxx # v3-2模型的密钥
+        model: deepseek-ai/DeepSeek-V3
+        url: https://api.siliconflow.cn/v1/chat/completions
+        key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 轨迹流动密钥
       r1_1:
-        model: deepseek-ai/DeepSeek-R1-Distill-Llama-70B # 这个是具体的模型
-        url: https://api.siliconflow.cn/v1/chat/completions # 这个是siliconflow的API接口
-        key: xxxxxxxxx # r1_1模型的密钥
+        model: deepseek-ai/DeepSeek-R1-Distill-Llama-70B
+        url: https://api.siliconflow.cn/v1/chat/completions
+        key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 硅基流动密钥
+      v3-tenCloud:
+        model: deepseek-v3-tenCloud
+        url: https://wss.lke.cloud.tencent.com/v1/qbot/chat/sse
+        key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 腾讯云智能体开发平台的密钥
+      Qwen-VL:
+        model: Qwen/Qwen2.5-VL-72B-Instruct
+        url: https://api.siliconflow.cn/v1/chat/completions
+        key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 轨迹流动密钥
   aliyun:
     oss:
-      endpoint: xxxxxxxxxx # 阿里云OSS地址，这里看你自己的OSS选择
-      accessKeyId: xxxxxxxxx # 阿里云OSS账号
-      accessKeySecret: xxxxxxxxx # 阿里云OSS密钥
+      endpoint: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 阿里云OSS地址，这里看你自己的OSS选择
+      accessKeyId: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 阿里云OSS账号
+      accessKeySecret: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 阿里云OSS密钥
       #        bucket可以由控制台创建，也可以使用java代码创建
-      bucketName: xxxxxxx #阿里云OSS上的存储块bucket名字
+      bucketName: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" #阿里云OSS上的存储块bucket名字
     vod:
-      accessKeyId: xxxxxxxxxxxxxxxxx # 阿里云vod的OSS账号
-      accessKeySecret: xxxxxxxxxxxxx # 阿里云void的OSS密钥
+      accessKeyId: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 阿里云vod的OSS账号
+      accessKeySecret: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 阿里云void的OSS密钥
+    embedding:
+      model: "text-embedding-v4"
+      url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings' # 阿里云的百请求地址
+      accessKeyId: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' # # 阿里云的百炼密钥
+
+  rabbitmq:
+    username: "xxxxx" # rabbitmq的账号
+    password: "xxxxx" # rabbitmq的密码
 avatar:
   default: "xxxxx" # 替换为自己设定的默认头像地址
 baidu:
