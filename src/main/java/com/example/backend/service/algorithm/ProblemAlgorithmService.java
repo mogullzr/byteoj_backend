@@ -219,7 +219,18 @@ public interface ProblemAlgorithmService extends IService<ProblemAlgorithmBank> 
      */
     Judge problemAlgorithmSubmit(JudgeRequest judgeRequest, Long uuid);
 
-    /**]
+    /**
+     * 提交代码产生记录（指定沙箱）
+     * 支持多沙箱负载均衡
+     *
+     * @param judgeRequest 调试信息
+     * @param uuid 用户id
+     * @param sandboxUrl 沙箱地址
+     * @return 测试记录
+     */
+    Judge problemAlgorithmSubmitWithSandbox(JudgeRequest judgeRequest, Long uuid, String sandboxUrl);
+
+    /**
      * 返回当前用户上一次访问题目的链接
      *
      * @param uuid

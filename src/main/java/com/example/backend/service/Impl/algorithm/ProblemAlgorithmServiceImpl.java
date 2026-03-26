@@ -85,6 +85,11 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         HttpGlobalConfig.setTimeout(30000);
         log.info("[ProblemAlgorithmServiceImpl] HTTP 超时配置已设置: 连接5s, 读取30s");
     }
+
+    // 🔥 ThreadLocal 存储当前请求的沙箱 URL（支持多沙箱负载均衡）
+    private static final ThreadLocal<String> currentSandboxUrl = new ThreadLocal<>();
+    private static final String DEFAULT_SANDBOX_URL = "http://101.43.48.120:6048";
+
     @Resource
     private VodUtils vodUtils;
     @Resource
@@ -604,7 +609,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
             data.put("cpuLimit", time_used * 3000000000L);
             fileList.add(data);
 
-            HttpResponse response = HttpRequest.post("http://101.43.48.120:6048/build")
+            HttpResponse response = HttpRequest.post(getCurrentSandboxUrl() + "/build")
                     .header("Content-Type", "application/json")  // 设置 Content-Type 为 application/json
                     .body(JSONUtil.toJsonStr(fileList))  // 将参数 Map 转换为 JSON 字符串
                     .execute();  // 执行请求
@@ -644,7 +649,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
                 mapList.add(paramMap);
             });
 
-            response = HttpRequest.post("http://101.43.48.120:6048/exec")
+            response = HttpRequest.post(getCurrentSandboxUrl() + "/exec")
                     .header("Content-Type", "application/json")  // 设置 Content-Type 为 application/json
                     .body(JSONUtil.toJsonStr(mapList))  // 将参数 Map 转换为 JSON 字符串
                     .execute();  // 执行请求
@@ -668,7 +673,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
             fileIdInfo.put("fileId", fileId);
             fileIdList.add(fileIdInfo);
 
-            response = HttpRequest.post("http://101.43.48.120:6048/delete")
+            response = HttpRequest.post(getCurrentSandboxUrl() + "/delete")
                     .header("Content-Type", "application/json")  // 设置 Content-Type 为 application/json
                     .body(JSONUtil.toJsonStr(fileIdList))  // 将参数 Map 转换为 JSON 字符串
                     .execute();  // 执行请求
@@ -688,7 +693,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
                 mapList.add(paramMap);
             });
 
-            HttpResponse response = HttpRequest.post("http://101.43.48.120:6048/")
+            HttpResponse response = HttpRequest.post(getCurrentSandboxUrl() + "/")
                     .header("Content-Type", "application/json")  // 设置 Content-Type 为 application/json
                     .body(JSONUtil.toJsonStr(mapList))  // 将参数 Map 转换为 JSON 字符串
                     .execute();  // 执行请求
@@ -859,7 +864,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
             paramMap.put("cpuLimit", time_used * 3);
             fileList.add(paramMap);
 
-            response = HttpRequest.post("http://101.43.48.120:6048/build")
+            response = HttpRequest.post(getCurrentSandboxUrl() + "/build")
                     .header("Content-Type", "application/json")
                     .body(JSONUtil.toJsonStr(fileList))
                     .execute();
@@ -896,7 +901,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
                 mapList.add(Param);
             }));
             // 开始正式运行代码
-            response = HttpRequest.post("http://101.43.48.120:6048/exec")
+            response = HttpRequest.post(getCurrentSandboxUrl() + "/exec")
                     .header("Content-Type", "application/json")
                     .body(JSONUtil.toJsonStr(mapList))
                     .execute();
@@ -915,7 +920,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
                 mapList.add(Param);
             }));
 
-            response = HttpRequest.post("http://101.43.48.120:6048/")
+            response = HttpRequest.post(getCurrentSandboxUrl() + "/")
                     .header("Content-Type", "application/json")  // 设置 Content-Type 为 application/json
                     .body(JSONUtil.toJsonStr(mapList))  // 将参数 Map 转换为 JSON 字符串
                     .execute();  // 执行请求
@@ -946,7 +951,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
                 paramMap.put("cpuLimit", time_used * 10);
                 fileList.add(paramMap);
 
-                response = HttpRequest.post("http://101.43.48.120:6048/build")
+                response = HttpRequest.post(getCurrentSandboxUrl() + "/build")
                         .header("Content-Type", "application/json")
                          .body(JSONUtil.toJsonStr(fileList))
                         .execute();
@@ -991,7 +996,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
                         mapList.add(param);
                     });
                 // 开始正式运行代码
-                response = HttpRequest.post("http://101.43.48.120:6048/exec")
+                response = HttpRequest.post(getCurrentSandboxUrl() + "/exec")
                         .header("Content-Type", "application/json")
                         .body(JSONUtil.toJsonStr(mapList))
                         .execute();
@@ -1321,7 +1326,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
             fileIdInfo.put("fileId", fileId);
             fileIdList.add(fileIdInfo);
 
-            response = HttpRequest.post("http://101.43.48.120:6048/delete")
+            response = HttpRequest.post(getCurrentSandboxUrl() + "/delete")
                     .header("Content-Type", "application/json")  // 设置 Content-Type 为 application/json
                     .body(JSONUtil.toJsonStr(fileIdList))  // 将参数 Map 转换为 JSON 字符串
                     .execute();  // 执行请求
@@ -2176,5 +2181,24 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 
         queryWrapper.eq("problem_id", problem_id);
         return problemDailyInfoMapper.update(problemDailySelected, queryWrapper) == 1;
+    }
+
+    /**
+     * 获取当前请求的沙箱 URL
+     */
+    private static String getCurrentSandboxUrl() {
+        String url = currentSandboxUrl.get();
+        return url != null ? url : DEFAULT_SANDBOX_URL;
+    }
+
+    @Override
+    public Judge problemAlgorithmSubmitWithSandbox(JudgeRequest judgeRequest, Long uuid, String sandboxUrl) {
+        try {
+            currentSandboxUrl.set(sandboxUrl);
+            log.info("[多沙箱] 使用沙箱: {}", sandboxUrl);
+            return problemAlgorithmSubmit(judgeRequest, uuid);
+        } finally {
+            currentSandboxUrl.remove();
+        }
     }
 }

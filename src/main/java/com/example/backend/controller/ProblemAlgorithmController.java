@@ -39,6 +39,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.PostConstruct;
+
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -47,11 +49,22 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
 @RequestMapping("/problem/algorithm")
 @Slf4j
 public class ProblemAlgorithmController {
+    
+    // 启动时打印沙箱配置
+    @PostConstruct
+    public void init() {
+        log.info("[多沙箱配置] 沙箱数量：{}", RabbitMQConfig.SANDBOX_COUNT);
+        for (int i = 0; i < RabbitMQConfig.SANDBOX_COUNT; i++) {
+            log.info("[多沙箱配置] 沙箱 {}: {} -> {}", 
+                i, RabbitMQConfig.QUEUE_NAMES[i], RabbitMQConfig.SANDBOX_URLS[i]);
+        }
+    }
     @Autowired
     ProblemAlgorithmBankMapper problemAlgorithmBankMapper;
 
@@ -76,6 +89,16 @@ public class ProblemAlgorithmController {
 
     // 🔥 使用固定线程池替代 new Thread()，避免线程资源耗尽
     private final ExecutorService judgeSubmitExecutor = Executors.newFixedThreadPool(10);
+    
+    // 🔥 轮询计数器：用于负载均衡分配沙箱
+    private final AtomicInteger roundRobinCounter = new AtomicInteger(0);
+    
+    /**
+     * 获取下一个沙箱索引（纯轮询）
+     */
+    private int getNextSandboxIndex() {
+        return Math.abs(roundRobinCounter.getAndIncrement() % RabbitMQConfig.SANDBOX_COUNT);
+    }
 
     @PostMapping("/search")
     @AccessLimit(seconds = 1, maxCount = 10, needLogin = false)
@@ -141,7 +164,6 @@ public class ProblemAlgorithmController {
         ProblemAlgorithmBankVo result = problemAlgorithmService.competitionSearchProblem(competition_id, index, uuid);
         return ResultUtils.success(result);
     }
-//    @AccessLimit(seconds=5, maxCount=50, needLogin=false)
     @PostMapping("/search/problemId")
     public BaseResponse<ProblemAlgorithmBankVo> problemAlgorithmSearchByProblemId(Integer problem_id, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -153,7 +175,7 @@ public class ProblemAlgorithmController {
     }
 
     @PostMapping("/search/difficulty/sum")
-    public BaseResponse<Long>  problemAlgorithmSearchSumByDifficulty(String difficulty, HttpServletRequest httpServletRequest) {
+    public BaseResponse<Long> problemAlgorithmSearchSumByDifficulty(String difficulty, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null || difficulty == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
@@ -303,8 +325,8 @@ public class ProblemAlgorithmController {
         if (loginUser != null) {
             uuid = loginUser.getUuid();
         }
-//        Judge result = problemAlgorithmService.problemAlgorithmSubmit(judgeRequest, uuid);
-// 生成taskId
+
+        // 生成taskId
         String taskId = UUID.randomUUID().toString();
 
         // 封装消息
@@ -313,38 +335,43 @@ public class ProblemAlgorithmController {
         message.setJudgeRequest(judgeRequest);
         message.setUserUuid(uuid);
         message.setCreateTime(new Date());
+        
+        // 🔥 轮询分配沙箱：实现负载均衡
+        int sandboxIndex = getNextSandboxIndex();
+        message.setSandboxIndex(sandboxIndex);
+        
+        // 获取对应的路由键
+        String routingKey = RabbitMQConfig.ROUTING_KEYS[sandboxIndex];
+        
+        log.info("[提交判题] 任务分配到沙箱 {}, counter={}, taskId: {}", sandboxIndex, roundRobinCounter.get(), taskId);
 
         // 立即返回初始状态
         JudgeTask initialJudge = new JudgeTask();
         initialJudge.setTaskId(taskId);
         initialJudge.setStatus("Pending");
         initialJudge.setUserUuid(uuid);
-        initialJudge.setMessage("任务已提交，等待处理...");
+        initialJudge.setMessage("任务已提交，等待处理（沙箱" + sandboxIndex + "）...");
         initialJudge.setSubmitTime(new Date());
 
         // 🔥 关键改动：立即推送 Pending 状态到 WebSocket
-        // 这样前端订阅时就能收到第一条消息，不会错过后续的 Running 状态
         try {
             messagingTemplate.convertAndSend("/topic/judge/" + taskId, initialJudge);
             log.info("[提交判题] 推送 Pending 状态成功, taskId: {}", taskId);
         } catch (Exception e) {
             log.warn("[提交判题] 推送 Pending 状态失败, taskId: {}", taskId, e);
-            // 推送失败不影响提交，继续处理
         }
 
         // 发送到RabbitMQ（使用线程池，避免 new Thread() 资源耗尽）
         judgeSubmitExecutor.submit(() -> {
             try {
                 Thread.sleep(100);  // 延迟 100ms，让前端有时间建立订阅
-                rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY, message);
-                log.info("[提交判题] 任务已发送到队列, taskId: {}", taskId);
+                // 🔥 使用轮询分配的路由键，发送到对应沙箱的队列
+                rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, routingKey, message);
+                log.info("[提交判题] 任务已发送到队列 {} (沙箱{}), taskId: {}", routingKey, sandboxIndex, taskId);
             } catch (Exception e) {
                 log.error("[提交判题] 发送到队列失败, taskId: {}", taskId, e);
             }
         });
-
-        // 可选：存入DB初始记录
-        // judgeMapper.insertInitial(initialJudge);
 
         return ResultUtils.success(initialJudge);
     }
@@ -355,6 +382,7 @@ public class ProblemAlgorithmController {
         AliyunVodVo result = problemAlgorithmService.AliyunVodGet(problem_id);
         return ResultUtils.success(result);
     }
+    
     @PostMapping("/record/add")
     public BaseResponse<Boolean> problemAlgorithmRecordAdd(@RequestBody JudgeRequest judgeRequest, HttpServletRequest httpServletRequest){
         if(httpServletRequest == null) {
@@ -454,6 +482,7 @@ public class ProblemAlgorithmController {
 
         return ResultUtils.success(result);
     }
+    
     @PostMapping("/admin/testCase/add")
     public BaseResponse<Boolean> problemAlgorithmTestCaseAdd(@RequestBody List<ProblemAlgorithmTestCaseRequest> problemAlgorithmTestCaseRequestList, Long problem_id, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -487,6 +516,7 @@ public class ProblemAlgorithmController {
         return ResultUtils.success(result);
 
     }
+    
     @AccessLimit(seconds = 3, maxCount = 20, needLogin = true)
     @GetMapping("/search/problemLast")
     public BaseResponse<ProblemUserLastVo> problemAlgorithmUserLast(HttpServletRequest httpServletRequest){

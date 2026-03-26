@@ -11,4 +11,10 @@ public class JudgeTaskMessage implements Serializable {
     private JudgeRequest judgeRequest;
     private Long userUuid;
     private Date createTime;
+    
+    /**
+     * 沙箱索引（0, 1, 2，3，4, 5, 6, 7, 8, 9）
+     * 用于标识该任务应该由哪个沙箱容器处理
+     */
+    private Integer sandboxIndex;
 }
