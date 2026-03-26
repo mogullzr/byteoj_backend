@@ -1,3 +1,5 @@
+domain:
+  url_1: "http://localhost:8080/user/complete"
 hm:
   mail:
     username: "xxxxxxxxxxxx"  # 你的QQ号
@@ -65,6 +67,10 @@ qq:
   app_id: "xxxxxxxxx" # 申请开发应用之后的app_id.注意：至少需要一个已经备案的域名。
   app_key: "xxxxxxxxxx" # 申请开发应用之后的app_key，至少需要一个已经备案的域名。
   app_redirect_url: "xxxxxxxxxxxx" # 自己设置的回调函数地址
+weChat:
+  mch_id: "xxxxxxxxxxxxxxxx" # YunGouOS的client_id
+  callback_url: "http://localhost:7091/api/user/weChat/login" # 回调获取用户信息
+  sign: "xxxxxxxxxxxx" # 签名密钥
 lantu: # 蓝兔支付——仅微信支付
   mch_id: "xxxxxxxx" # 微信商户管理的商户号
   key: "xxxxxxxxxx" # 微信商户管理的商户密钥

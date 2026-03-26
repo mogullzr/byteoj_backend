@@ -215,7 +215,7 @@ ai:
       key: ${hm.ai.api.Qwen-VL.key}
 
 domain:
-  url_1: https://www.byteoj.com/ # 自己的域名地址，替换一下
+  url_1: ${domain.url_1} # 自己的域名地址，替换一下
 avatar:
   default: ${avatar.default}
 log:
@@ -244,6 +244,10 @@ qq:
   app_id: ${qq.app_id}
   app_key: ${qq.app_key}
   app_redirect_url: ${qq.app_redirect_url}
+weChat:
+  mch_id: ${weChat.mch_id}
+  callback_url: ${weChat.callback_url}
+  sign: ${weChat.sign}
 lantu:
   mch_id: ${lantu.mch_id}
   key: ${lantu.key}

@@ -95,6 +95,11 @@ public class User implements Serializable {
     private Date birth;
 
     /**
+     * OpenId(微信凭证)
+     */
+    private String open_id;
+
+    /**
      * 创建时间
      */
     private Date create_time;

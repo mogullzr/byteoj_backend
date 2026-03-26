@@ -29,9 +29,12 @@ import com.example.backend.utils.EmailSendUtil;
 import com.example.backend.utils.HttpClientUtils;
 import com.example.backend.utils.OssUtils;
 import com.example.backend.utils.RedisUtils;
+import com.yungouos.pay.entity.WxOauthInfo;
+import com.yungouos.pay.wxapi.WxApi;
 import io.swagger.models.auth.In;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.amqp.utils.MapBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -121,6 +124,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Value("${qq.app_redirect_url}")
     private String app_redirect_url;
+
+    @Value("${weChat.callback_url}")
+    private String weChat_callback_url;
+
+    @Value("${weChat.mch_id}")
+    private String weChat_mch_id;
+
+    @Value("${weChat.key}")
+    private String weChat_key;
+
     @Autowired
     private PostsMapper postsMapper;
 
@@ -460,12 +473,64 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         String school = userModifyRequest.getSchool();
         Date birth = userModifyRequest.getBirth();
         String url = userModifyRequest.getUrl();
+        String password = userModifyRequest.getPassword();
+        String confirm_password = userModifyRequest.getConfirm_password();
+
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("uuid", uuid);
         User pre_user = userMapper.selectOne(queryWrapper);
 
         if (pre_user == null) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "系统错误");
+        }
+
+        // 进行QQ邮箱格式正确性校验
+        if (email == null || email.isEmpty()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "邮箱格式不正确");
+        } else {
+            Pattern patternQQ = Pattern.compile("^[a-zA-z0-9_\\-]+@qq\\.com$");
+            Matcher matcherQQ = patternQQ.matcher(email);
+            if (!matcherQQ.find()){
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "QQ邮箱格式不正确");
+            }
+        }
+
+
+        if (pre_user.getPassword() == null || pre_user.getPassword().isEmpty()) {
+            if (password.length() < 8 || confirm_password.length() < 8) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码不能少于8位");
+            }
+
+            if (!password.equals(confirm_password)) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "两次输入密码不一致");
+            }
+
+            // 查一查，QQ对应的账号是否存在
+            QueryWrapper<User> queryWrapper2 = new QueryWrapper<>();
+            queryWrapper2.eq("email", email);
+
+            User user = userMapper.selectOne(queryWrapper2);
+            if (user == null) {
+                pre_user.setPassword(DigestUtils.md5DigestAsHex((SALT + password).getBytes()));
+                pre_user.setEmail(email);
+
+                return userMapper.update(pre_user, queryWrapper) == 1;
+            } else if (user.getOpen_id() == null || user.getOpen_id().isEmpty()) {
+                user.setOpen_id(pre_user.getOpen_id());
+                user.setPassword(DigestUtils.md5DigestAsHex((SALT + password).getBytes()));
+                user.setAvatar(pre_user.getAvatar());
+
+                userMapper.update(user, queryWrapper2);
+                userMapper.delete(queryWrapper);
+
+                HttpSession session = httpServletRequest.getSession();
+                session.setAttribute(USER_LOGIN_STATE, user);
+                session.setMaxInactiveInterval(3600 * 24 * 7);
+
+                return true;
+            } else {
+                throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "QQ已绑定微信，不可重复绑定");
+            }
         }
 
         if (StringUtils.isAnyBlank(username, gender)) {
@@ -484,34 +549,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "个人简介字数不可超过100字！！");
         }
 
+        pre_user.setUuid(uuid);
+        pre_user.setAccount(account);
+        pre_user.setUsername(username);
+        pre_user.setAvatar(avatar);
+        pre_user.setTags(Objects.equals(String.valueOf(tags), "null") ? "" : String.valueOf(tags));
+        pre_user.setHobby(hobby);
+        pre_user.setEmail(email);
+        pre_user.setPhone(phone);
+        pre_user.setGender(gender);
+        pre_user.setSchool(school);
+        pre_user.setProfile(profile);
+        pre_user.setBirth(birth);
+        pre_user.setUpdate_time(new Date());
+        pre_user.setUrl(url);
 
-        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
-
-        userQueryWrapper.eq("uuid", uuid);
-        User user = userMapper.selectOne(userQueryWrapper);
-
-        user.setUuid(uuid);
-        user.setAccount(account);
-        user.setUsername(username);
-        user.setAvatar(avatar);
-        user.setTags(Objects.equals(String.valueOf(tags), "null") ? "" : String.valueOf(tags));
-        user.setHobby(hobby);
-        user.setEmail(email);
-        user.setPhone(phone);
-        user.setGender(gender);
-        user.setSchool(school);
-        user.setProfile(profile);
-        user.setRating(user.getRating());
-        user.setRole(user.getRole());
-        user.setBirth(birth);
-        user.setCreate_time(user.getCreate_time());
-        user.setUpdate_time(new Date());
-        user.setReadings(user.getReadings());
-        user.setUrl(url);
-
-        userMapper.update(user, userQueryWrapper);
-
-        return true;
+        return userMapper.updateById(pre_user) == 1;
     }
 
     @Override
@@ -1108,6 +1161,62 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 //            session.setMaxInactiveInterval(3600 * 24 * 7);
 //            safetyUser.setSessionId(httpServletRequest.getRequestedSessionId());
             return true;
+    }
+
+    @Override
+    public String getWeChatUrl() {
+        JSONObject params = new JSONObject();
+
+        return WxApi.getWxOauthUrl(weChat_mch_id,
+                weChat_callback_url,
+                "open-url",
+                params,
+                weChat_key
+        );
+    }
+
+    @Override
+    public void userWeChatLogin(String code, HttpServletRequest request) {
+        WxOauthInfo wxOauthInfo = WxApi.getWxOauthInfo(
+                weChat_mch_id,
+                code,
+                weChat_key
+        );
+        String openId = wxOauthInfo.getOpenId();
+
+        // 查看数据库是否有对应的微信用户
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("open_id", openId);
+        User user = userMapper.selectOne(queryWrapper);
+
+        // 1.1 没有对应得微信用户
+        if (user == null) {
+            user = new User();
+            user.setGender("男性");
+            user.setAccount(wxOauthInfo.getWxUserInfo().getNickname());
+            user.setUsername(wxOauthInfo.getWxUserInfo().getNickname());
+            user.setRating(1200);
+            user.setAvatar(wxOauthInfo.getWxUserInfo().getHeadimgurl());
+            user.setOpen_id(openId);
+            user.setRole(1);
+            userMapper.insert(user);
+        }
+
+        // 9.设置权限
+        UserRoleRelation userRoleRelation = new UserRoleRelation();
+        userRoleRelation.setUuid(user.getUuid());
+        userRoleRelation.setRole_id(12);
+
+        userRoleRelationMapper.insert(userRoleRelation);
+
+//        UserVo safetyUser = getSafetyUser(user);
+        // 1.2 有对应得微信用户
+        HttpSession session = request.getSession();
+        session.setAttribute(USER_LOGIN_STATE, user);
+        session.setMaxInactiveInterval(3600 * 24 * 7);
+
+
+//        safetyUser.setSessionId(request.getRequestedSessionId());
     }
 
     // 解析QQ返回的字符串（如：access_token=xxx&expires_in=7776000）

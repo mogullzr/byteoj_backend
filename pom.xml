@@ -15,6 +15,11 @@
         <maven.plugin.validation>DEFAULT</maven.plugin.validation>
     </properties>
     <dependencies>
+        <dependency>
+            <groupId>com.yungouos.pay</groupId>
+            <artifactId>yungouos-pay-sdk</artifactId>
+            <version>2.0.34</version>
+        </dependency>
         <!-- PostgreSQL 驱动 (新增) -->
         <dependency>
             <groupId>org.postgresql</groupId>

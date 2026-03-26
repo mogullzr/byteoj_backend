@@ -278,4 +278,17 @@ public interface UserService extends IService<User> {
      * @param httpServletRequest
      */
     Boolean userQQCallBack(String code, String state, HttpServletRequest httpServletRequest);
+
+    /**
+     * 获取微信登录页面
+     *
+     * @return 微信登录页面
+     */
+    String getWeChatUrl();
+
+    /**
+     * 获取用户信息
+     * @return
+     */
+    void userWeChatLogin(String code, HttpServletRequest request);
 }

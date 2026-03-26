@@ -29,6 +29,16 @@ public class UserModifyRequest implements Serializable {
     private String username;
 
     /**
+     * 密码(仅密码为空可以使用)
+     */
+    private String password;
+
+    /**
+     * 确认密码(仅密码为空可以使用)
+     */
+    private String confirm_password;
+
+    /**
      * 头像
      */
     private String avatar;

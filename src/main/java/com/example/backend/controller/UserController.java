@@ -13,7 +13,6 @@ import com.example.backend.models.domain.picture.WebsiteBackgroundPictures;
 import com.example.backend.models.domain.user.User;
 import com.example.backend.models.request.*;
 import com.example.backend.models.request.user.*;
-import com.example.backend.models.vo.AliyunVodVo;
 import com.example.backend.models.vo.UserRolesInfoVo;
 import com.example.backend.models.vo.UserRolesVo;
 import com.example.backend.models.vo.UserVo;
@@ -83,6 +82,9 @@ public class UserController {
 
     @Value("${qq.app_redirect_url}")
     private String appRedirectUrl;
+
+    @Value("${domain.url_1}")
+    private String domain;
 
     @PostMapping("/register")
     private BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest,
@@ -210,6 +212,20 @@ public class UserController {
         return ResultUtils.success(authUrl);
     }
 
+    @AccessLimit(seconds = 5, maxCount = 5, needLogin = false)
+    @GetMapping("/weChat/getAuthorizationUrl")
+    private BaseResponse<String> userWeChatGetAuthorizationUrl() {
+
+        String result = userService.getWeChatUrl();
+        return ResultUtils.success(result);
+    }
+
+    @AccessLimit(seconds = 5, maxCount = 5, needLogin = false)
+    @GetMapping("/weChat/login")
+    private void userWeChatLogin(@Param("code") String code, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        userService.userWeChatLogin(code, request);
+        response.sendRedirect(domain);
+    }
 //    @GetMapping("/callback")
 //    private BaseResponse<Boolean> userQQCallBack(@RequestParam("code") String code, @RequestParam("state") String state, HttpServletRequest httpServletRequest, HttpServletResponse response) {
 //        Boolean result = userService.userQQCallBack(code, state, httpServletRequest);
