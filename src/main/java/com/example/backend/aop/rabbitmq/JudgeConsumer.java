@@ -41,70 +41,75 @@ public class JudgeConsumer {
     private SimpMessagingTemplate messagingTemplate;  // WebSocket 推送
 
     @RabbitHandler
-    public void handleMessage(JudgeTaskMessage message, Channel channel, Message amqpMessage) throws IOException, InterruptedException {
+    public void handleMessage(JudgeTaskMessage message, Channel channel, Message amqpMessage) throws IOException {
         long deliveryTag = amqpMessage.getMessageProperties().getDeliveryTag();
         String taskId = message.getTaskId();
         Long uuid = message.getUserUuid();
 
         log.info("[判题消费者] 开始处理任务, taskId: {}, uuid: {}", taskId, uuid);
 
-        Thread.sleep(500);
-        // 1. 推送 Running 状态
-        updateAndPushStatus(taskId, "Running", null, uuid);
+        try {
+            // 🔥 移除了硬编码的 500ms 延迟，直接处理
+            // 1. 推送 Running 状态
+            updateAndPushStatus(taskId, "Running", null, uuid);
 
-        // 2. 执行判题逻辑
-        JudgeRequest request = message.getJudgeRequest();
-        Judge result = problemAlgorithmService.problemAlgorithmSubmit(request, uuid);
+            // 2. 执行判题逻辑
+            JudgeRequest request = message.getJudgeRequest();
+            if (request == null) {
+                throw new IllegalArgumentException("JudgeRequest 为空");
+            }
+            Judge result = problemAlgorithmService.problemAlgorithmSubmit(request, uuid);
 
-        // 3. 推送成功结果
-        updateAndPushStatus(taskId, "Success", result, uuid);
+            // 3. 推送成功结果
+            updateAndPushStatus(taskId, "Success", result, uuid);
 
-        // 4. 手动 ACK（确认消息处理成功）
-        channel.basicAck(deliveryTag, false);
+            // 4. 手动 ACK（确认消息处理成功）
+            channel.basicAck(deliveryTag, false);
+            log.info("[判题消费者] 任务处理成功, taskId: {}, 结果: {}", taskId, result);
 
-        log.info("[判题消费者] 任务处理成功, taskId: {}, 结果: {}", taskId, result);
-//        catch (Exception e) {
-//            log.error("[判题消费者] 任务处理失败, taskId: {}, 错误: {}", taskId, e.getMessage(), e);
-//
-//            try {
-//                // 获取重试次数
-//                Integer retryCount = (Integer) amqpMessage.getMessageProperties()
-//                        .getHeaders().getOrDefault("x-retry-count", 0);
-//
-//                if (retryCount < MAX_RETRY_COUNT) {
-//                    // 还有重试机会，NACK 并重新入队
-//                    log.warn("[判题消费者] 任务重试, taskId: {}, 当前重试次数: {}", taskId, retryCount);
-//
-//                    // 增加重试计数
-//                    amqpMessage.getMessageProperties().setHeader("x-retry-count", retryCount + 1);
-//
-//                    // NACK 并重新入队（延迟重试）
-//                    channel.basicNack(deliveryTag, false, true);
-//
-//                    // 推送重试状态
-//                    updateAndPushRetryStatus(taskId, retryCount + 1, uuid);
-//
-//                } else {
-//                    // 超过最大重试次数，推送失败状态并拒绝消息（进入死信队列）
-//                    log.error("[判题消费者] 任务失败（超过最大重试次数）, taskId: {}", taskId);
-//
-//                    // 推送失败结果
-//                    JudgeTask errorResult = new JudgeTask();
-//                    errorResult.setTaskId(taskId);
-//                    errorResult.setStatus("Failed");
-//                    errorResult.setMessage("判题失败: " + e.getMessage());
-//                    errorResult.setUserUuid(uuid);
-//
-//                    messagingTemplate.convertAndSend("/topic/judge/" + taskId, errorResult);
-//
-//                    // NACK 并不重新入队（进入死信队列）
-//                    channel.basicNack(deliveryTag, false, false);
-//                }
-//
-//            } catch (IOException ioException) {
-//                log.error("[判题消费者] 消息确认失败, taskId: {}", taskId, ioException);
-//            }
-//        }
+        } catch (Exception e) {
+            log.error("[判题消费者] 任务处理失败, taskId: {}, 错误: {}", taskId, e.getMessage(), e);
+
+            try {
+                // 获取重试次数
+                Integer retryCount = (Integer) amqpMessage.getMessageProperties()
+                        .getHeaders().getOrDefault("x-retry-count", 0);
+
+                if (retryCount < MAX_RETRY_COUNT) {
+                    // 还有重试机会，NACK 并重新入队
+                    log.warn("[判题消费者] 任务重试, taskId: {}, 当前重试次数: {}", taskId, retryCount);
+
+                    // 增加重试计数
+                    amqpMessage.getMessageProperties().setHeader("x-retry-count", retryCount + 1);
+
+                    // 推送重试状态
+                    updateAndPushRetryStatus(taskId, retryCount + 1, uuid);
+
+                    // NACK 并重新入队（延迟重试）
+                    channel.basicNack(deliveryTag, false, true);
+
+                } else {
+                    // 超过最大重试次数，推送失败状态并拒绝消息（进入死信队列）
+                    log.error("[判题消费者] 任务失败（超过最大重试次数）, taskId: {}", taskId);
+
+                    // 推送失败结果
+                    JudgeTask errorResult = new JudgeTask();
+                    errorResult.setTaskId(taskId);
+                    errorResult.setStatus("Failed");
+                    errorResult.setMessage("判题失败: " + e.getMessage());
+                    errorResult.setUserUuid(uuid);
+                    errorResult.setSubmitTime(new Date());
+
+                    messagingTemplate.convertAndSend("/topic/judge/" + taskId, errorResult);
+
+                    // NACK 并不重新入队（进入死信队列）
+                    channel.basicNack(deliveryTag, false, false);
+                }
+
+            } catch (IOException ioException) {
+                log.error("[判题消费者] 消息确认失败, taskId: {}", taskId, ioException);
+            }
+        }
     }
 
     /**

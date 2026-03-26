@@ -8,6 +8,7 @@ import java.util.List;
 
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
+import cn.hutool.http.HttpGlobalConfig;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.nacos.shaded.com.google.common.reflect.TypeToken;
 import com.alibaba.nacos.shaded.com.google.gson.Gson;
@@ -60,6 +61,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
@@ -75,6 +77,14 @@ import java.util.stream.IntStream;
 @Slf4j
 public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBankMapper, ProblemAlgorithmBank>
         implements ProblemAlgorithmService {
+
+    // 🔥 配置 HTTP 请求超时（避免网络延迟阻塞消费者）
+    @PostConstruct
+    public void init() {
+        // 设置连接超时 5 秒，读取超时 30 秒
+        HttpGlobalConfig.setTimeout(30000);
+        log.info("[ProblemAlgorithmServiceImpl] HTTP 超时配置已设置: 连接5s, 读取30s");
+    }
     @Resource
     private VodUtils vodUtils;
     @Resource

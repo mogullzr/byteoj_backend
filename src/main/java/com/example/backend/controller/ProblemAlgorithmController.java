@@ -45,6 +45,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @RestController
 @RequestMapping("/problem/algorithm")
@@ -71,6 +73,9 @@ public class ProblemAlgorithmController {
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;  // WebSocket 推送
+
+    // 🔥 使用固定线程池替代 new Thread()，避免线程资源耗尽
+    private final ExecutorService judgeSubmitExecutor = Executors.newFixedThreadPool(10);
 
     @PostMapping("/search")
     @AccessLimit(seconds = 1, maxCount = 10, needLogin = false)
@@ -327,17 +332,16 @@ public class ProblemAlgorithmController {
             // 推送失败不影响提交，继续处理
         }
 
-        // 发送到RabbitMQ（稍微延迟，给前端时间订阅）
-        // 延迟 100ms，让前端有时间建立订阅
-        new Thread(() -> {
+        // 发送到RabbitMQ（使用线程池，避免 new Thread() 资源耗尽）
+        judgeSubmitExecutor.submit(() -> {
             try {
-                Thread.sleep(100);  // 延迟 100 毫秒
+                Thread.sleep(100);  // 延迟 100ms，让前端有时间建立订阅
                 rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY, message);
                 log.info("[提交判题] 任务已发送到队列, taskId: {}", taskId);
             } catch (Exception e) {
                 log.error("[提交判题] 发送到队列失败, taskId: {}", taskId, e);
             }
-        }).start();
+        });
 
         // 可选：存入DB初始记录
         // judgeMapper.insertInitial(initialJudge);
