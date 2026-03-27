@@ -62,7 +62,7 @@ public class ProblemAlgorithmController {
         log.info("[多沙箱配置] 沙箱数量：{}", RabbitMQConfig.SANDBOX_COUNT);
         for (int i = 0; i < RabbitMQConfig.SANDBOX_COUNT; i++) {
             log.info("[多沙箱配置] 沙箱 {}: {} -> {}", 
-                i, RabbitMQConfig.QUEUE_NAMES[i], RabbitMQConfig.SANDBOX_URLS[i]);
+                i, RabbitMQConfig.QUEUE_NAMES[i], RabbitMQConfig.SANDBOX_URLS.get(i));
         }
     }
     @Autowired
@@ -88,7 +88,7 @@ public class ProblemAlgorithmController {
     private SimpMessagingTemplate messagingTemplate;  // WebSocket 推送
 
     // 🔥 使用固定线程池替代 new Thread()，避免线程资源耗尽
-    private final ExecutorService judgeSubmitExecutor = Executors.newFixedThreadPool(10);
+    private final ExecutorService judgeSubmitExecutor = Executors.newFixedThreadPool(RabbitMQConfig.SANDBOX_COUNT);
     
     // 🔥 轮询计数器：用于负载均衡分配沙箱
     private final AtomicInteger roundRobinCounter = new AtomicInteger(0);

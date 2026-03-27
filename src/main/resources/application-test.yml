@@ -1,68 +1,81 @@
 domain:
-  url_1: "http://localhost:8080/user/complete"
+  url_1: "http://localhost:8080/home"
+sandbox:
+  urls: # 最多写10个沙箱服务(沙箱服务的镜像未来再看是否开通)
+    - "http://xxxxxxxxxxxxx:9000"
+    - "http://xxxxxxxxxxxxx:9001"
+    - "http://xxxxxxxxxxxxx:9002"
+    - "http://xxxxxxxxxxxxx:9003"
+    - "http://xxxxxxxxxxxxx:9004"
+    - "http://xxxxxxxxxxxxx:9005"
+    - "http://xxxxxxxxxxxxx:9006"
+    - "http://xxxxxxxxxxxxx:9007"
+    - "http://xxxxxxxxxxxxx:9008"
+    - "http://xxxxxxxxxxxxx:9009"
 hm:
   mail:
     username: "xxxxxxxxxxxx"  # 你的QQ号
-    password: "xxxxxxxxxxxx"  # 这里就是我前面提到的授权码了
+    password: "xxxxxxxxxxxxxxxxxxxxxx"  # STM授权码，免费
   db:
     host: localhost
     name: root
     table: byteoj
-    pwd: "xxxxxxxxxxxx"
+    pwd: "xxxxxxxxxxxx" # mysql数据库密码
   pg:
     host: localhost
-    db: postgres
-    user: postgres
-    pwd: "xxxxxxxxxxxx"
+    db: postgres # 选中数据库
+    user: "xxxxxxxxxx" # pg用户名
+    pwd: "xxxxxxxxxxxx" # pg的密码
   redis:
-    host: 127.0.0.1
+    host: 127.0.0.1 # redis域名
+    port: 6379 # redis端口
     pwd: "xxxxxxxxxxxx" # redis密码
   ai:
     api:
       v3-1:
         model: deepseek-chat
         url: https://api.deepseek.com/chat/completions
-        key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # deepseek官网的密钥
+        key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # deepseek官网的密钥, token计费
       v3-2:
         model: deepseek-ai/DeepSeek-V3
         url: https://api.siliconflow.cn/v1/chat/completions
-        key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 轨迹流动密钥
+        key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 硅基流动密钥, token计费
       r1_1:
-        model: deepseek-ai/DeepSeek-R1-Distill-Llama-70B
+        model: deepseek-ai/DeepSeek-R1-Distill-Llama-70Bv
         url: https://api.siliconflow.cn/v1/chat/completions
-        key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 硅基流动密钥
+        key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 硅基流动密钥, token计费
       v3-tenCloud:
         model: deepseek-v3-tenCloud
         url: https://wss.lke.cloud.tencent.com/v1/qbot/chat/sse
-        key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 腾讯云智能体开发平台的密钥
+        key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 腾讯云智能体开发平台的密钥, token计费
       Qwen-VL:
         model: Qwen/Qwen2.5-VL-72B-Instruct
         url: https://api.siliconflow.cn/v1/chat/completions
-        key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 轨迹流动密钥
+        key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 轨迹流动密钥, token计费
   aliyun:
+    # 按量计费
     oss:
       endpoint: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 阿里云OSS地址，这里看你自己的OSS选择
       accessKeyId: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 阿里云OSS账号
-      accessKeySecret: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 阿里云OSS密钥
-      #        bucket可以由控制台创建，也可以使用java代码创建
-      bucketName: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" #阿里云OSS上的存储块bucket名字
+      accessKeySecret: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 阿里云OSS密钥, token计费
+      bucketName: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 阿里云OSS上的存储块bucket名字
     vod:
       accessKeyId: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 阿里云vod的OSS账号
-      accessKeySecret: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 阿里云void的OSS密钥
+      accessKeySecret: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 阿里云void的OSS密钥, token计费
     embedding:
       model: "text-embedding-v4"
       url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings' # 阿里云的百请求地址
-      accessKeyId: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' # # 阿里云的百炼密钥
-
+      accessKeyId: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' # # 阿里云的百炼密钥, token计费
   rabbitmq:
     username: "xxxxx" # rabbitmq的账号
     password: "xxxxx" # rabbitmq的密码
 avatar:
-  default: "xxxxx" # 替换为自己设定的默认头像地址
+  default: "xxxxx" # 替换为前端设定的默认头像地址
 baidu:
   ipService:
-    ak: "xxxxxxxx" # 这个是百度地图的IP定位的 ak
-    coor: "xxxxxxxx" # 这个是百度地图的IP定位的参数信息
+    ak: "xxxxxxxx" # 这个是百度地图的IP定位的 ak, 免费, 每天有限额
+    coor: "bd09ll" # 这个是百度地图的IP定位的参数信息, 免费, 每天有限额。这个参数不动
+# QQ登录由于某些原因前端没有正式使用，可以直接忽略
 qq:
   app_id: "xxxxxxxxx" # 申请开发应用之后的app_id.注意：至少需要一个已经备案的域名。
   app_key: "xxxxxxxxxx" # 申请开发应用之后的app_key，至少需要一个已经备案的域名。
@@ -70,11 +83,11 @@ qq:
 weChat:
   mch_id: "xxxxxxxxxxxxxxxx" # YunGouOS的client_id
   callback_url: "http://localhost:7091/api/user/weChat/login" # 回调获取用户信息
-  sign: "xxxxxxxxxxxx" # 签名密钥
-lantu: # 蓝兔支付——仅微信支付
+  sign: "xxxxxxxxxxxx" # YunGouOS签名密钥
+lantu: # 蓝兔支付——仅微信支付, 至少50元，2026年3月27为止，目前不可签约
   mch_id: "xxxxxxxx" # 微信商户管理的商户号
   key: "xxxxxxxxxx" # 微信商户管理的商户密钥
   expire_time: "3m" # 支付二维码过期时间：最小1m，表示1min，最长2h，表示2hour
   url: "https://www.byteoj.com/api/course/join" # 支付成功之后的回调地址，自己修改(注意：必须为线上可访问地址，如需本地调试，需要进行内网穿透)
-  post_url: "https://api.ltzf.cn/api/wxpay/native" # 不变，蓝兔支付二维码生成地址
-  refund_url: "https://api.ltzf.cn/api/wxpay/refund_order" # 不变，蓝兔退款请求地址
+  post_url: "https://api.ltzf.cn/api/wxpay/native" # 蓝兔支付二维码生成地址
+  refund_url: "https://api.ltzf.cn/api/wxpay/refund_order" # 蓝兔退款请求地址

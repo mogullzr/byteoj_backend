@@ -1,4 +1,4 @@
-﻿package com.example.backend.config;
+package com.example.backend.config;
 
 import com.example.backend.config.websocket.AdminAlertHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,7 +32,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     /**
      * 注册 WebSocket 处理器
      */
-    @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(adminAlertHandler, "/ws/alerts")
                 .setAllowedOriginPatterns("*"); // 支持跨域

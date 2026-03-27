@@ -1,4 +1,3 @@
-// websocket/AdminAlertHandler.java
 package com.example.backend.config.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class AdminAlertHandler extends TextWebSocketHandler {
 
-    // key: userId (À´×Ô Cookie), value: WebSocketSession
+    // key: userId (æ¥è‡ª Cookie), value: WebSocketSession
     private static final Map<String, WebSocketSession> USER_SESSIONS = new ConcurrentHashMap<>();
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -22,21 +21,21 @@ public class AdminAlertHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        // ´Ó attributes ÖĞ»ñÈ¡ userId£¨ÓÉÀ¹½ØÆ÷×¢Èë£©
+        // ä» attributes ä¸­è·å– userIdï¼ˆç”±æ‹¦æˆªå™¨æ³¨å…¥ï¼‰
         String userId = (String) session.getAttributes().get("uuid");
         if (userId == null) {
-            // Ìæ»» CloseStatus.LOGIN_REQUIRED Îª×Ô¶¨ÒåÂë
+            // æ›¿æ¢ CloseStatus.LOGIN_REQUIRED ä¸ºè‡ªå®šä¹‰ç 
             session.close(new CloseStatus(4001, "Login required"));
             return;
         }
 
-        // Ò»¸öÓÃ»§Ö»±£Áô×îĞÂÁ¬½Ó
+        // ä¸€ä¸ªç”¨æˆ·åªä¿ç•™æœ€æ–°è¿æ¥
         WebSocketSession oldSession = USER_SESSIONS.put(userId, session);
         if (oldSession != null && oldSession.isOpen()) {
             oldSession.close(CloseStatus.NORMAL);
         }
 
-        System.out.println(" ¹ÜÀíÔ±ÉÏÏß£º" + userId + " (µ±Ç°ÔÚÏß£º" + USER_SESSIONS.size() + ")");
+        System.out.println("ğŸ‘¨â€ğŸ’¼ ç®¡ç†å‘˜ä¸Šçº¿: " + userId + " (å½“å‰åœ¨çº¿: " + USER_SESSIONS.size() + ")");
     }
 
     @Override
@@ -50,7 +49,7 @@ public class AdminAlertHandler extends TextWebSocketHandler {
         }
         if (closedUserId != null) {
             USER_SESSIONS.remove(closedUserId);
-            System.out.println(" ¹ÜÀíÔ±ÏÂÏß£º" + closedUserId + " (Ê£Óà£º" + USER_SESSIONS.size() + ")");
+            System.out.println("ğŸ‘‹ ç®¡ç†å‘˜ä¸‹çº¿: " + closedUserId + " (å‰©ä½™: " + USER_SESSIONS.size() + ")");
         }
     }
 
@@ -58,10 +57,10 @@ public class AdminAlertHandler extends TextWebSocketHandler {
         if (USER_SESSIONS.isEmpty()) return;
 
         String message = String.format(
-                " ¿Í»§¶ËµôÏß¾¯±¨\n" +
+                "ğŸš¨ å®¢æˆ·ç«¯æ‰çº¿è­¦æŠ¥\n" +
                         "ID: %s\n" +
-                        "Ô­Òò£º%s\n" +
-                        "Ê±¼ä£º%s",
+                        "åŸå› : %s\n" +
+                        "æ—¶é—´: %s",
                 clientId,
                 reason,
                 LocalDateTime.now().format(TIME_FORMAT)

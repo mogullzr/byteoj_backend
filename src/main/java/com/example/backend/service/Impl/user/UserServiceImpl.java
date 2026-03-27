@@ -45,7 +45,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.*;
@@ -133,6 +135,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Value("${weChat.key}")
     private String weChat_key;
+
+    @Value("${domain.url_1}")
+    private String domain;
 
     @Autowired
     private PostsMapper postsMapper;
@@ -1176,7 +1181,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     @Override
-    public void userWeChatLogin(String code, HttpServletRequest request) {
+    public void userWeChatLogin(String code, HttpServletRequest request, HttpServletResponse response) throws IOException {
         WxOauthInfo wxOauthInfo = WxApi.getWxOauthInfo(
                 weChat_mch_id,
                 code,
@@ -1214,8 +1219,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         HttpSession session = request.getSession();
         session.setAttribute(USER_LOGIN_STATE, user);
         session.setMaxInactiveInterval(3600 * 24 * 7);
+        Cookie cookie = new Cookie("JSESSIONID", session.getId());
+        cookie.setPath("/");
+        cookie.setMaxAge(7 * 24 * 60 * 60);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
 
-
+        response.addCookie(cookie);
+        response.sendRedirect(domain);
 //        safetyUser.setSessionId(request.getRequestedSessionId());
     }
 

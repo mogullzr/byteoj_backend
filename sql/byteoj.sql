@@ -1,4 +1,4 @@
-create table if not exists byteoj.account_fund
+create table account_fund
 (
     id           bigint auto_increment comment 'ID'
         primary key,
@@ -13,26 +13,12 @@ create table if not exists byteoj.account_fund
     course_title text                               null comment '课程标题',
     username     text                               null comment '用户名',
     is_delete    tinyint  default 0                 null comment '逻辑删除',
+    wx_trade_no  text                               null comment 'wx',
     constraint account_fund_pk_2
         unique (id)
 );
 
-create table if not exists byteoj.account_pay_back
-(
-    id            bigint auto_increment comment 'ID'
-        primary key,
-    out_trade_no  text                               not null comment '退款单号',
-    out_refund_no text                               not null comment '退单号',
-    refund_desc   text                               null comment '退款信息描述',
-    is_delete     tinyint  default 0                 null comment '逻辑删除',
-    create_date   datetime default CURRENT_TIMESTAMP null comment '创建时间',
-    update_date   datetime default CURRENT_TIMESTAMP null comment '更新时间',
-    pay_back      text                               not null comment '退钱具体量',
-    constraint account_pay_back_pk_2
-        unique (id)
-);
-
-create table if not exists byteoj.algorithm_test_case
+create table algorithm_test_case
 (
     id          bigint auto_increment comment 'ID'
         primary key,
@@ -46,7 +32,7 @@ create table if not exists byteoj.algorithm_test_case
         unique (id)
 );
 
-create table if not exists byteoj.course
+create table course
 (
     course_id                bigint           not null comment '课程id'
         primary key,
@@ -57,7 +43,7 @@ create table if not exists byteoj.course
     num                      bigint default 0 not null comment '参加人数',
     start_time               datetime         null comment '课程开始时间',
     end_time                 datetime         null comment '结束时间',
-    pay                      varchar(10)      not null comment '价钱',
+    pay                      varchar(10)      null,
     is_delete                int    default 0 not null comment '逻辑删除',
     create_time              datetime         not null comment '创建时间',
     course_description       text             null comment '课程描述',
@@ -65,7 +51,7 @@ create table if not exists byteoj.course
         unique (course_id)
 );
 
-create table if not exists byteoj.course_problems
+create table course_problems
 (
     course_problem_id      bigint auto_increment comment '课程问题ID'
         primary key,
@@ -79,25 +65,11 @@ create table if not exists byteoj.course_problems
     constraint course_problems_pk2
         unique (course_problem_id),
     constraint course_problems_course_course_id_fk
-        foreign key (course_id) references byteoj.course (course_id)
+        foreign key (course_id) references course (course_id)
 )
     comment '课程专栏信息';
 
-create table if not exists byteoj.course_problems_ac_num
-(
-    ac_num_id  bigint auto_increment comment 'ID'
-        primary key,
-    course_id  bigint        not null comment '课程ID',
-    problem_id bigint        not null comment '问题ID',
-    num        int default 0 not null comment '通过题目的数量',
-    constraint course_problems_ac_num_pk2
-        unique (ac_num_id),
-    constraint course_problems_ac_num_course_course_id_fk
-        foreign key (course_id) references byteoj.course (course_id)
-)
-    comment '某课程某题目的通过人数';
-
-create table if not exists byteoj.course_problems_type
+create table course_problems_type
 (
     type_id         bigint auto_increment comment 'ID'
         primary key,
@@ -107,7 +79,7 @@ create table if not exists byteoj.course_problems_type
         unique (type_id)
 );
 
-create table if not exists byteoj.course_user_ac_problem
+create table course_user_ac_problem
 (
     course_ac_problem_id bigint auto_increment comment 'ID'
         primary key,
@@ -117,84 +89,11 @@ create table if not exists byteoj.course_user_ac_problem
     constraint course_user_ac_problem_pk2
         unique (course_ac_problem_id),
     constraint course_user_ac_problem_course_course_id_fk
-        foreign key (course_id) references byteoj.course (course_id)
+        foreign key (course_id) references course (course_id)
 )
     comment '用户AC题目基本信息';
 
-create table if not exists byteoj.language_command
-(
-    id             bigint auto_increment comment 'ID'
-        primary key,
-    language_id    int          null comment '编程语言ID',
-    command        varchar(255) null comment '计算机命令，比如gcc++...,java....',
-    sequence       int          null comment '次序',
-    create_by_id   bigint       null comment '创建人id',
-    create_by_name varchar(256) null comment '创建人name',
-    create_time    datetime     null comment '创建时间',
-    update_by_id   bigint       null comment '修改人id',
-    update_by_name varchar(256) null comment '修改人name',
-    update_time    datetime     null comment '修改时间',
-    status         int          null comment '0.编译中1.运行'
-)
-    comment '编程语言信息表' collate = utf8mb4_unicode_ci;
-
-create table if not exists byteoj.log_browser
-(
-    id          bigint auto_increment comment 'ID'
-        primary key,
-    type        int                                not null comment '0,1,2,3分别表示关联表daily_detail/daily/monthly/yealy',
-    log_info_id bigint                             not null comment '日志分析信息ID',
-    browser     varchar(255)                       not null comment '浏览器名称',
-    total       int      default 0                 not null comment '浏览器使用次数',
-    create_time datetime default CURRENT_TIMESTAMP not null comment '创建时间',
-    is_delete   tinyint                            null comment '是否删除',
-    constraint brower_pk2
-        unique (id)
-);
-
-create table if not exists byteoj.log_daily_detail_info
-(
-    id                bigint auto_increment comment 'ID'
-        primary key,
-    create_date       bigint  default 0 not null comment '创建时间',
-    operation_total   int     default 0 not null comment '操作日志总数',
-    exception_total   int     default 0 not null comment '异常日志数量',
-    new_user_total    bigint  default 0 not null comment '新增用户数',
-    user_total        bigint  default 0 not null comment '用户总数',
-    start_time        bigint  default 0 not null comment '高峰期开始时间',
-    end_time          bigint  default 0 not null comment '高峰期时间',
-    avg_response_time bigint  default 0 not null comment '平均响应时间',
-    operator_id       bigint            not null comment '使用频率最高用户uuid',
-    operator_total    bigint  default 0 not null comment '最多使用者的数量',
-    browse_total      bigint  default 0 not null comment '用户访问量(按照有多少用户访问为准)',
-    active_total      bigint  default 0 not null comment '活跃用户数量',
-    is_delete         tinyint default 0 not null comment '是否删除',
-    constraint log_daily_detail_info_pk2
-        unique (id)
-);
-
-create table if not exists byteoj.log_daily_info
-(
-    id                bigint auto_increment comment 'ID'
-        primary key,
-    create_date       bigint  default 0 not null comment '创建时间',
-    operation_total   int     default 0 not null comment '操作日志总数',
-    exception_total   int     default 0 not null comment '异常日志数量',
-    user_total        bigint  default 0 not null comment '用户总数',
-    new_user_total    bigint  default 0 not null comment '新增用户数',
-    start_time        bigint  default 0 not null comment '高峰期开始时间',
-    end_time          bigint  default 0 not null comment '高峰期时间',
-    avg_response_time bigint  default 0 not null comment '平均响应时间',
-    operator_id       bigint            not null comment '使用频率最高用户uuid',
-    operator_total    bigint  default 0 not null comment '最多使用者的数量',
-    browse_total      bigint  default 0 not null comment '用户访问量(按照有多少用户访问为准)',
-    is_delete         tinyint default 0 not null comment '是否删除',
-    active_total      bigint  default 0 not null comment '活跃用户数量',
-    constraint log_daily_info_pk2
-        unique (id)
-);
-
-create table if not exists byteoj.log_exception
+create table log_exception
 (
     id             int auto_increment comment '异常日志ID'
         primary key,
@@ -215,28 +114,7 @@ create table if not exists byteoj.log_exception
 )
     comment '异常日志';
 
-create table if not exists byteoj.log_monthly_info
-(
-    id                bigint auto_increment comment 'ID'
-        primary key,
-    create_date       bigint  default 0 not null comment '创建时间',
-    operation_total   int     default 0 not null comment '操作日志总数',
-    exception_total   int     default 0 not null comment '异常日志数量',
-    user_total        bigint  default 0 not null comment '用户总数',
-    new_user_total    bigint  default 0 not null comment '新增用户数',
-    start_time        bigint  default 0 not null comment '高峰期开始时间',
-    end_time          bigint  default 0 not null comment '高峰期时间',
-    avg_response_time bigint  default 0 not null comment '平均响应时间',
-    operator_id       bigint            not null comment '使用频率最高用户uuid',
-    operator_total    bigint  default 0 not null comment '最多使用者的数量',
-    browse_total      bigint  default 0 not null comment '用户访问量(按照有多少用户访问为准)',
-    is_delete         tinyint default 0 not null comment '是否删除',
-    active_total      bigint  default 0 not null comment '活跃用户数量',
-    constraint log_daily_info_pk2
-        unique (id)
-);
-
-create table if not exists byteoj.log_operation
+create table log_operation
 (
     id             int auto_increment comment '操作日志ID'
         primary key,
@@ -271,29 +149,22 @@ create table log_website_info
 )
     comment '网站日志信息';
 
-
-create table if not exists byteoj.log_yearly_info
+create table monitor_user
 (
-    id                bigint auto_increment comment 'ID'
+    id          int                                not null comment 'ID'
         primary key,
-    create_date       bigint  default 0 not null comment '创建时间',
-    operation_total   int     default 0 not null comment '操作日志总数',
-    exception_total   int     default 0 not null comment '异常日志数量',
-    user_total        bigint  default 0 not null comment '用户总数',
-    new_user_total    bigint  default 0 not null comment '新增用户数',
-    start_time        bigint  default 0 not null comment '高峰期开始时间',
-    end_time          bigint  default 0 not null comment '高峰期时间',
-    avg_response_time bigint  default 0 not null comment '平均响应时间',
-    operator_id       bigint            not null comment '使用频率最高用户uuid',
-    operator_total    bigint  default 0 not null comment '最多使用者的数量',
-    browse_total      bigint  default 0 not null comment '用户访问量(按照有多少用户访问为准)',
-    active_total      bigint  default 0 not null comment '活跃用户总数',
-    is_delete         tinyint default 0 not null comment '是否删除',
-    constraint log_daily_info_pk2
+    client_id   varchar(255)                       not null,
+    username    varchar(255)                       not null comment '+',
+    status      int      default 0                 not null comment '0123',
+    create_time datetime default CURRENT_TIMESTAMP not null,
+    update_time datetime default CURRENT_TIMESTAMP not null,
+    is_delete   tinyint  default 0                 not null,
+    constraint monitor_user_pk_2
         unique (id)
-);
+)
+    charset = utf8mb3;
 
-create table if not exists byteoj.oj_competition
+create table oj_competition
 (
     id          bigint auto_increment comment 'ID'
         primary key,
@@ -311,7 +182,7 @@ create table if not exists byteoj.oj_competition
         unique (id)
 );
 
-create table if not exists byteoj.problem_algorithm_bank
+create table problem_algorithm_bank
 (
     problem_id      bigint auto_increment
         primary key,
@@ -335,16 +206,6 @@ create table if not exists byteoj.problem_algorithm_bank
 )
     comment 'algorithm题目基本信息表' collate = utf8mb4_unicode_ci;
 
-create table if not exists byteoj.problem_algorithm_bank_detailed
-(
-    id         bigint auto_increment comment 'ID'
-        primary key,
-    problem_id bigint null comment '问题id',
-    md_cn      text   null comment '中文md',
-    md_en      text   null comment '英文md'
-)
-    comment 'algorithm问题细节信息表' collate = utf8mb4_unicode_ci;
--- auto-generated definition
 create table problem_algorithm_limit
 (
     id             bigint auto_increment comment 'ID'
@@ -372,11 +233,7 @@ create table problem_algorithm_limit
 create index problem_id
     on problem_algorithm_limit (problem_id);
 
-
-create index problem_id
-    on byteoj.problem_algorithm_limit (problem_id);
-
-create table if not exists byteoj.problem_algorithm_tags_classify_relation
+create table problem_algorithm_tags_classify_relation
 (
     category_id   int          not null comment '类别ID'
         primary key,
@@ -386,7 +243,7 @@ create table if not exists byteoj.problem_algorithm_tags_classify_relation
 )
     comment '类别关系表' collate = utf8mb4_unicode_ci;
 
-create table if not exists byteoj.problem_algorithm_tags_relation
+create table problem_algorithm_tags_relation
 (
     tag_id   int auto_increment comment '标签id'
         primary key,
@@ -394,7 +251,7 @@ create table if not exists byteoj.problem_algorithm_tags_relation
 )
     comment 'algorithm问题标签关联表' collate = utf8mb4_unicode_ci;
 
-create table if not exists byteoj.problem_algorithm_tags
+create table problem_algorithm_tags
 (
     id         bigint auto_increment comment 'ID'
         primary key,
@@ -402,30 +259,30 @@ create table if not exists byteoj.problem_algorithm_tags
     problem_id bigint        not null comment '问题ID',
     is_delete  int default 0 null,
     constraint fk_algorithm_tags_problem_id
-        foreign key (problem_id) references byteoj.problem_algorithm_bank (problem_id)
+        foreign key (problem_id) references problem_algorithm_bank (problem_id)
             on update cascade on delete cascade,
     constraint fk_algorithm_tags_relation_id
-        foreign key (tag_id) references byteoj.problem_algorithm_tags_relation (tag_id)
+        foreign key (tag_id) references problem_algorithm_tags_relation (tag_id)
             on update cascade on delete cascade
 )
     comment 'algorithm问题标签类型表' collate = utf8mb4_unicode_ci;
 
-create table if not exists byteoj.problem_algorithm_tags_classify
+create table problem_algorithm_tags_classify
 (
     id       bigint auto_increment comment 'ID'
         primary key,
     tag_id   int not null comment '算法标签ID',
     category int not null comment '类别名称',
     constraint problem_algorithm_tags_classify_ibfk_1
-        foreign key (tag_id) references byteoj.problem_algorithm_tags_relation (tag_id)
+        foreign key (tag_id) references problem_algorithm_tags_relation (tag_id)
             on update cascade on delete cascade
 )
     comment '标签分类' collate = utf8mb4_unicode_ci;
 
 create index tag_id
-    on byteoj.problem_algorithm_tags_classify (tag_id);
+    on problem_algorithm_tags_classify (tag_id);
 
-create table if not exists byteoj.problem_daily_info
+create table problem_daily_info
 (
     id         bigint auto_increment comment 'ID'
         primary key,
@@ -436,55 +293,121 @@ create table if not exists byteoj.problem_daily_info
         unique (id)
 );
 
-create table if not exists byteoj.problem_math408_bank
+create table problem_exam
+(
+    id          bigint auto_increment comment 'ID'
+        primary key,
+    exam_name   varchar(255)                           not null comment '考试名称',
+    password    varchar(255)                           null comment '密码',
+    author      varchar(255)                           not null comment '作者',
+    picture     varchar(255)                           null comment '图片链接',
+    joins       int      default 0                     not null comment '参加人数',
+    start_time  datetime default (now())               null comment '开始时间',
+    end_time    datetime default '2099-12-31 23:59:59' null comment '结束时间',
+    time        int                                    not null comment '考试时间(min)',
+    total_score int      default 0                     null comment '总分',
+    status      tinyint  default 0                     not null comment '0表示自由考试(可多次提交)，1表示开启监控(仅允许提交一次),2表示自由练习(写题过程可以直接提交某题查看答案)',
+    create_time datetime default CURRENT_TIMESTAMP     null comment '创建时间',
+    update_time datetime default CURRENT_TIMESTAMP     null comment '更新时间',
+    is_delete   tinyint  default 0                     null comment '逻辑删除',
+    constraint problem_exam_pk_2
+        unique (id)
+)
+    comment '考试';
+
+create table problem_exam_record
+(
+    id           bigint auto_increment comment 'ID'
+        primary key,
+    exam_user_id bigint                             not null comment '用户报名记录ID',
+    problem_id   bigint                             not null comment '问题ID',
+    uuid         bigint                             not null comment '用户ID',
+    answer       text                               not null comment '答案',
+    score        int                                null comment '此题得分',
+    ai_advise    text                               null comment 'AI修改建议',
+    create_date  datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    update_date  datetime default CURRENT_TIMESTAMP null comment '更新时间',
+    is_delete    tinyint  default 0                 not null comment '逻辑删除',
+    constraint problem_exam_record_pk_2
+        unique (id)
+)
+    comment '考试提交记录表';
+
+create table problem_exam_tissue
+(
+    id          bigint auto_increment comment 'ID'
+        primary key,
+    problem_id  bigint                             not null comment '试题ID',
+    exam_id     bigint                             not null comment '考试ID',
+    score       int                                not null comment '此题分值',
+    type        int                                not null comment '0简答，1单选，2多选，3填空，4算法',
+    status      int                                null comment '0数学，1 408，2 政治，3算法',
+    create_date datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    update_date datetime default CURRENT_TIMESTAMP null comment '更新时间',
+    is_delete   tinyint  default 0                 null comment '逻辑删除',
+    constraint problem_exam_tissue_pk_2
+        unique (id)
+)
+    comment '考试试题信息';
+
+create table problem_exam_user
+(
+    id               bigint auto_increment comment 'ID'
+        primary key,
+    exam_id          bigint                             not null comment '考试ID',
+    uuid             bigint                             not null comment '用户ID',
+    username         varchar(256)                       not null comment '用户名',
+    score_option     int                                null comment '选择题分值',
+    status           int      default 0                 null comment '0表示报名信息生效，1表示报名信息失效(主要是为了区分多次报名信息)',
+    score_subjective int                                null comment '主观题得分',
+    create_date      datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    update_date      datetime default CURRENT_TIMESTAMP null comment '更新时间',
+    is_delete        tinyint  default 0                 not null comment '逻辑删除',
+    constraint problem_exam_user_pk_2
+        unique (id)
+)
+    comment '考试参加用户信息表';
+
+create table problem_math408_bank
 (
     problem_id      bigint auto_increment
         primary key,
-    problem_name    varchar(256)  null comment '简称',
-    difficulty_name varchar(10)   null comment '难度',
-    source_name     varchar(256)  null comment '来源',
-    description     text          null comment '题目描述',
-    create_by_id    bigint        null comment '修改人id',
-    create_by_name  varchar(256)  null comment '修改人name',
-    create_time     datetime      null comment '修改时间',
-    update_by_id    bigint        null comment '修改人id',
-    update_by_name  varchar(256)  null comment '修改人name',
-    update_time     datetime      null comment '修改时间',
-    status          int           null comment '0表示该题目为数学类型题目，1表示该题目为408考研试题',
-    option_type     int           null comment '0表示简答题，1表示单选题，2表示多选题，3表示填空题',
-    is_delete       int default 0 null comment '逻辑删除'
+    problem_name    varchar(256)      null comment '简称',
+    difficulty_name varchar(10)       null comment '难度',
+    source_name     varchar(256)      null comment '来源',
+    description     text              null comment '题目描述',
+    options         text              null comment '如果是选择题，则有多个选项（反之则为null）',
+    correct_answer  text              null comment '正确答案（各个类型题目的答案格式不同）',
+    analysis        text              null comment '解析',
+    create_by_id    bigint            null comment '修改人id',
+    create_by_name  varchar(256)      null comment '修改人name',
+    create_time     datetime          null comment '修改时间',
+    update_by_id    bigint            null comment '修改人id',
+    update_by_name  varchar(256)      null comment '修改人name',
+    update_time     datetime          null comment '修改时间',
+    status          int               null comment '0表示该题目为数学类型题目，1表示该题目为408考研试题，2表示该题目为政治考研试题',
+    option_type     int               null comment '0表示简答题，1表示单选题，2表示多选题，3表示填空题',
+    is_delete       tinyint default 0 null comment '逻辑删除'
 )
     comment 'math题目基本信息表' collate = utf8mb4_unicode_ci;
 
-create table if not exists byteoj.problem_math408_options
+create table problem_math408_tags
 (
-    id           bigint auto_increment comment '选项 ID'
+    id         bigint auto_increment comment 'ID'
         primary key,
-    problem_id   bigint        not null comment '所属问题的 ID',
-    option_text  varchar(256)  null comment '选项内容',
-    option_index varchar(10)   not null comment '选项索引，如 A, B, C，D 等',
-    is_delete    int default 0 null
+    tag_id     bigint        not null comment '标签ID',
+    problem_id bigint        not null comment '问题ID',
+    is_delete  int default 0 null
 )
-    comment '题目选项存储表' collate = utf8mb4_unicode_ci;
+    comment 'math知识点存储表' collate = utf8mb4_unicode_ci;
 
-create table if not exists byteoj.problem_math408_correct_answers
-(
-    id            bigint auto_increment comment '正确答案ID'
-        primary key,
-    problem_id    bigint not null comment '所属问题的ID',
-    correct_index text   null comment '参考正确答案（选择，填空，简答还有编程大题）',
-    constraint idx_problem_id_correct_index
-        unique (problem_id),
-    constraint fk_problem_correct_answers_problem_id
-        foreign key (problem_id) references byteoj.problem_math408_options (problem_id)
-            on update cascade on delete cascade
-)
-    comment '题目正确选项存储表' collate = utf8mb4_unicode_ci;
+create index problem_id
+    on problem_math408_tags (problem_id);
 
-create index idx_problem_id
-    on byteoj.problem_math408_options (problem_id);
+create index tag_id
+    on problem_math408_tags (tag_id);
 
-create table if not exists byteoj.problem_math408_tags_relation
+create table problem_math408_tags_relation
 (
     tag_id   bigint auto_increment comment '标签ID'
         primary key,
@@ -492,39 +415,39 @@ create table if not exists byteoj.problem_math408_tags_relation
 )
     comment 'math知识点存储表' collate = utf8mb4_unicode_ci;
 
-create table if not exists byteoj.problem_math408_tags
+create table problem_similarity
 (
-    id         bigint auto_increment comment 'ID'
+    id                    bigint auto_increment comment 'ID'
         primary key,
-    tag_id     bigint        not null comment '标签ID',
-    problem_id bigint        not null comment '问题ID',
-    is_delete  int default 0 null,
-    constraint problem_math408_tags_ibfk_1
-        foreign key (problem_id) references byteoj.problem_math408_bank (problem_id)
-            on update cascade on delete cascade,
-    constraint problem_math408_tags_ibfk_2
-        foreign key (tag_id) references byteoj.problem_math408_tags_relation (tag_id)
-            on update cascade on delete cascade
+    problem_id            bigint                             not null comment '原问题ID',
+    problem_id_similarity bigint                             null comment '相似问题ID',
+    `Rank`                int                                null comment '相似度排名',
+    create_date           datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    update_date           datetime default CURRENT_TIMESTAMP null comment '更新时间',
+    is_delete             tinyint                            null comment '逻辑删除',
+    constraint problem_similarity_pk_2
+        unique (id)
 )
-    comment 'math知识点存储表' collate = utf8mb4_unicode_ci;
+    comment '相似问题关系表';
 
-create index problem_id
-    on byteoj.problem_math408_tags (problem_id);
-
-create index tag_id
-    on byteoj.problem_math408_tags (tag_id);
-
-create table if not exists byteoj.public_chat_rooms
+create table procter_info
 (
-    room_id     bigint auto_increment comment '房间号'
+    procter_id     int auto_increment comment '监控信息ID'
         primary key,
-    room_name   varchar(256) default '学习聊天室' not null comment '房间名称',
-    description varchar(256)                      not null comment '描述',
-    online_num  bigint       default 0            null comment '聊天室的人數'
+    img_url        varchar(1024)                      not null comment '图片地址',
+    competition_id mediumtext                         not null comment '竞赛ID',
+    description    varchar(1024)                      not null comment '可疑行为描述',
+    type           tinyint                            not null comment '行为类型',
+    uuid           mediumtext                         not null comment '用户ID',
+    is_delete      tinyint  default 0                 not null comment '逻辑删除',
+    create_date    datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    update_date    datetime default CURRENT_TIMESTAMP null comment '更新时间',
+    constraint procter_info_pk_2
+        unique (procter_id)
 )
-    comment '公共聊天室表' collate = utf8mb4_unicode_ci;
+    comment '监控信息表';
 
-create table if not exists byteoj.submission_algorithm_records
+create table submission_algorithm_records
 (
     id            bigint auto_increment comment 'ID'
         primary key,
@@ -536,17 +459,32 @@ create table if not exists byteoj.submission_algorithm_records
     memory_used   int           null comment '空间花销'
 );
 
-create table if not exists byteoj.user
+create table usage_plans
+(
+    id           bigint auto_increment comment 'ID'
+        primary key,
+    feature_code varchar(255)                       not null comment '类型',
+    max_count    int      default 0                 null comment '最大使用次数',
+    is_delete    tinyint  default 0                 null comment '逻辑删除',
+    create_date  datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    update_date  datetime default CURRENT_TIMESTAMP null comment '更新时间',
+    uuid         bigint                             not null comment '用户ID',
+    constraint usage_plans_pk_2
+        unique (id)
+)
+    comment '使用额度表';
+
+create table user
 (
     uuid        bigint auto_increment comment 'ID'
         primary key,
     account     varchar(256)                       not null comment '账号',
-    password    varchar(256)                       not null comment '密码',
+    password    varchar(256)                       null comment '密码',
     username    varchar(256)                       not null comment '用户名',
-    avatar      text                               null comment '头像',
+    avatar      text                               not null comment '头像',
     tags        varchar(256)                       null comment '标签',
     hobby       varchar(256)                       null comment '爱好',
-    email       varchar(256)                       not null comment '邮箱',
+    email       varchar(256)                       null comment '邮箱',
     phone       varchar(256)                       null comment '电话',
     gender      varchar(256)                       null comment '性别',
     school      varchar(256)                       null comment '学校',
@@ -554,17 +492,18 @@ create table if not exists byteoj.user
     rating      int      default 1200              not null comment '竞赛分数',
     role        int      default 1                 not null comment '用户角色：user/admin/ban 1/2/3 用户/管理员/封禁账户',
     birth       datetime default CURRENT_TIMESTAMP null comment '生日',
-    create_time datetime default CURRENT_TIMESTAMP not null comment '创建时间',
-    update_time datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
-    is_delete   tinyint  default 0                 not null comment '是否删除',
-    readings    int      default 0                 not null,
+    open_id     varchar(64)                        null comment '微信的open_id',
+    create_time datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    update_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
+    is_delete   tinyint  default 0                 null comment '是否删除',
+    readings    int      default 0                 null,
     url         varchar(1024)                      null comment '个人网站地址',
     constraint user_pk
         unique (account)
 )
     comment '用户表' collate = utf8mb4_unicode_ci;
 
-create table if not exists byteoj.ac_algorithm_problem
+create table ac_algorithm_problem
 (
     id              bigint auto_increment
         primary key,
@@ -576,16 +515,16 @@ create table if not exists byteoj.ac_algorithm_problem
     is_delete       int default 0 null comment '逻辑删除',
     difficulty_name varchar(10)   null comment '题目难度',
     constraint ac_algorithm_problem_ibfk_1
-        foreign key (problem_id) references byteoj.problem_algorithm_bank (problem_id),
+        foreign key (problem_id) references problem_algorithm_bank (problem_id),
     constraint ac_algorithm_problem_ibfk_2
-        foreign key (user_id) references byteoj.user (uuid)
+        foreign key (user_id) references user (uuid)
 )
     comment 'AC情况存储表' collate = utf8mb4_bin;
 
 create index problem_id
-    on byteoj.ac_algorithm_problem (problem_id);
+    on ac_algorithm_problem (problem_id);
 
-create table if not exists byteoj.ac_math408_problem
+create table ac_math408_problem
 (
     id             bigint auto_increment
         primary key,
@@ -600,14 +539,14 @@ create table if not exists byteoj.ac_math408_problem
     status         int           null comment '状态',
     is_delete      int default 0 null comment '逻辑删除',
     constraint ac_math408_problem___fk2
-        foreign key (uuid) references byteoj.user (uuid),
+        foreign key (uuid) references user (uuid),
     constraint ac_math408_problem_ibfk_1
-        foreign key (problem_id) references byteoj.problem_math408_bank (problem_id)
+        foreign key (problem_id) references problem_math408_bank (problem_id)
             on update cascade on delete cascade
 )
     comment 'mathAC情况存储表' collate = utf8mb4_bin;
 
-create table if not exists byteoj.competitions
+create table competitions
 (
     competition_id   bigint auto_increment comment '比赛id'
         primary key,
@@ -620,15 +559,16 @@ create table if not exists byteoj.competitions
     created_by       bigint            not null comment '用户名字',
     pattern          tinyint default 0 not null comment '0:ACM赛制;1:IOI赛制;2:OI赛制',
     status           tinyint default 0 not null comment '0表示无密码， 1表示有密码',
+    is_procter       tinyint default 0 not null comment '是否开启监控0关1开',
     is_delete        tinyint default 0 not null comment '逻辑删除',
     joins            bigint  default 0 not null comment '参加比赛的人数',
     type             int     default 0 null comment '比赛创建类型，0表示个人创建赛，1表示管理员创建赛',
     constraint competitions_ibfk_1
-        foreign key (created_by) references byteoj.user (uuid)
+        foreign key (created_by) references user (uuid)
 )
     comment '比赛基本信息表' collate = utf8mb4_unicode_ci;
 
-create table if not exists byteoj.competition_ac_problems_algorithm
+create table competition_ac_problems_algorithm
 (
     id             int              not null comment 'ID'
         primary key,
@@ -644,15 +584,15 @@ create table if not exists byteoj.competition_ac_problems_algorithm
     constraint competition_ac_problems_algorithm_uuid_competition_id_idx_uindex
         unique (uuid, competition_id, idx),
     constraint competition_ac_problems_algorithm_competitions_competition_id_fk
-        foreign key (competition_id) references byteoj.competitions (competition_id),
+        foreign key (competition_id) references competitions (competition_id),
     constraint competition_ac_problems_algorithm_user_uuid_fk
-        foreign key (uuid) references byteoj.user (uuid)
+        foreign key (uuid) references user (uuid)
 );
 
 create index created_by
-    on byteoj.competitions (created_by);
+    on competitions (created_by);
 
-create table if not exists byteoj.competitions_problems_algorithm
+create table competitions_problems_algorithm
 (
     id             bigint auto_increment comment 'ID'
         primary key,
@@ -664,38 +604,19 @@ create table if not exists byteoj.competitions_problems_algorithm
     ac_total       bigint default 0 not null comment '通过人数',
     score          bigint default 0 not null comment '题目分数',
     constraint competitions_problems_algorithm_ibfk_1
-        foreign key (competition_id) references byteoj.competitions (competition_id),
+        foreign key (competition_id) references competitions (competition_id),
     constraint competitions_problems_algorithm_ibfk_2
-        foreign key (problem_id) references byteoj.problem_algorithm_bank (problem_id)
+        foreign key (problem_id) references problem_algorithm_bank (problem_id)
 )
     comment '比赛题目关联表' collate = utf8mb4_unicode_ci;
 
 create index competition_id
-    on byteoj.competitions_problems_algorithm (competition_id);
+    on competitions_problems_algorithm (competition_id);
 
 create index problem_id
-    on byteoj.competitions_problems_algorithm (problem_id);
+    on competitions_problems_algorithm (problem_id);
 
-create table if not exists byteoj.competitions_problems_math408
-(
-    id             bigint auto_increment comment 'ID'
-        primary key,
-    competition_id bigint not null comment '比赛ID',
-    problem_id     bigint not null comment '问题ID',
-    constraint competitions_problems_math408_ibfk_1
-        foreign key (competition_id) references byteoj.competitions (competition_id),
-    constraint competitions_problems_math408_ibfk_2
-        foreign key (problem_id) references byteoj.problem_math408_bank (problem_id)
-)
-    comment '比赛题目关联表' collate = utf8mb4_unicode_ci;
-
-create index competition_id
-    on byteoj.competitions_problems_math408 (competition_id);
-
-create index problem_id
-    on byteoj.competitions_problems_math408 (problem_id);
-
-create table if not exists byteoj.competitions_user
+create table competitions_user
 (
     id             bigint auto_increment comment 'ID'
         primary key,
@@ -707,19 +628,19 @@ create table if not exists byteoj.competitions_user
     ac_num         bigint     default 0                 null comment '通过次数',
     time_penalty   int        default 0                 null comment '罚时',
     constraint competitions_user_ibfk_1
-        foreign key (uuid) references byteoj.user (uuid),
+        foreign key (uuid) references user (uuid),
     constraint competitions_user_ibfk_2
-        foreign key (competition_id) references byteoj.competitions (competition_id)
+        foreign key (competition_id) references competitions (competition_id)
 )
     comment '用户参与表' collate = utf8mb4_unicode_ci;
 
 create index competition_id
-    on byteoj.competitions_user (competition_id);
+    on competitions_user (competition_id);
 
 create index uuid
-    on byteoj.competitions_user (uuid);
+    on competitions_user (uuid);
 
-create table if not exists byteoj.posts
+create table posts
 (
     post_id     bigint auto_increment comment '帖子id'
         primary key,
@@ -733,18 +654,18 @@ create table if not exists byteoj.posts
     reading     bigint   default 0                 not null comment '浏览量',
     location    varchar(256)                       null,
     problem_id  bigint   default 0                 not null comment '帖子所属题目id',
-    status      int      default 0                 null comment '0表示普通帖子，1表示答疑帖子，2表示题解帖子',
+    status      int      default 0                 null comment '0表示普通帖子，1表示答疑帖子，2表示题解帖子,3表示有下载内容，4表示博客帖子',
     url         varchar(1024)                      null,
     constraint posts_ibfk_1
-        foreign key (uuid) references byteoj.user (uuid)
+        foreign key (uuid) references user (uuid)
             on update cascade on delete cascade
 )
     comment '帖子表' collate = utf8mb4_unicode_ci;
 
 create index uuid
-    on byteoj.posts (uuid);
+    on posts (uuid);
 
-create table if not exists byteoj.posts_comment
+create table posts_comment
 (
     comment_id         bigint auto_increment comment '评论ID'
         primary key,
@@ -757,24 +678,24 @@ create table if not exists byteoj.posts_comment
     create_time        datetime default CURRENT_TIMESTAMP not null comment '创建时间',
     is_delete          tinyint  default 0                 not null comment '是否删除',
     constraint posts_comment_ibfk_1
-        foreign key (post_id) references byteoj.posts (post_id)
+        foreign key (post_id) references posts (post_id)
             on update cascade on delete cascade,
     constraint posts_comment_ibfk_2
-        foreign key (uuid) references byteoj.user (uuid)
+        foreign key (uuid) references user (uuid)
             on update cascade on delete cascade
 )
     comment '评论表' collate = utf8mb4_unicode_ci;
 
 create index post_id
-    on byteoj.posts_comment (post_id);
+    on posts_comment (post_id);
 
 create index root_comment_id
-    on byteoj.posts_comment (root_comment_id);
+    on posts_comment (root_comment_id);
 
 create index uuid
-    on byteoj.posts_comment (uuid);
+    on posts_comment (uuid);
 
-create table if not exists byteoj.posts_comment_thumbs
+create table posts_comment_thumbs
 (
     id         bigint not null comment 'ID'
         primary key,
@@ -782,27 +703,27 @@ create table if not exists byteoj.posts_comment_thumbs
     comment_id bigint not null comment '评论ID',
     uuid       bigint not null comment '用户ID',
     constraint posts_comment_thumbs_ibfk_1
-        foreign key (uuid) references byteoj.user (uuid)
+        foreign key (uuid) references user (uuid)
             on update cascade on delete cascade,
     constraint posts_comment_thumbs_ibfk_2
-        foreign key (post_id) references byteoj.posts (post_id)
+        foreign key (post_id) references posts (post_id)
             on update cascade on delete cascade,
     constraint posts_comment_thumbs_ibfk_3
-        foreign key (comment_id) references byteoj.posts_comment (comment_id)
+        foreign key (comment_id) references posts_comment (comment_id)
             on update cascade on delete cascade
 )
     comment '评论点赞关系表' collate = utf8mb4_unicode_ci;
 
 create index comment_id
-    on byteoj.posts_comment_thumbs (comment_id);
+    on posts_comment_thumbs (comment_id);
 
 create index post_id
-    on byteoj.posts_comment_thumbs (post_id);
+    on posts_comment_thumbs (post_id);
 
 create index uuid
-    on byteoj.posts_comment_thumbs (uuid);
+    on posts_comment_thumbs (uuid);
 
-create table if not exists byteoj.posts_tags
+create table posts_tags
 (
     id          bigint auto_increment comment 'ID'
         primary key,
@@ -812,68 +733,43 @@ create table if not exists byteoj.posts_tags
     create_time datetime default CURRENT_TIMESTAMP not null comment '创建时间',
     is_delete   tinyint  default 0                 not null comment '是否删除',
     constraint fk_tag_user
-        foreign key (uuid) references byteoj.user (uuid)
+        foreign key (uuid) references user (uuid)
             on update cascade on delete cascade,
     constraint posts_tags_ibfk_1
-        foreign key (post_id) references byteoj.posts (post_id)
+        foreign key (post_id) references posts (post_id)
             on update cascade on delete cascade
 )
     comment '帖子标签表' collate = utf8mb4_unicode_ci;
 
 create index idx_user_id
-    on byteoj.posts_tags (uuid)
+    on posts_tags (uuid)
     comment '用户id索引';
 
 create index post_id
-    on byteoj.posts_tags (post_id);
+    on posts_tags (post_id);
 
-create table if not exists byteoj.posts_thumbs
+create table posts_thumbs
 (
     id      bigint not null comment 'ID'
         primary key,
     post_id bigint not null comment '帖子ID',
     uuid    bigint not null comment '用户ID',
     constraint posts_thumbs_ibfk_1
-        foreign key (uuid) references byteoj.user (uuid)
+        foreign key (uuid) references user (uuid)
             on update cascade on delete cascade,
     constraint posts_thumbs_ibfk_2
-        foreign key (post_id) references byteoj.posts (post_id)
+        foreign key (post_id) references posts (post_id)
             on update cascade on delete cascade
 )
     comment '帖子标签点赞表' collate = utf8mb4_unicode_ci;
 
 create index post_id
-    on byteoj.posts_thumbs (post_id);
+    on posts_thumbs (post_id);
 
 create index uuid
-    on byteoj.posts_thumbs (uuid);
+    on posts_thumbs (uuid);
 
-create table if not exists byteoj.public_chat_messages
-(
-    message_id      bigint auto_increment comment '消息ID'
-        primary key,
-    room_id         bigint   default 0                 null comment '聊天室ID,0表示为私人聊天',
-    uuid            bigint                             not null comment '用户ID',
-    avatar          varchar(256)                       not null comment '头像地址',
-    message_content text                               not null comment '消息内容',
-    create_time     datetime default CURRENT_TIMESTAMP not null comment '发送时间',
-    to_uuid         bigint   default 0                 null comment '发送给的用户id,0表示公开发送',
-    constraint public_chat_messages_ibfk_1
-        foreign key (room_id) references byteoj.public_chat_rooms (room_id)
-            on update cascade on delete cascade,
-    constraint public_chat_messages_ibfk_2
-        foreign key (uuid) references byteoj.user (uuid)
-            on update cascade on delete cascade
-)
-    comment '公共聊天室消息表' collate = utf8mb4_unicode_ci;
-
-create index room_id
-    on byteoj.public_chat_messages (room_id);
-
-create index uuid
-    on byteoj.public_chat_messages (uuid);
-
-create table if not exists byteoj.submissions_algorithm
+create table submissions_algorithm
 (
     submission_id  bigint auto_increment comment '提交记录ID'
         primary key,
@@ -887,13 +783,13 @@ create table if not exists byteoj.submissions_algorithm
     score          int      default 0                                                                                                                                                                                                                                                            not null comment '得分',
     competition_id bigint   default 0                                                                                                                                                                                                                                                            not null comment '竞赛ID',
     constraint submissions_algorithm_ibfk_1
-        foreign key (uuid) references byteoj.user (uuid),
+        foreign key (uuid) references user (uuid),
     constraint submissions_algorithm_ibfk_2
-        foreign key (problem_id) references byteoj.problem_algorithm_bank (problem_id)
+        foreign key (problem_id) references problem_algorithm_bank (problem_id)
 )
     comment '评测表' collate = utf8mb4_unicode_ci;
 
-create table if not exists byteoj.submission_algorithm_details
+create table submission_algorithm_details
 (
     detail_id     bigint auto_increment comment '详细表id'
         primary key,
@@ -901,20 +797,20 @@ create table if not exists byteoj.submission_algorithm_details
     time_used     int    default 0 null comment '运行时间',
     memory_used   bigint default 0 null comment '内存使用',
     constraint submission_algorithm_details_ibfk_1
-        foreign key (submission_id) references byteoj.submissions_algorithm (submission_id)
+        foreign key (submission_id) references submissions_algorithm (submission_id)
 )
     comment '评测详细结果表' collate = utf8mb4_unicode_ci;
 
 create index submission_id
-    on byteoj.submission_algorithm_details (submission_id);
+    on submission_algorithm_details (submission_id);
 
 create index problem_id
-    on byteoj.submissions_algorithm (problem_id);
+    on submissions_algorithm (problem_id);
 
 create index uuid
-    on byteoj.submissions_algorithm (uuid);
+    on submissions_algorithm (uuid);
 
-create table if not exists byteoj.user_api
+create table user_api
 (
     id          int auto_increment comment 'id'
         primary key,
@@ -929,7 +825,7 @@ create table if not exists byteoj.user_api
 )
     comment 'API表' collate = utf8mb4_unicode_ci;
 
-create table if not exists byteoj.user_api_auth
+create table user_api_auth
 (
     id          int auto_increment comment 'id'
         primary key,
@@ -942,12 +838,12 @@ create table if not exists byteoj.user_api_auth
     comment '权限API关联表' collate = utf8mb4_unicode_ci;
 
 create index idx_api_id
-    on byteoj.user_api_auth (api_id);
+    on user_api_auth (api_id);
 
 create index idx_auth_id
-    on byteoj.user_api_auth (auth_id);
+    on user_api_auth (auth_id);
 
-create table if not exists byteoj.user_api_type
+create table user_api_type
 (
     id          int auto_increment comment 'id'
         primary key,
@@ -958,7 +854,7 @@ create table if not exists byteoj.user_api_type
 )
     comment 'API认证类型表' collate = utf8mb4_unicode_ci;
 
-create table if not exists byteoj.user_auth
+create table user_auth
 (
     id          int auto_increment comment 'id'
         primary key,
@@ -969,7 +865,7 @@ create table if not exists byteoj.user_auth
 )
     comment '权限表' collate = utf8mb4_unicode_ci;
 
-create table if not exists byteoj.user_background_picture
+create table user_background_picture
 (
     id              bigint auto_increment comment 'ID'
         primary key,
@@ -980,7 +876,7 @@ create table if not exists byteoj.user_background_picture
 )
     comment '用户背景图片存储表';
 
-create table if not exists byteoj.user_last_enter
+create table user_last_enter
 (
     id           bigint auto_increment comment 'ID'
         primary key,
@@ -990,10 +886,10 @@ create table if not exists byteoj.user_last_enter
     constraint user_last_enter_pk2
         unique (id),
     constraint user_last_enter_user_uuid_fk
-        foreign key (uuid) references byteoj.user (uuid)
+        foreign key (uuid) references user (uuid)
 );
 
-create table if not exists byteoj.user_rating
+create table user_rating
 (
     id               bigint auto_increment comment 'ID'
         primary key,
@@ -1014,7 +910,7 @@ create table if not exists byteoj.user_rating
         unique (id)
 );
 
-create table if not exists byteoj.user_role
+create table user_role
 (
     id          int auto_increment comment 'id'
         primary key,
@@ -1026,7 +922,7 @@ create table if not exists byteoj.user_role
 )
     comment '角色表' collate = utf8mb4_unicode_ci;
 
-create table if not exists byteoj.user_role_auth
+create table user_role_auth
 (
     id          int auto_increment comment 'id'
         primary key,
@@ -1039,12 +935,12 @@ create table if not exists byteoj.user_role_auth
     comment '用户角色关联表' collate = utf8mb4_unicode_ci;
 
 create index idx_auth_id
-    on byteoj.user_role_auth (auth_id);
+    on user_role_auth (auth_id);
 
 create index idx_role_id
-    on byteoj.user_role_auth (role_id);
+    on user_role_auth (role_id);
 
-create table if not exists byteoj.user_role_relation
+create table user_role_relation
 (
     id          int auto_increment comment 'id'
         primary key,
@@ -1057,12 +953,12 @@ create table if not exists byteoj.user_role_relation
     comment '用户角色关联表' collate = utf8mb4_unicode_ci;
 
 create index idx_role_id
-    on byteoj.user_role_relation (role_id);
+    on user_role_relation (role_id);
 
 create index idx_user_id
-    on byteoj.user_role_relation (uuid);
+    on user_role_relation (uuid);
 
-create table if not exists byteoj.website_background_pictures
+create table website_background_pictures
 (
     id              bigint auto_increment comment '图片id'
         primary key,
@@ -1072,7 +968,7 @@ create table if not exists byteoj.website_background_pictures
     constraint website_background_pictures_pk2
         unique (id),
     constraint website_background_pictures_user_uuid_fk
-        foreign key (uuid) references byteoj.user (uuid)
+        foreign key (uuid) references user (uuid)
 )
     comment '网站的背景图片集';
 

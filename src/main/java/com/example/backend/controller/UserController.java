@@ -68,9 +68,6 @@ public class UserController {
     @Autowired
     private EmailSendUtil emailSendUtils;
 
-    @Autowired
-    private RedisTemplate redisTemplate;
-
     @Value("${ROLE_MAX.UUID}")
     private Long BOSS_UUID;
 
@@ -82,9 +79,6 @@ public class UserController {
 
     @Value("${qq.app_redirect_url}")
     private String appRedirectUrl;
-
-    @Value("${domain.url_1}")
-    private String domain;
 
     @PostMapping("/register")
     private BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest,
@@ -223,8 +217,7 @@ public class UserController {
     @AccessLimit(seconds = 5, maxCount = 5, needLogin = false)
     @GetMapping("/weChat/login")
     private void userWeChatLogin(@Param("code") String code, HttpServletRequest request, HttpServletResponse response) throws IOException {
-        userService.userWeChatLogin(code, request);
-        response.sendRedirect(domain);
+        userService.userWeChatLogin(code, request, response);
     }
 //    @GetMapping("/callback")
 //    private BaseResponse<Boolean> userQQCallBack(@RequestParam("code") String code, @RequestParam("state") String state, HttpServletRequest httpServletRequest, HttpServletResponse response) {

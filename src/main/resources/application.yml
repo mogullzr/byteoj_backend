@@ -13,7 +13,7 @@ spring:
   mail:
     host: smtp.qq.com # 指定邮件服务器的主机名，这里默认是smtp.qq.com，表示使用的是腾讯的SMTP服务器。
     port: 465 # 587也行，但是就不需要开放ssl的enable了，同时修改protocol协议为 smtps 才行
-    username: ${hm.mail.username} # xxxx@qq.com  这里是发送者
+    username: ${hm.mail.username} # 用户名 xxxxxxxx@qq.com
     password: ${hm.mail.password}  # 这里就是我前面提到的授权码了
     properties: # 其他配置
       mail:
@@ -28,27 +28,25 @@ spring:
     default-encoding: UTF-8 # 设置邮件内容的默认编码格式为UTF-8 默认就是UTF-8
     protocol: smtps
   main:
-    #    解决升级Spring Boot2.6后,因依赖循环引用导致启动时报错的问题
+    # 解决升级Spring Boot2.6后,因依赖循环引用导致启动时报错的问题
     allow-circular-references: true
   profiles:
-    active: local
+    active: test
     name: backend
   datasource:
     dynamic:
       # 1. 设置默认数据源：保持原有逻辑，默认走 mysql
       primary: mysql
-      # 2. 严格模式：如果指定了不存在的數據源是否报错，建议 false (找不到则回退到主库)
+      # 2. 严格模式：如果指定了不存在的數據源是否报错
       strict: false
-
       datasource:
         # ================= MySQL 配置 (原有逻辑迁移) =================
         mysql:
           # 注意：dynamic-datasource 不需要在这里写 driver-class-name，它会自动识别 url
-          # 但为了清晰或旧版本兼容，写上也没问题
-          driver-class-name: com.mysql.cj.jdbc.Driver
-          url: jdbc:mysql://${hm.db.host}:3306/${hm.db.table}?rewriteBatchedStatements=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
-          username: ${hm.db.name}
-          password: ${hm.db.pwd}
+          driver-class-name: com.mysql.cj.jdbc.Driver # 驱动
+          url: jdbc:mysql://${hm.db.host}:${hm.db.port}/${hm.db.table}?rewriteBatchedStatements=true&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai # 地址
+          username: ${hm.db.name} # 用户名
+          password: ${hm.db.pwd} # 密码
           # HikariCP 连接池优化配置 (保留你原有的调优参数)
           hikari:
             maximum-pool-size: 20
@@ -56,21 +54,13 @@ spring:
             connection-timeout: 30000
             idle-timeout: 600000
             max-lifetime: 1800000
-          # 如果你之前的 docker 配置是自定义属性，可以放在这里，或者作为元数据
-          # 注意：standard dynamic-datasource config doesn't use 'docker' node directly inside datasource
-          # 如果这是你项目的自定义逻辑，请确保你的代码能读取到它，标准配置通常不需要这个节点
-
         # ================= PostgreSQL 配置 (新增) =================
         pg:
           # PostgreSQL 驱动
           driver-class-name: org.postgresql.Driver
-          # URL 格式：jdbc:postgresql://host:port/database
-          # 假设 PG 也在本地或同个 Docker 网络，端口通常是 5432
-          # 你需要定义新的环境变量：hm.pg.host, hm.pg.db, hm.pg.user, hm.pg.pwd
-          url: jdbc:postgresql://${hm.pg.host}:5432/${hm.pg.db}
-          username: ${hm.pg.user}
-          password: ${hm.pg.pwd}
-          # 应用相同的 HikariCP 优化配置，保证高并发下性能一致
+          url: jdbc:postgresql://${hm.pg.host}:${hm.pg.port}/${hm.pg.db}
+          username: ${hm.pg.user} # 用户名
+          password: ${hm.pg.pwd} # 密码
           hikari:
             maximum-pool-size: 20
             minimum-idle: 5
@@ -86,13 +76,12 @@ spring:
   # redis配置
   redis:
     # 端口
-    port: 6379
+    port: ${hm.redis.port}
     host: ${hm.redis.host}
     # 使用的数据库索引，默认是0
     database: 0
     # 连接超时时间
     timeout: 1800000
-#    password: 142398749lzr
     # 设置密码
     password: ${hm.redis.pwd}
     lettuce :
@@ -122,9 +111,9 @@ spring:
         size: 50  # 通道数
     listener:
       simple:
-        concurrency: 2  # 🔥 起步 2 线程（判题是CPU密集型，不能太多）
-        max-concurrency: 4  # 🔥 峰值 4（避免CPU过载）
-        prefetch: 1  # 🔥 预取 1 条/线程（确保负载均衡）
+        concurrency: 2  # 起步 2 线程（判题是CPU密集型，不能太多）
+        max-concurrency: 4  # 峰值 4（避免CPU过载）
+        prefetch: 1  # 预取 1 条/线程（确保负载均衡）
         acknowledge-mode: manual
         retry:
           enabled: true
@@ -155,13 +144,13 @@ server:
 #    session:
 #      cookie:
 #        domain: localhost
-
+sandbox:
+  urls: ${sandbox.urls}
 mybatis-plus:
   configuration:
     #    会默认将下滑线转换成驼峰式
     map-underscore-to-camel-case: false
-#    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    log-impl: ${hm.log} # 日志是否显示
   global-config:
     db-config:
       logic-delete-field: isDelete # 全局逻辑删除的实体字段名(since 3.3.0,配置后可以忽略不配置步骤2)
@@ -172,7 +161,7 @@ aliyun:
     endpoint: ${hm.aliyun.oss.endpoint} # 阿里云OSS地址，这里看你自己的OSS选择
     accessKeyId: ${hm.aliyun.oss.accessKeyId} # 阿里云OSS账号
     accessKeySecret: ${hm.aliyun.oss.accessKeySecret} # 阿里云OSS密钥
-    #        bucket可以由控制台创建，也可以使用java代码创建
+    # bucket可以由控制台创建，也可以使用java代码创建
     bucketName: ${hm.aliyun.oss.bucketName} #阿里云OSS上的存储块bucket名字
   vod:
     accessKeyId: ${hm.aliyun.vod.accessKeyId} # 阿里云vod的OSS账号
@@ -257,10 +246,13 @@ lantu:
   refund_url: ${lantu.refund_url}
 logging:
   level:
-    org.springframework: WARN
-    org.apache: WARN
-    com.zaxxer: WARN
-    org.hibernate: WARN
+    # 关闭Spring Boot启动时的Banner（启动图案）
+    org.springframework.boot.StartupInfoLogger: OFF
+    # 关闭Hibernate的统计信息和DEBUG日志
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.hibernate.SQL: WARN
+    # 关闭邮件发送的详细日志
+    org.springframework.mail: WARN
 
 #logging:
 # 日志持久化存储文件 nohup java -jar xxx.jar > /dev/null 2>&1 &

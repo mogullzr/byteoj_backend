@@ -11,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 
@@ -290,5 +291,5 @@ public interface UserService extends IService<User> {
      * 获取用户信息
      * @return
      */
-    void userWeChatLogin(String code, HttpServletRequest request);
+    void userWeChatLogin(String code, HttpServletRequest request, HttpServletResponse response) throws IOException;
 }

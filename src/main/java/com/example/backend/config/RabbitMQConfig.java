@@ -1,18 +1,16 @@
 package com.example.backend.config;
 
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.DirectExchange;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.QueueBuilder;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,21 +24,15 @@ import java.util.Map;
 public class RabbitMQConfig {
     
     // ==================== 沙箱配置 ====================
-    public static final int SANDBOX_COUNT = 10;  // 沙箱数量
-    
-    // 10个沙箱地址
-    public static final String[] SANDBOX_URLS = {
-        "http://101.43.48.120:6048",
-        "http://101.43.48.120:6049", 
-        "http://101.43.48.120:6050",
-        "http://101.43.48.120:6051",
-        "http://101.43.48.120:6052",
-        "http://101.43.48.120:6053",
-        "http://101.43.48.120:6054",
-        "http://101.43.48.120:6055",
-        "http://101.43.48.120:6056",
-        "http://101.43.48.120:6057",
-    };
+    public static int SANDBOX_COUNT;  // 沙箱数量
+
+    public static List<String> SANDBOX_URLS;
+    // n个沙箱地址
+    @Value("${sandbox.urls}")
+    public void setSandboxUrls(List<String> urls) {
+        RabbitMQConfig.SANDBOX_URLS = urls;
+        RabbitMQConfig.SANDBOX_COUNT = urls.size();
+    }
     
     // ==================== 队列配置 ====================
     // 队列名称模板
@@ -242,7 +234,7 @@ public class RabbitMQConfig {
         factory.setPrefetchCount(1);
         
         // 手动确认模式
-        factory.setAcknowledgeMode(org.springframework.amqp.core.AcknowledgeMode.MANUAL);
+        factory.setAcknowledgeMode(AcknowledgeMode.MANUAL);
         
         // 默认重新入队：false（失败后进入死信队列）
         factory.setDefaultRequeueRejected(false);
