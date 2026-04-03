@@ -27,22 +27,21 @@ public class DeadLetterQueueConsumer {
             long deliveryTag = amqpMessage.getMessageProperties().getDeliveryTag();
             String taskId = message.getTaskId();
             Long uuid = message.getUserUuid();
-            
-            log.error("[死信队列] 收到失败任务: taskId={}, uuid={}, problemId={}", 
+
+            log.error("[死信队列] 收到失败任务: taskId={}, uuid={}, problemId={}",
                     taskId, uuid, message.getJudgeRequest().getProblem_id());
-            
+
             // TODO: 可以在这里添加以下功能：
             // 1. 保存失败记录到数据库
             // 2. 发送告警通知（邮件、钉钉等）
             // 3. 记录到日志文件供后续分析
             // 4. 根据具体情况决定是否人工重试
-            
+
             // 确认消息（防止死信队列堆积）
             channel.basicAck(deliveryTag, false);
-            
+
         } catch (Exception e) {
             log.error("[死信队列] 处理死信消息失败", e);
         }
     }
 }
-

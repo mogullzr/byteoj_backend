@@ -29,8 +29,13 @@ import com.example.backend.models.vo.problem.ProblemDailyNumVo;
 import com.example.backend.models.vo.problem.ProblemTagsVo;
 import com.example.backend.models.vo.problem.ProblemUserLastVo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
+import com.example.backend.models.vo.similarity.CodeSimilarityVo;
 import com.example.backend.service.algorithm.ProblemAlgorithmService;
 import com.example.backend.service.user.UserService;
+import com.example.backend.service.competition.CodeSimilarityResultService;
+import com.example.backend.models.domain.embedding.CodeSimilarityResult;
+import com.example.backend.models.domain.user.User;
+import com.example.backend.mapper.UserMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +49,7 @@ import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -62,7 +68,7 @@ public class ProblemAlgorithmController {
         log.info("[多沙箱配置] 沙箱数量：{}", RabbitMQConfig.SANDBOX_COUNT);
         for (int i = 0; i < RabbitMQConfig.SANDBOX_COUNT; i++) {
             log.info("[多沙箱配置] 沙箱 {}: {} -> {}", 
-                i, RabbitMQConfig.QUEUE_NAMES[i], RabbitMQConfig.SANDBOX_URLS.get(i));
+                i, RabbitMQConfig.QUEUE_NAMES[i], RabbitMQConfig.SANDBOX_URLS[i]);
         }
     }
     @Autowired
@@ -80,6 +86,9 @@ public class ProblemAlgorithmController {
 
     @Autowired
     public UserService userService;
+
+    @Autowired
+    private UserMapper userMapper;
 
     @Autowired
     private RabbitTemplate rabbitTemplate;
@@ -315,7 +324,8 @@ public class ProblemAlgorithmController {
 
     @AccessLimit(seconds=5, maxCount=20, needLogin=true)
     @PostMapping("/judge/submit")
-    public BaseResponse<JudgeTask> problemAlgorithmJudgeSubmit(@RequestBody JudgeRequest judgeRequest, HttpServletRequest httpServletRequest) {
+    public BaseResponse<JudgeTask> problemAlgorithmJudgeSubmit(@RequestBody JudgeRequest judgeRequest,
+                                                               HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
@@ -378,7 +388,8 @@ public class ProblemAlgorithmController {
 
     @AccessLimit(seconds=5, maxCount=15, needLogin=true)
     @GetMapping("/aliyun/vod")
-    public BaseResponse<AliyunVodVo> AliyunVodGet(@RequestParam("problem_id") Long problem_id) throws Exception {
+    public BaseResponse<AliyunVodVo> AliyunVodGet(@RequestParam("problem_id") Long problem_id)
+            throws Exception {
         AliyunVodVo result = problemAlgorithmService.AliyunVodGet(problem_id);
         return ResultUtils.success(result);
     }
@@ -552,6 +563,27 @@ public class ProblemAlgorithmController {
         Long uuid = loginUser.getUuid();
 
         List<ProblemDailyVo> result = problemAlgorithmService.problemDailyGet(uuid);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 查询代码相似度结果(分页)
+     * @param competitionId 竞赛ID
+     * @param problemIndex 题目索引(可选,不传则查询所有题目)
+     * @param currentPage 当前页码(从1开始)
+     * @param pageSize 每页条数(默认20)
+     * @return 分页的相似度结果
+     */
+    @AccessLimit(seconds = 5, maxCount = 20, needLogin = true)
+    @GetMapping("/similarity/list")
+    public BaseResponse<Page<CodeSimilarityVo>> getSimilarityList(
+            @RequestParam Long competitionId,
+            @RequestParam(required = false) String problemIndex,
+            @RequestParam(defaultValue = "1") Integer currentPage,
+            @RequestParam(defaultValue = "20") Integer pageSize) {
+
+        Page<CodeSimilarityVo> result = problemAlgorithmService.getSimilarityList(competitionId,problemIndex, currentPage, pageSize);
+
         return ResultUtils.success(result);
     }
 

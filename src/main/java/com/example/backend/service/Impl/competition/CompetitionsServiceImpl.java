@@ -523,7 +523,8 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
             } else {
 
                 String CorrectPassword = competition.getPassword();
-                if (competition.getStatus() == 1 && (!Objects.equals(CorrectPassword, "") || !CorrectPassword.isEmpty())) {
+                if (competition.getStatus() == 1 && (!Objects.equals(CorrectPassword, "")
+                        || !CorrectPassword.isEmpty())) {
                     password = DigestUtils.md5DigestAsHex((SALT +password).getBytes());
                     if (!Objects.equals(CorrectPassword, password)) {
                         throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码错误");

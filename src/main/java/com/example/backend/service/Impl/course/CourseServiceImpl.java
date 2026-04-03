@@ -314,7 +314,6 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         QueryWrapper<Course> courseQueryWrapper = new QueryWrapper<>();
         QueryWrapper<CourseProblems> courseProblemsQueryWrapper = new QueryWrapper<>();
         QueryWrapper<CourseUserAcProblem> courseUserAcProblemQueryWrapper = new QueryWrapper<>();
-//        QueryWrapper<CourseUserAcStatus> courseUserAcStatusQueryWrapper = new QueryWrapper<>();
         QueryWrapper<CourseProblemsAcNum> courseProblemsAcNumQueryWrapper = new QueryWrapper<>();
         QueryWrapper<CourseProblemsType> courseProblemsTypeQueryWrapper = new QueryWrapper<>();
 

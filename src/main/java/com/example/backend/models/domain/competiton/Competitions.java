@@ -90,6 +90,11 @@ public class Competitions implements Serializable {
      */
     private Integer type;
 
+    /**
+     * Embedding 处理状态: 0-未处理 1-处理中 2-已完成
+     */
+    private Integer embedding_status;
+
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 }

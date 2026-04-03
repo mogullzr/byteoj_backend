@@ -1,5 +1,6 @@
 package com.example.backend.service.algorithm;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.backend.models.domain.algorithm.ProblemDailyInfo;
 import com.example.backend.models.domain.algorithm.UserLastEnter;
@@ -16,6 +17,7 @@ import com.example.backend.models.vo.problem.ProblemAlgorithmBankVo;
 import com.example.backend.models.vo.problem.ProblemDailyNumVo;
 import com.example.backend.models.vo.problem.ProblemTagsVo;
 import com.example.backend.models.vo.problem.ProblemUserLastVo;
+import com.example.backend.models.vo.similarity.CodeSimilarityVo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
@@ -271,4 +273,14 @@ public interface ProblemAlgorithmService extends IService<ProblemAlgorithmBank> 
      * @return 是否设置成功
      */
     Boolean problemDailySet(Long problem_id, Long uuid);
+
+    /**
+     * 查找代码相似度比例 > 0.85代码
+     *
+     * @param problemIndex
+     * @param currentPage
+     * @param pageSize
+     * @return
+     */
+    Page<CodeSimilarityVo> getSimilarityList(Long competitionId, String problemIndex, Integer currentPage, Integer pageSize);
 }

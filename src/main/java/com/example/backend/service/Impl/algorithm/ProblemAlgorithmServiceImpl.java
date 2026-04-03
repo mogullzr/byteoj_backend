@@ -32,6 +32,7 @@ import com.example.backend.models.domain.competiton.CompetitionAcProblemsAlgorit
 import com.example.backend.models.domain.competiton.Competitions;
 import com.example.backend.models.domain.competiton.CompetitionsProblemsAlgorithm;
 import com.example.backend.models.domain.competiton.CompetitionsUser;
+import com.example.backend.models.domain.embedding.CodeSimilarityResult;
 import com.example.backend.models.domain.judge.Judge;
 import com.example.backend.models.request.JudgeRequest;
 import com.example.backend.models.request.problem.AlgorithmQueryRequest;
@@ -44,16 +45,19 @@ import com.example.backend.models.vo.problem.ProblemAlgorithmBankVo;
 import com.example.backend.models.vo.problem.ProblemDailyNumVo;
 import com.example.backend.models.vo.problem.ProblemTagsVo;
 import com.example.backend.models.vo.problem.ProblemUserLastVo;
+import com.example.backend.models.vo.similarity.CodeSimilarityVo;
 import com.example.backend.models.vo.submission.SubmissionAlgorithmDetailRecordVo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import com.example.backend.service.algorithm.ProblemAlgorithmService;
 import com.example.backend.models.domain.algorithm.*;
 import com.example.backend.models.domain.user.User;
+import com.example.backend.service.competition.CodeSimilarityResultService;
 import com.example.backend.service.user.UserService;
 import com.example.backend.utils.RedisUtils;
 import com.example.backend.utils.VodUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -140,6 +144,9 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 
     @Resource
     private ProblemDailyInfoMapper problemDailyInfoMapper;
+
+    @Resource
+    private CodeSimilarityResultService codeSimilarityResultService;
 
     @Resource
     private JdbcTemplate jdbcTemplate;
@@ -2181,6 +2188,56 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 
         queryWrapper.eq("problem_id", problem_id);
         return problemDailyInfoMapper.update(problemDailySelected, queryWrapper) == 1;
+    }
+
+    @Override
+    public Page<CodeSimilarityVo> getSimilarityList(Long competitionId, String problemIndex, Integer currentPage, Integer pageSize) {
+        // 1. 查询总数
+        QueryWrapper<CodeSimilarityResult> countQuery = new QueryWrapper<>();
+        countQuery.eq("competition_id", competitionId);
+        if (problemIndex != null && !problemIndex.trim().isEmpty()) {
+            countQuery.eq("problem_index", problemIndex);
+        }
+        long total = codeSimilarityResultService.count(countQuery);
+
+        // 2. 手动分页查询(PostgreSQL 不支持 LIMIT ?,? 语法)
+        int offset = (currentPage - 1) * pageSize;
+        QueryWrapper<CodeSimilarityResult> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("competition_id", competitionId);
+        if (problemIndex != null && !problemIndex.trim().isEmpty()) {
+            queryWrapper.eq("problem_index", problemIndex);
+        }
+        queryWrapper.orderByDesc("similarity_score");
+        queryWrapper.last("LIMIT " + pageSize + " OFFSET " + offset);  // PostgreSQL 语法
+        
+        List<CodeSimilarityResult> resultList = codeSimilarityResultService.list(queryWrapper);
+
+        // 3. 转换为 VO
+        Page<CodeSimilarityVo> voPage = new Page<>(currentPage, pageSize, total);
+        List<CodeSimilarityVo> voList = new ArrayList<>();
+
+        for (CodeSimilarityResult result : resultList) {
+            CodeSimilarityVo vo = new CodeSimilarityVo();
+            vo.setCompetitionId(result.getCompetitionId());
+            vo.setProblemIndex(result.getProblemIndex());
+            vo.setSimilarityScore(result.getSimilarityScore());
+            vo.setSourceCode1(result.getSourceCode1());
+            vo.setSourceCode2(result.getSourceCode2());
+            vo.setCreatedAt(result.getCreatedAt());
+
+            // 查询用户名称
+            User user1 = userMapper.selectById(result.getUserUuid1());
+            User user2 = userMapper.selectById(result.getUserUuid2());
+
+            vo.setUserName1(user1 != null ? user1.getUsername() : "未知用户");
+            vo.setUserName2(user2 != null ? user2.getUsername() : "未知用户");
+
+            voList.add(vo);
+        }
+
+        voPage.setRecords(voList);
+
+        return voPage;
     }
 
     /**

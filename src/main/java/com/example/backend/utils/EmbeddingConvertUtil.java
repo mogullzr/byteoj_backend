@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.postgresql.util.PGobject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,7 @@ public class EmbeddingConvertUtil {
 
     @Resource
     private ProblemMath408BankService problemMath408BankService;
+
 
     @Value("${hm.aliyun.embedding.url}")
     private String url;
@@ -265,7 +267,7 @@ public class EmbeddingConvertUtil {
      * @param description 需要转换的描述信息
      * @return 转换后的向量数据
      */
-    private PGobject getEmebddingInfo(String model, String description) {
+    public PGobject getEmebddingInfo(String model, String description) {
         // 构建请求参数 (只构建一次)
         String jsonParams = String.format(
                 "{\"model\":\"%s\",\"input\":\"%s\",\"dimension\": 2048, \"encoding_format\": \"float\"\n}",

@@ -1,24 +1,41 @@
 package com.example.backend.utils;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.common.ErrorCode;
+import com.example.backend.config.RabbitMQConfig;
 import com.example.backend.exception.BusinessException;
 import com.example.backend.mapper.*;
+import com.example.backend.models.domain.algorithm.submission.SubmissionsAlgorithm;
 import com.example.backend.models.domain.competiton.Competitions;
 import com.example.backend.models.domain.competiton.CompetitionsProblemsAlgorithm;
 import com.example.backend.models.domain.competiton.CompetitionsUser;
+import com.example.backend.models.domain.embedding.EmbeddingTaskMessage;
+import com.example.backend.models.domain.embedding.EmbeddingTaskQueue;
 import com.example.backend.models.domain.user.User;
 import com.example.backend.models.domain.user.UserRating;
+import com.example.backend.service.algorithm.ProblemCompetitionCodeEmbeddingsService;
+import com.example.backend.service.embedding.EmbeddingTaskQueueService;
 import com.example.backend.service.user.UserRatingService;
+import com.alibaba.fastjson.JSON;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional; // 建议加事务
 
+import javax.annotation.Resource;
 import java.util.*;
 
 @Component
 public class CompetitionsRatedUtil {
+    private static final Logger log = LoggerFactory.getLogger(CompetitionsRatedUtil.class);
+
+    // 每批处理的用户数
+    private static final int BATCH_SIZE = 50;
 
     @Autowired
     private CompetitionsMapper competitionsMapper;
@@ -31,8 +48,29 @@ public class CompetitionsRatedUtil {
     @Autowired
     private CompetitionsProblemsAlgorithmMapper competitionsProblemsAlgorithmMapper;
 
+    @Autowired
+    private SubmissionsAlgorithmMapper submissionsAlgorithmMapper;
+
+    @Autowired
+    private ProblemCompetitionCodeEmbeddingsService problemCompetitionCodeEmbeddingsService;
+
+    @Autowired
+    private EmbeddingConvertUtil embeddingConvertUtil;
+
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+
+    @Resource
+    private EmbeddingTaskQueueService embeddingTaskQueueService;
+
+    @Value("${hm.aliyun.embedding.model}")
+    private String model;
+
     @Scheduled(cron = "0 0/30 12-23 * * ?")
     @Transactional(rollbackFor = Exception.class) // 加上事务保证数据一致性
+    /**
+     * 定时实现竞赛分数更新
+     */
     public void executeRated() {
         Date date = new Date();
         long time = 60 * 40 * 1000;
@@ -187,6 +225,222 @@ public class CompetitionsRatedUtil {
         }
     }
 
+    /**
+     * 定时任务:将代码转为 Embedding 向量(异步处理)
+     * 改造后:分批发送消息到 MQ,由消费者异步处理
+     * 注意: 不能使用 @Transactional,因为会锁定数据源,导致 @DS 失效
+     */
+    @Scheduled(fixedRate = 1000 * 60 * 60 * 8)
+//    @Scheduled(cron = "0 0/30 12-23 * * ?")  // 每分钟
+    public void codeToEmbedding() {
+        Date date = new Date();
+//        long time = 60 * 40 * 1000;
+//        Date date1 = new Date(date.getTime() - time);
+
+        // 1. 查询所有已结束的竞赛
+        QueryWrapper<Competitions> queryWrapper = new QueryWrapper<>();
+        queryWrapper.lt("end_time", date);
+        queryWrapper.eq("embedding_status", 0);
+        List<Competitions> competitionsList = competitionsMapper.selectList(queryWrapper);
+
+        if (competitionsList.isEmpty()) {
+            return;
+        }
+
+        log.info("[Embedding任务创建] 发现 {} 个已结束竞赛", competitionsList.size());
+
+        // 2. 遍历每个竞赛,创建任务记录
+        int totalTasksCreated = 0;
+        for (Competitions competition : competitionsList) {
+            try {
+                int count = createEmbeddingTasks(competition);
+                totalTasksCreated += count;
+            } catch (Exception e) {
+                log.error("[Embedding任务创建] 竞赛 {} 创建任务失败: {}", 
+                        competition.getCompetition_id(), e.getMessage(), e);
+            }
+        }
+
+        log.info("[Embedding任务创建] 共创建 {} 个任务记录", totalTasksCreated);
+    }
+
+    /**
+     * 为单个竞赛创建 Embedding 任务记录
+     * @return 创建的任务数量
+     */
+    private int createEmbeddingTasks(Competitions competition) {
+        Long competitionId = competition.getCompetition_id();
+
+        // 1. 检查是否已经创建过任务
+        Long existCount = embeddingTaskQueueService.countByCompetitionId(competitionId);
+        
+        if (existCount > 0) {
+            log.info("[Embedding任务创建] 竞赛 {} 已创建过任务,跳过", competitionId);
+            return 0;
+        }
+
+        // 2. 查询所有参赛用户
+        QueryWrapper<CompetitionsUser> cuQuery = new QueryWrapper<>();
+        cuQuery.eq("competition_id", competitionId)
+                .eq("is_participant", 0);
+
+        if (competition.getPattern() == 0) {
+            cuQuery.orderByDesc("ac_num");
+        } else {
+            cuQuery.orderByDesc("score");
+        }
+
+        List<CompetitionsUser> allUsers = competitionsUserMapper.selectList(cuQuery);
+        int totalUsers = allUsers.size();
+
+        if (totalUsers == 0) {
+            log.info("[Embedding任务创建] 竞赛 {} 没有参赛用户", competitionId);
+            return 0;
+        }
+
+        // 3. 分批创建任务记录
+        int totalBatches = (int) Math.ceil((double) totalUsers / BATCH_SIZE);
+        List<EmbeddingTaskQueue> taskList = new ArrayList<>();
+
+        for (int i = 0; i < totalUsers; i += BATCH_SIZE) {
+            int endIndex = Math.min(i + BATCH_SIZE, totalUsers);
+            List<CompetitionsUser> batchUsers = allUsers.subList(i, endIndex);
+
+            // 提取用户 UUID 列表
+            List<Long> uuids = new ArrayList<>();
+            for (CompetitionsUser cu : batchUsers) {
+                uuids.add(cu.getUuid());
+            }
+
+            // 创建任务记录
+            EmbeddingTaskQueue task = new EmbeddingTaskQueue();
+            task.setCompetitionId(competitionId);
+            task.setBatchIndex(i / BATCH_SIZE + 1);
+            task.setTotalBatches(totalBatches);
+            task.setUserUuids(JSON.toJSONString(uuids));  // 转为JSON存储
+            task.setStatus("PENDING");
+            task.setRetryCount(0);
+            task.setCreatedAt(new Date());
+            task.setUpdatedAt(new Date());
+
+            taskList.add(task);
+        }
+
+        // 4. 批量插入数据库(在 Service 层有事务)
+        if (!taskList.isEmpty()) {
+            embeddingTaskQueueService.saveTasksBatch(taskList);
+            log.info("[Embedding任务创建] 竞赛 {} 创建 {} 个任务记录", competitionId, taskList.size());
+        }
+
+        return taskList.size();
+    }
+
+    /**
+     * 定时任务2:分发 Pending 任务到 MQ(每分钟执行)
+     * 每次只取5个任务发送,慢慢处理
+     * 注意: 不能使用 @Transactional,因为会锁定数据源
+     */
+    @Scheduled(fixedRate = 1000 * 60)  // 每分钟
+    public void dispatchPendingTasks() {
+        // 1. 查询待处理的任务(每次取5个)
+        List<EmbeddingTaskQueue> pendingTasks = embeddingTaskQueueService.listPendingTasks(5);
+
+        if (pendingTasks.isEmpty()) {
+            return;
+        }
+
+        log.info("[任务分发] 发现 {} 个待处理任务", pendingTasks.size());
+
+        // 2. 逐个处理
+        for (EmbeddingTaskQueue task : pendingTasks) {
+            try {
+                // 更新状态为 PROCESSING
+                task.setStatus("PROCESSING");
+                task.setUpdatedAt(new Date());
+                embeddingTaskQueueService.updateById(task);
+
+                // 构建消息
+                EmbeddingTaskMessage message = new EmbeddingTaskMessage();
+                message.setCompetitionId(task.getCompetitionId());
+                message.setUserUuids(JSON.parseArray(task.getUserUuids(), Long.class));
+                message.setTaskType("EMBEDDING");
+                message.setBatchIndex(task.getBatchIndex());
+                message.setTotalBatches(task.getTotalBatches());
+                message.setCreateTime(System.currentTimeMillis());
+                message.setTaskQueueId(task.getId());  // 记录任务ID,方便回调更新
+
+                // 发送到 MQ
+                rabbitTemplate.convertAndSend(
+                        RabbitMQConfig.EMBEDDING_EXCHANGE,
+                        RabbitMQConfig.EMBEDDING_ROUTING_KEY,
+                        message
+                );
+
+                log.info("[任务分发] 已发送任务 ID: {}, 竞赛: {}, 批次: {}/{}", 
+                        task.getId(), task.getCompetitionId(), task.getBatchIndex(), task.getTotalBatches());
+
+            } catch (Exception e) {
+                log.error("[任务分发] 任务 ID: {} 发送失败: {}", task.getId(), e.getMessage(), e);
+                // 恢复状态为 PENDING,下次重试
+                task.setStatus("PENDING");
+                task.setUpdatedAt(new Date());
+                embeddingTaskQueueService.updateById(task);
+            }
+        }
+    }
+    /**
+     * 简化版：仅获取指定竞赛中指定用户的源代码列表
+     * @param competition_id 竞赛ID
+     * @param uuid 用户UUID
+     * @return Map<Integer, String> 题目序号 -> 源代码
+     */
+    public Map<String, String> getOnlySourceCode(Long competition_id, Long uuid) {
+        // 1. 验证竞赛是否存在（基础校验）
+        QueryWrapper<Competitions> competitionQW = new QueryWrapper<>();
+        competitionQW.eq("competition_id", competition_id).eq("is_delete", 0);
+        Competitions competition = competitionsMapper.selectOne(competitionQW);
+        if (competition == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "竞赛不存在");
+        }
+
+        // 2. 获取该竞赛下的所有题目ID映射
+        QueryWrapper<CompetitionsProblemsAlgorithm> problemQW = new QueryWrapper<>();
+        problemQW.eq("competition_id", competition_id).orderByAsc("idx");
+        List<CompetitionsProblemsAlgorithm> problemList = competitionsProblemsAlgorithmMapper.selectList(problemQW);
+
+        if (problemList.isEmpty()) {
+            return new HashMap<>(); // 如果没有题目，直接返回空
+        }
+
+        // 3. 核心简化：直接查询该用户的Accepted提交记录
+        Map<String, String> sourceCodeMap = new HashMap<>();
+
+        for (CompetitionsProblemsAlgorithm problem : problemList) {
+            String problemIdx = problem.getIdx(); // 题目序号 (A, B, C...)
+            Long problemId = problem.getProblem_id(); // 对应的题目ID
+
+            // 构建查询：查找该用户在该题目下最早的Accepted记录（或最新记录，视业务定）
+            QueryWrapper<SubmissionsAlgorithm> submissionQW = new QueryWrapper<>();
+            submissionQW.eq("competition_id", competition_id)
+                    .eq("uuid", uuid)
+                    .eq("problem_id", problemId)
+                    .eq("results", "Accepted") // 只获取通过的代码
+                    .last("LIMIT 1"); // 通常只需要一份AC代码，避免重复
+
+            SubmissionsAlgorithm submission = submissionsAlgorithmMapper.selectOne(submissionQW);
+
+            // 4. 提取源代码
+            if (submission != null && submission.getSource_code() != null) {
+                // Key为题目序号(如1,2,3)，Value为源码
+                sourceCodeMap.put(problemIdx, submission.getSource_code());
+            } else {
+                // 如果没AC，可以存空字符串或跳过
+                sourceCodeMap.put(problemIdx, "No Accepted Code");
+            }
+        }
+
+        return sourceCodeMap; // 返回结果：{1: "public class...", 2: "..."}
+    }
     /**
      * 获取当前分段的K值
      * @param rating 当前的分数
