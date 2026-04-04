@@ -2191,13 +2191,21 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
     }
 
     @Override
-    public Page<CodeSimilarityVo> getSimilarityList(Long competitionId, String problemIndex, Integer currentPage, Integer pageSize) {
+    public Page<CodeSimilarityVo> getSimilarityList(Long competitionId, Integer uuid, String problemIndex, Integer currentPage, Integer pageSize) {
         // 1. 查询总数
         QueryWrapper<CodeSimilarityResult> countQuery = new QueryWrapper<>();
         countQuery.eq("competition_id", competitionId);
         if (problemIndex != null && !problemIndex.trim().isEmpty()) {
             countQuery.eq("problem_index", problemIndex);
         }
+        if (uuid != null && !uuid.equals(-1)) {
+            countQuery.and(wrapper -> wrapper
+                            .eq("user_uuid_1", uuid)
+                            .or()
+                            .eq("user_uuid_2", uuid)
+                    );
+        }
+
         long total = codeSimilarityResultService.count(countQuery);
 
         // 2. 手动分页查询(PostgreSQL 不支持 LIMIT ?,? 语法)
@@ -2206,6 +2214,14 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         queryWrapper.eq("competition_id", competitionId);
         if (problemIndex != null && !problemIndex.trim().isEmpty()) {
             queryWrapper.eq("problem_index", problemIndex);
+        }
+
+        if (uuid != null && !uuid.equals(-1)) {
+            queryWrapper.and(wrapper -> wrapper
+                    .eq("user_uuid_1", uuid)
+                    .or()
+                    .eq("user_uuid_2", uuid)
+            );
         }
         queryWrapper.orderByDesc("similarity_score");
         queryWrapper.last("LIMIT " + pageSize + " OFFSET " + offset);  // PostgreSQL 语法

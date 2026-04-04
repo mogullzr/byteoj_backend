@@ -581,11 +581,12 @@ public class ProblemAlgorithmController {
     @GetMapping("/similarity/list")
     public BaseResponse<Page<CodeSimilarityVo>> getSimilarityList(
             @RequestParam Long competitionId,
+            @RequestParam(required = false) Integer uuid,
             @RequestParam(required = false) String problemIndex,
             @RequestParam(defaultValue = "1") Integer currentPage,
             @RequestParam(defaultValue = "20") Integer pageSize) {
 
-        Page<CodeSimilarityVo> result = problemAlgorithmService.getSimilarityList(competitionId,problemIndex, currentPage, pageSize);
+        Page<CodeSimilarityVo> result = problemAlgorithmService.getSimilarityList(competitionId, uuid, problemIndex, currentPage, pageSize);
 
         return ResultUtils.success(result);
     }

@@ -282,5 +282,5 @@ public interface ProblemAlgorithmService extends IService<ProblemAlgorithmBank> 
      * @param pageSize
      * @return
      */
-    Page<CodeSimilarityVo> getSimilarityList(Long competitionId, String problemIndex, Integer currentPage, Integer pageSize);
+    Page<CodeSimilarityVo> getSimilarityList(Long competitionId, Integer uuid, String problemIndex, Integer currentPage, Integer pageSize);
 }
