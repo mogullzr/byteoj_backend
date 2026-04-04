@@ -10,8 +10,10 @@ import com.example.backend.models.domain.embedding.CodeSimilarityResult;
 import com.example.backend.models.domain.embedding.EmbeddingTaskMessage;
 import com.example.backend.models.domain.embedding.EmbeddingTaskQueue;
 import com.example.backend.service.algorithm.ProblemCompetitionCodeEmbeddingsService;
+import com.example.backend.service.competition.CompetitionsService;
 import com.example.backend.service.embedding.EmbeddingTaskQueueService;
 import com.example.backend.utils.CompetitionsRatedUtil;
+import com.example.backend.utils.SimilarityClusterUtil;
 import com.example.backend.utils.EmbeddingConvertUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.rabbitmq.client.Channel;
@@ -34,16 +36,13 @@ import java.util.Date;
 
 /**
  * Embedding 任务消费者
- * 处理代码向量化和相似度比对任务
- * 使用固定线程池控制并发
+ * 处理代码向量化、相似度比对和团伙计算任务
  */
 @Component
 @RabbitListener(queues = RabbitMQConfig.EMBEDDING_QUEUE, containerFactory = "embeddingListenerContainerFactory")
 public class EmbeddingConsumer {
     private static final Logger log = LoggerFactory.getLogger(EmbeddingConsumer.class);
 
-    @Autowired
-    private CompetitionsMapper competitionsMapper;
     @Autowired
     private CompetitionsUserMapper competitionsUserMapper;
     @Autowired
@@ -58,11 +57,17 @@ public class EmbeddingConsumer {
     @Autowired
     private CompetitionsRatedUtil competitionsRatedUtil;
 
+    @Autowired
+    private SimilarityClusterUtil similarityClusterUtil;
+
     @Resource
     private EmbeddingTaskQueueService embeddingTaskQueueService;
 
     @Resource
     private CodeSimilarityResultService codeSimilarityResultService;
+
+    @Resource
+    private CompetitionsMapper competitionsMapper;
 
     @Autowired
     private RabbitTemplate rabbitTemplate;
@@ -86,8 +91,9 @@ public class EmbeddingConsumer {
         String taskType = message.getTaskType();
         int batchIndex = message.getBatchIndex();
 
-        log.info("[Embedding消费者] 开始处理任务, competitionId: {}, taskType: {}, batchIndex: {}/{}, 用户数: {}",
-                competitionId, taskType, batchIndex, message.getTotalBatches(), message.getUserUuids().size());
+//        log.info("[Embedding消费者] 开始处理任务, competitionId: {}, taskType: {}, batchIndex: {}/{}, 用户数: {}",
+//                competitionId, taskType, batchIndex, message.getTotalBatches(),
+//                message.getUserUuids() != null ? message.getUserUuids().size() : 0);
 
         try {
             // 同步处理,不使用线程池,保证 @DS 数据源切换有效
@@ -95,6 +101,17 @@ public class EmbeddingConsumer {
                 processEmbedding(message);
             } else if ("SIMILARITY".equals(taskType)) {
                 processSimilarity(message);
+//                log.info("[Embedding消费者] 竞赛 {} 所有相似度比对完成,创建团伙计算任务",
+//                        message.getCompetitionId());
+
+                // 修改竞赛状态
+                Competitions competition = competitionsMapper.selectOne(new QueryWrapper<Competitions>().eq("competition_id", competitionId));
+                competition.setEmbedding_status(2);
+                competitionsMapper.updateById(competition);
+
+                createClusterTask(message.getCompetitionId());
+            } else if ("CLUSTER".equals(taskType)) {
+                processCluster(message);
             }
             
             // 处理成功,更新数据库状态
@@ -107,29 +124,101 @@ public class EmbeddingConsumer {
                     embeddingTaskQueueService.updateById(task);
                                     
                     // 检查是否所有批次都完成了
-                    if (checkAllBatchesCompleted(message.getCompetitionId())) {
-                        log.info("[Embedding消费者] 竞赛 {} 所有 embedding 处理完成,触发相似度比对", 
-                                message.getCompetitionId());
-                        // 触发相似度比对任务
-                        triggerSimilarityTask(message.getCompetitionId());
+                    if (checkAllBatchesCompleted(message.getCompetitionId(), taskType)) {
+//                        log.info("[Embedding消费者] 竞赛 {} 所有 {} 任务处理完成",
+//                                message.getCompetitionId(), taskType);
+                        
+                        // 如果是 EMBEDDING 任务完成,触发相似度比对
+                        if ("EMBEDDING".equals(taskType)) {
+//                            log.info("[Embedding消费者] 竞赛 {} 所有 embedding 处理完成,触发相似度比对",
+//                                    message.getCompetitionId());
+                            triggerSimilarityTask(message.getCompetitionId());
+                        }
+                        // 如果是 SIMILARITY 任务完成,创建团伙计算任务
+//                        else if ("SIMILARITY".equals(taskType)) {
+//
+//                        }
                     }
                 }
             }
             
             // 处理成功,手动 ACK
             channel.basicAck(deliveryTag, false);
-            log.info("[Embedding消费者] 任务处理成功, competitionId: {}, batchIndex: {}", competitionId, batchIndex);
+//            log.info("[Embedding消费者] 任务处理成功, competitionId: {}, batchIndex: {}", competitionId, batchIndex);
             
         } catch (Exception e) {
-            log.error("[Embedding消费者] 任务处理失败, competitionId: {}, batchIndex: {}, 错误: {}",
-                    competitionId, batchIndex, e.getMessage(), e);
+//            log.error("[Embedding消费者] 任务处理失败, competitionId: {}, batchIndex: {}, 错误: {}",
+//                    competitionId, batchIndex, e.getMessage(), e);
             try {
                 // 处理失败,NACK,不重新入队(进入死信队列)
                 channel.basicNack(deliveryTag, false, false);
             } catch (IOException ioException) {
-                log.error("[Embedding消费者] 消息确认失败", ioException);
+//                log.error("[Embedding消费者] 消息确认失败", ioException);
             }
         }
+    }
+
+    /**
+     * 处理团伙计算任务
+     */
+    private void processCluster(EmbeddingTaskMessage message) {
+        Long competitionId = message.getCompetitionId();
+        
+        // log.info("[Cluster] 开始团伙计算, competitionId: {}", competitionId);
+        
+        // 直接调用团伙计算
+        similarityClusterUtil.calculateSimilarityClusters(competitionId);
+        
+        // log.info("[Cluster] 团伙计算完成, competitionId: {}", competitionId);
+    }
+
+    /**
+     * 创建团伙计算任务(单个任务,不分批)
+     */
+    private void createClusterTask(Long competitionId) {
+        // 检查是否已创建过
+        QueryWrapper<EmbeddingTaskQueue> checkQuery = new QueryWrapper<>();
+        checkQuery.eq("competition_id", competitionId)
+                .eq("task_type", "CLUSTER");
+        Long existCount = embeddingTaskQueueService.count(checkQuery);
+        
+        if (existCount > 0) {
+            // log.info("[Cluster任务创建] 竞赛 {} 已创建过团伙计算任务,跳过", competitionId);
+            return;
+        }
+        
+        // 创建任务记录
+        EmbeddingTaskQueue task = new EmbeddingTaskQueue();
+        task.setCompetitionId(competitionId);
+        task.setBatchIndex(1);
+        task.setTotalBatches(1);
+        task.setUserUuids(null);  // CLUSTER 任务不需要用户列表
+        task.setTaskType("CLUSTER");
+        task.setStatus("PENDING");
+        task.setRetryCount(0);
+        task.setCreatedAt(new Date());
+        task.setUpdatedAt(new Date());
+        
+        embeddingTaskQueueService.save(task);
+        // log.info("[Cluster任务创建] 竞赛 {} 团伙计算任务已创建,任务ID: {}", competitionId, task.getId());
+        
+        // 直接发送到 MQ,不等待定时任务
+        EmbeddingTaskMessage message = new EmbeddingTaskMessage();
+        message.setCompetitionId(competitionId);
+        message.setUserUuids(null);
+        message.setTaskType("CLUSTER");
+        message.setBatchIndex(1);
+        message.setTotalBatches(1);
+        message.setTaskQueueId(task.getId());  // 关联任务ID
+        message.setCreateTime(System.currentTimeMillis());
+        
+        rabbitTemplate.convertAndSend(
+                RabbitMQConfig.EMBEDDING_EXCHANGE,
+                RabbitMQConfig.EMBEDDING_ROUTING_KEY,
+                message
+        );
+        
+        // log.info("[Cluster任务创建] 竞赛 {} 团伙计算任务已发送到 MQ", competitionId);
     }
 
     /**
@@ -189,7 +278,7 @@ public class EmbeddingConsumer {
         // 4. 批量保存(幂等操作:使用 saveBatch,重复插入会失败但不影响)
         if (!embeddingsList.isEmpty()) {
             problemCompetitionCodeEmbeddingsService.saveBatch(embeddingsList);
-            log.info("[Embedding] 批量保存成功, competitionId: {}, 数量: {}", competitionId, embeddingsList.size());
+            // log.info("[Embedding] 批量保存成功, competitionId: {}, 数量: {}", competitionId, embeddingsList.size());
         }
     }
 
@@ -200,14 +289,14 @@ public class EmbeddingConsumer {
         Long competitionId = message.getCompetitionId();
         List<Long> userUuids = message.getUserUuids();
 
-        log.info("[Similarity] 开始相似度比对, competitionId: {}, 批次: {}/{}, 用户数: {}", 
-                competitionId, message.getBatchIndex(), message.getTotalBatches(), userUuids.size());
+        // log.info("[Similarity] 开始相似度比对, competitionId: {}, 批次: {}/{}, 用户数: {}",
+//                competitionId, message.getBatchIndex(), message.getTotalBatches(), userUuids.size());
 
         // 调用相似度计算逻辑,只计算当前批次的用户
         calculateSimilarityForBatch(competitionId, userUuids);
         
-        log.info("[Similarity] 批次相似度比对完成, competitionId: {}, batchIndex: {}", 
-                competitionId, message.getBatchIndex());
+        // log.info("[Similarity] 批次相似度比对完成, competitionId: {}, batchIndex: {}",
+//                competitionId, message.getBatchIndex());
     }
 
     /**
@@ -216,7 +305,7 @@ public class EmbeddingConsumer {
      * @param userUuids 当前批次的用户UUID列表
      */
     private void calculateSimilarityForBatch(Long competitionId, List<Long> userUuids) {
-        log.info("[Similarity计算] 开始, competitionId: {}, 用户数: {}", competitionId, userUuids.size());
+        // log.info("[Similarity计算] 开始, competitionId: {}, 用户数: {}", competitionId, userUuids.size());
 
         // 1. 查询这些用户的 embedding 数据
         QueryWrapper<ProblemCompetitionCodeEmbeddings> queryWrapper = new QueryWrapper<>();
@@ -232,7 +321,7 @@ public class EmbeddingConsumer {
             return;
         }
 
-        log.info("[Similarity计算] 找到 {} 条 embedding 数据", embeddingsList.size());
+        // log.info("[Similarity计算] 找到 {} 条 embedding 数据", embeddingsList.size());
 
         // 2. 按题目分组
         Map<String, List<ProblemCompetitionCodeEmbeddings>> groupedByProblem = new HashMap<>();
@@ -249,7 +338,7 @@ public class EmbeddingConsumer {
             String probIdx = entry.getKey();
             List<ProblemCompetitionCodeEmbeddings> problemEmbeddings = entry.getValue();
 
-            log.info("[Similarity计算] 题目 {} 有 {} 个用户代码", probIdx, problemEmbeddings.size());
+            // log.info("[Similarity计算] 题目 {} 有 {} 个用户代码", probIdx, problemEmbeddings.size());
 
             // 过滤掉代码太短的用户
             List<ProblemCompetitionCodeEmbeddings> validEmbeddings = new ArrayList<>();
@@ -267,7 +356,7 @@ public class EmbeddingConsumer {
             }
 
             if (validEmbeddings.size() < 2) {
-                log.info("[Similarity计算] 题目 {} 有效代码不足2个,跳过", probIdx);
+                // log.info("[Similarity计算] 题目 {} 有效代码不足2个,跳过", probIdx);
                 continue;
             }
 
@@ -305,86 +394,10 @@ public class EmbeddingConsumer {
 
         // 4. 批量保存结果
         if (!similarityResults.isEmpty()) {
-            log.info("[Similarity计算] 找到 {} 对高相似度代码", similarityResults.size());
+            // log.info("[Similarity计算] 找到 {} 对高相似度代码", similarityResults.size());
              codeSimilarityResultService.saveBatch(similarityResults);
         } else {
-            log.info("[Similarity计算] 没有找到高相似度代码");
-        }
-    }
-
-    /**
-     * 计算两两代码相似度(使用 pgvector)
-     * @param competitionId 竞赛ID
-     * @param problemIndex 题目索引(为null时计算所有题目)
-     */
-    public void calculateSimilarity(Long competitionId, String problemIndex) {
-        log.info("[Similarity计算] 开始, competitionId: {}, problemIndex: {}", competitionId, problemIndex);
-
-        // 1. 查询 embedding 数据
-        QueryWrapper<ProblemCompetitionCodeEmbeddings> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("competition_id", competitionId);
-        if (problemIndex != null) {
-            queryWrapper.eq("problem_index", problemIndex);
-        }
-        queryWrapper.orderByAsc("problem_index", "uuid");
-        
-        List<ProblemCompetitionCodeEmbeddings> embeddingsList = 
-                problemCompetitionCodeEmbeddingsService.list(queryWrapper);
-
-        if (embeddingsList.isEmpty()) {
-            log.warn("[Similarity计算] 没有找到 embedding 数据");
-            return;
-        }
-
-        log.info("[Similarity计算] 找到 {} 条 embedding 数据", embeddingsList.size());
-
-        // 2. 按题目分组
-        Map<String, List<ProblemCompetitionCodeEmbeddings>> groupedByProblem = new HashMap<>();
-        for (ProblemCompetitionCodeEmbeddings emb : embeddingsList) {
-            groupedByProblem.computeIfAbsent(emb.getProblem_index(), k -> new ArrayList<>()).add(emb);
-        }
-
-        // 3. 对每个题目进行两两比对
-        List<CodeSimilarityResult> similarityResults = new ArrayList<>();
-        double threshold = 0.85;  // 相似度阈值
-
-        for (Map.Entry<String, List<ProblemCompetitionCodeEmbeddings>> entry : groupedByProblem.entrySet()) {
-            String probIdx = entry.getKey();
-            List<ProblemCompetitionCodeEmbeddings> problemEmbeddings = entry.getValue();
-
-            log.info("[Similarity计算] 题目 {} 有 {} 个用户代码", probIdx, problemEmbeddings.size());
-
-            // 两两比对
-            for (int i = 0; i < problemEmbeddings.size(); i++) {
-                for (int j = i + 1; j < problemEmbeddings.size(); j++) {
-                    ProblemCompetitionCodeEmbeddings emb1 = problemEmbeddings.get(i);
-                    ProblemCompetitionCodeEmbeddings emb2 = problemEmbeddings.get(j);
-
-                    // 计算余弦相似度
-                    double similarity = calculateCosineSimilarity(emb1.getEmbedding(), emb2.getEmbedding());
-
-                    // 只保存超过阈值的
-                    if (similarity >= threshold) {
-                        CodeSimilarityResult result = new CodeSimilarityResult();
-                        result.setCompetitionId(competitionId);
-                        result.setProblemIndex(probIdx);
-                        result.setUserUuid1(Math.min(emb1.getUuid(), emb2.getUuid()));  // 保证 uuid1 < uuid2
-                        result.setUserUuid2(Math.max(emb1.getUuid(), emb2.getUuid()));
-                        result.setSimilarityScore(similarity);
-                        result.setCreatedAt(new Date());
-
-                        similarityResults.add(result);
-                    }
-                }
-            }
-        }
-
-        // 4. 批量保存结果
-        if (!similarityResults.isEmpty()) {
-            // TODO: 需要创建 CodeSimilarityResultService
-            log.info("[Similarity计算] 找到 {} 对高相似度代码(>{})", similarityResults.size(), threshold);
-        } else {
-            log.info("[Similarity计算] 没有找到高相似度代码");
+            // log.info("[Similarity计算] 没有找到高相似度代码");
         }
     }
 
@@ -550,11 +563,12 @@ public class EmbeddingConsumer {
     }
 
     /**
-     * 检查竞赛的所有 embedding 批次是否都已完成
+     * 检查竞赛的所有指定类型任务批次是否都已完成
      */
-    private boolean checkAllBatchesCompleted(Long competitionId) {
+    private boolean checkAllBatchesCompleted(Long competitionId, String taskType) {
         QueryWrapper<EmbeddingTaskQueue> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("competition_id", competitionId)
+                .eq("task_type", taskType)  // 只检查当前任务类型
                 .ne("status", "COMPLETED");  // 查找未完成的
         
         long pendingCount = embeddingTaskQueueService.count(queryWrapper);
@@ -606,10 +620,10 @@ public class EmbeddingConsumer {
                     message
             );
             
-            log.info("[Similarity触发] 已发送批次 {}/{}, 用户数: {}", 
-                    message.getBatchIndex(), totalBatches, uuids.size());
+            // log.info("[Similarity触发] 已发送批次 {}/{}, 用户数: {}",
+//                    message.getBatchIndex(), totalBatches, uuids.size());
         }
         
-        log.info("[Similarity触发] 竞赛 {} 相似度比对任务已全部发送,共 {} 批", competitionId, totalBatches);
+        // log.info("[Similarity触发] 竞赛 {} 相似度比对任务已全部发送,共 {} 批", competitionId, totalBatches);
     }
 }

@@ -49,7 +49,7 @@ public class WebSocketUtil {
 		// 当前用户
 		String userIdTo = session.getPathParameters().get("userId");
 		// JSON数据
-		log.info("onMessage:{}", messageInfo);
+		// log.info("onMessage:{}", messageInfo);
 		Map map = JSON.parseObject(messageInfo, Map.class);
 		// 接收人
 		String userId = (String) map.get("userId");
@@ -57,7 +57,7 @@ public class WebSocketUtil {
 		String message = (String) map.get("message");
 		// 发送给指定用户
 		sendMessageTo(message, userId);
-		log.info(DateUtil.now() + " | " + userIdTo + " 私人消息-> " + message, userId);
+		// log.info(DateUtil.now() + " | " + userIdTo + " 私人消息-> " + message, userId);
 	}
 
 	/**
@@ -76,8 +76,8 @@ public class WebSocketUtil {
 			addLoginCount();
 			userMap.put(userId, webSocket);
 		}
-		log.info("打开连接触发事件!已连接用户: " + userId);
-		log.info("当前在线人数: " + loginCount);
+		// log.info("打开连接触发事件!已连接用户: " + userId);
+		// log.info("当前在线人数: " + loginCount);
 
 	}
 
@@ -95,8 +95,8 @@ public class WebSocketUtil {
 			// 减少断开连接的用户
 			reduceLoginCount();
 		}
-		log.info("关闭连接触发事件!已断开用户: " + userId);
-		log.info("当前在线人数: " + loginCount);
+		// log.info("关闭连接触发事件!已断开用户: " + userId);
+		// log.info("当前在线人数: " + loginCount);
 
 	}
 
@@ -107,7 +107,7 @@ public class WebSocketUtil {
 	 **/
 	@OnError
 	public void onError(Throwable error) {
-		log.info("onError:{}", error.getMessage());
+		// log.info("onError:{}", error.getMessage());
 	}
 
 	/**

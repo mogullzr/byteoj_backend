@@ -1,46 +1,50 @@
 package com.example.backend.models.domain.embedding;
 
 import lombok.Data;
+
 import java.io.Serializable;
 import java.util.List;
 
 /**
- * Embedding 任务消息体
- * 用于异步处理代码向量化和相似度比对
+ * Embedding 任务消息
+ * 用于 RabbitMQ 消息传递
  */
 @Data
 public class EmbeddingTaskMessage implements Serializable {
-    
+
+    private static final long serialVersionUID = 1L;
+
     /**
      * 竞赛ID
      */
     private Long competitionId;
-    
+
     /**
-     * 用户UUID列表(每批50个用户)
+     * 用户UUID列表
+     * CLUSTER 任务此字段为 null
      */
     private List<Long> userUuids;
-    
+
     /**
-     * 任务类型: EMBEDDING-向量化, SIMILARITY-相似度比对
+     * 任务类型: EMBEDDING-代码向量化, SIMILARITY-相似度比对, CLUSTER-团伙计算
      */
     private String taskType;
-    
+
     /**
-     * 批次索引(用于日志追踪和进度记录)
+     * 批次索引
      */
     private int batchIndex;
-    
+
     /**
-     * 总批次数(用于判断是否最后一批)
+     * 总批次数
      */
     private int totalBatches;
-    
+
     /**
-     * 创建时间
+     * 创建时间戳
      */
-    private Long createTime;
-    
+    private long createTime;
+
     /**
      * 任务队列ID(用于回调更新状态)
      */

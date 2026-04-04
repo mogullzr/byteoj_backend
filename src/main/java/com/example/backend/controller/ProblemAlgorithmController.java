@@ -28,14 +28,14 @@ import com.example.backend.models.vo.problem.ProblemAlgorithmBankVo;
 import com.example.backend.models.vo.problem.ProblemDailyNumVo;
 import com.example.backend.models.vo.problem.ProblemTagsVo;
 import com.example.backend.models.vo.problem.ProblemUserLastVo;
+import com.example.backend.models.vo.similarity.ClusterVo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import com.example.backend.models.vo.similarity.CodeSimilarityVo;
 import com.example.backend.service.algorithm.ProblemAlgorithmService;
+import com.example.backend.service.embedding.SimilarityClusterService;
 import com.example.backend.service.user.UserService;
-import com.example.backend.service.competition.CodeSimilarityResultService;
-import com.example.backend.models.domain.embedding.CodeSimilarityResult;
-import com.example.backend.models.domain.user.User;
 import com.example.backend.mapper.UserMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,14 +61,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 @RequestMapping("/problem/algorithm")
 @Slf4j
 public class ProblemAlgorithmController {
-    
+
     // 启动时打印沙箱配置
     @PostConstruct
     public void init() {
-        log.info("[多沙箱配置] 沙箱数量：{}", RabbitMQConfig.SANDBOX_COUNT);
+        // log.info("[多沙箱配置] 沙箱数量：{}", RabbitMQConfig.SANDBOX_COUNT);
         for (int i = 0; i < RabbitMQConfig.SANDBOX_COUNT; i++) {
-            log.info("[多沙箱配置] 沙箱 {}: {} -> {}", 
-                i, RabbitMQConfig.QUEUE_NAMES[i], RabbitMQConfig.SANDBOX_URLS[i]);
+            // log.info("[多沙箱配置] 沙箱 {}: {} -> {}",
+//                    i, RabbitMQConfig.QUEUE_NAMES[i], RabbitMQConfig.SANDBOX_URLS[i]);
         }
     }
     @Autowired
@@ -91,6 +91,9 @@ public class ProblemAlgorithmController {
     private UserMapper userMapper;
 
     @Autowired
+    private SimilarityClusterService similarityClusterService;
+
+    @Autowired
     private RabbitTemplate rabbitTemplate;
 
     @Autowired
@@ -98,10 +101,10 @@ public class ProblemAlgorithmController {
 
     // 🔥 使用固定线程池替代 new Thread()，避免线程资源耗尽
     private final ExecutorService judgeSubmitExecutor = Executors.newFixedThreadPool(RabbitMQConfig.SANDBOX_COUNT);
-    
+
     // 🔥 轮询计数器：用于负载均衡分配沙箱
     private final AtomicInteger roundRobinCounter = new AtomicInteger(0);
-    
+
     /**
      * 获取下一个沙箱索引（纯轮询）
      */
@@ -316,7 +319,7 @@ public class ProblemAlgorithmController {
         Long uuid = -1L;
         if (loginUser != null) {
             uuid = loginUser.getUuid();
-       }
+        }
 
         List<Judge> result = problemAlgorithmService.problemAlgorithmJudge(judgeRequest);
         return ResultUtils.success(result);
@@ -345,15 +348,15 @@ public class ProblemAlgorithmController {
         message.setJudgeRequest(judgeRequest);
         message.setUserUuid(uuid);
         message.setCreateTime(new Date());
-        
+
         // 🔥 轮询分配沙箱：实现负载均衡
         int sandboxIndex = getNextSandboxIndex();
         message.setSandboxIndex(sandboxIndex);
-        
+
         // 获取对应的路由键
         String routingKey = RabbitMQConfig.ROUTING_KEYS[sandboxIndex];
-        
-        log.info("[提交判题] 任务分配到沙箱 {}, counter={}, taskId: {}", sandboxIndex, roundRobinCounter.get(), taskId);
+
+        // log.info("[提交判题] 任务分配到沙箱 {}, counter={}, taskId: {}", sandboxIndex, roundRobinCounter.get(), taskId);
 
         // 立即返回初始状态
         JudgeTask initialJudge = new JudgeTask();
@@ -366,7 +369,7 @@ public class ProblemAlgorithmController {
         // 🔥 关键改动：立即推送 Pending 状态到 WebSocket
         try {
             messagingTemplate.convertAndSend("/topic/judge/" + taskId, initialJudge);
-            log.info("[提交判题] 推送 Pending 状态成功, taskId: {}", taskId);
+            // log.info("[提交判题] 推送 Pending 状态成功, taskId: {}", taskId);
         } catch (Exception e) {
             log.warn("[提交判题] 推送 Pending 状态失败, taskId: {}", taskId, e);
         }
@@ -377,7 +380,7 @@ public class ProblemAlgorithmController {
                 Thread.sleep(100);  // 延迟 100ms，让前端有时间建立订阅
                 // 🔥 使用轮询分配的路由键，发送到对应沙箱的队列
                 rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, routingKey, message);
-                log.info("[提交判题] 任务已发送到队列 {} (沙箱{}), taskId: {}", routingKey, sandboxIndex, taskId);
+                // log.info("[提交判题] 任务已发送到队列 {} (沙箱{}), taskId: {}", routingKey, sandboxIndex, taskId);
             } catch (Exception e) {
                 log.error("[提交判题] 发送到队列失败, taskId: {}", taskId, e);
             }
@@ -393,7 +396,7 @@ public class ProblemAlgorithmController {
         AliyunVodVo result = problemAlgorithmService.AliyunVodGet(problem_id);
         return ResultUtils.success(result);
     }
-    
+
     @PostMapping("/record/add")
     public BaseResponse<Boolean> problemAlgorithmRecordAdd(@RequestBody JudgeRequest judgeRequest, HttpServletRequest httpServletRequest){
         if(httpServletRequest == null) {
@@ -493,7 +496,7 @@ public class ProblemAlgorithmController {
 
         return ResultUtils.success(result);
     }
-    
+
     @PostMapping("/admin/testCase/add")
     public BaseResponse<Boolean> problemAlgorithmTestCaseAdd(@RequestBody List<ProblemAlgorithmTestCaseRequest> problemAlgorithmTestCaseRequestList, Long problem_id, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
@@ -527,7 +530,7 @@ public class ProblemAlgorithmController {
         return ResultUtils.success(result);
 
     }
-    
+
     @AccessLimit(seconds = 3, maxCount = 20, needLogin = true)
     @GetMapping("/search/problemLast")
     public BaseResponse<ProblemUserLastVo> problemAlgorithmUserLast(HttpServletRequest httpServletRequest){
@@ -584,6 +587,36 @@ public class ProblemAlgorithmController {
 
         Page<CodeSimilarityVo> result = problemAlgorithmService.getSimilarityList(competitionId,problemIndex, currentPage, pageSize);
 
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 查询某题目的抄袭团伙(分页,每次一个团伙)
+     */
+    @AccessLimit(seconds = 5, maxCount = 20, needLogin = true)
+    @GetMapping("/similarity/clusters")
+    public BaseResponse<Page<ClusterVo>> getClustersByProblem(
+            @RequestParam Long competitionId,
+            @RequestParam(required = false) String problemIndex,
+            @RequestParam(defaultValue = "1") Integer currentPage,
+            @RequestParam(defaultValue = "1") Integer pageSize) throws JsonProcessingException {
+        Page<ClusterVo> result = similarityClusterService.getClustersByProblem(
+                competitionId, problemIndex, currentPage, pageSize);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 查询某用户的抄袭关系网
+     */
+    @AccessLimit(seconds = 5, maxCount = 20, needLogin = true)
+    @GetMapping("/similarity/clusters/user")
+    public BaseResponse<Page<ClusterVo>> getClustersByUser(
+            @RequestParam Long competitionId,
+            @RequestParam Long userUuid,
+            @RequestParam(defaultValue = "1") Integer currentPage,
+            @RequestParam(defaultValue = "10") Integer pageSize) throws JsonProcessingException {
+        Page<ClusterVo> result = similarityClusterService.getClustersByUser(
+                competitionId, userUuid, currentPage, pageSize);
         return ResultUtils.success(result);
     }
 

@@ -19,11 +19,21 @@ import java.util.List;
 public class EmbeddingTaskQueueService extends ServiceImpl<EmbeddingTaskQueueMapper, EmbeddingTaskQueue> {
     
     /**
-     * 查询指定竞赛的任务数量
+     * 查询指定竞赛的任务数量(所有类型)
      */
     public long countByCompetitionId(Long competitionId) {
         QueryWrapper<EmbeddingTaskQueue> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("competition_id", competitionId);
+        return count(queryWrapper);
+    }
+    
+    /**
+     * 查询指定竞赛的 EMBEDDING 任务数量(用于判断是否创建过)
+     */
+    public long countEmbeddingTasksByCompetitionId(Long competitionId) {
+        QueryWrapper<EmbeddingTaskQueue> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("competition_id", competitionId)
+                .eq("task_type", "EMBEDDING");
         return count(queryWrapper);
     }
     
@@ -36,7 +46,7 @@ public class EmbeddingTaskQueueService extends ServiceImpl<EmbeddingTaskQueueMap
     }
     
     /**
-     * 查询待处理任务
+     * 查询待处理任务(所有类型)
      */
     public List<EmbeddingTaskQueue> listPendingTasks(int limit) {
         QueryWrapper<EmbeddingTaskQueue> queryWrapper = new QueryWrapper<>();

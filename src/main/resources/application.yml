@@ -246,13 +246,10 @@ lantu:
   refund_url: ${lantu.refund_url}
 logging:
   level:
-    # 关闭Spring Boot启动时的Banner（启动图案）
-    org.springframework.boot.StartupInfoLogger: OFF
-    # 关闭Hibernate的统计信息和DEBUG日志
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-    org.hibernate.SQL: WARN
-    # 关闭邮件发送的详细日志
-    org.springframework.mail: WARN
+    # 替换为您项目的包名，或者使用通配符
+#    com.example.mapper: ERROR
+    # 或者全局设置（谨慎使用，会屏蔽所有业务的普通日志）
+     root: ERROR
 
 #logging:
 # 日志持久化存储文件 nohup java -jar xxx.jar > /dev/null 2>&1 &

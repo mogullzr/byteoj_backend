@@ -25,7 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional; // 建议加事务
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.*;
@@ -67,7 +67,7 @@ public class CompetitionsRatedUtil {
     private String model;
 
     @Scheduled(cron = "0 0/30 12-23 * * ?")
-    @Transactional(rollbackFor = Exception.class) // 加上事务保证数据一致性
+    @Transactional(rollbackFor = Exception.class)
     /**
      * 定时实现竞赛分数更新
      */
@@ -205,11 +205,6 @@ public class CompetitionsRatedUtil {
             }
 
             // 6. 批量更新数据库 (性能关键)
-            // 注意：MyBatis-Plus 的 updateBatchById 需要实体类有 @TableId
-            // 如果 uuid 是主键且配置正确，可以直接用。否则需要循环更新或自定义 XML 批量更新。
-            // 这里假设 uuid 是主键或者你有其他批量更新手段。
-            // 如果 userMapper 不支持基于 uuid 的批量更新，这里退化为循环，但内存计算已完成，只慢在 IO。
-
             for (User u : usersToUpdate) {
                 QueryWrapper<User> uw = new QueryWrapper<>();
                 uw.eq("uuid", u.getUuid());
@@ -230,12 +225,9 @@ public class CompetitionsRatedUtil {
      * 改造后:分批发送消息到 MQ,由消费者异步处理
      * 注意: 不能使用 @Transactional,因为会锁定数据源,导致 @DS 失效
      */
-    @Scheduled(fixedRate = 1000 * 60 * 60 * 8)
-//    @Scheduled(cron = "0 0/30 12-23 * * ?")  // 每分钟
+    @Scheduled(fixedRate = 1000 * 60 * 60 * 2)
     public void codeToEmbedding() {
         Date date = new Date();
-//        long time = 60 * 40 * 1000;
-//        Date date1 = new Date(date.getTime() - time);
 
         // 1. 查询所有已结束的竞赛
         QueryWrapper<Competitions> queryWrapper = new QueryWrapper<>();
@@ -247,12 +239,16 @@ public class CompetitionsRatedUtil {
             return;
         }
 
-        log.info("[Embedding任务创建] 发现 {} 个已结束竞赛", competitionsList.size());
+        // log.info("[Embedding任务创建] 发现 {} 个已结束且未处理的竞赛", competitionsList.size());
 
         // 2. 遍历每个竞赛,创建任务记录
         int totalTasksCreated = 0;
         for (Competitions competition : competitionsList) {
             try {
+                // 处理中......
+                competition.setEmbedding_status(1);
+                competitionsMapper.updateById(competition);
+
                 int count = createEmbeddingTasks(competition);
                 totalTasksCreated += count;
             } catch (Exception e) {
@@ -261,7 +257,7 @@ public class CompetitionsRatedUtil {
             }
         }
 
-        log.info("[Embedding任务创建] 共创建 {} 个任务记录", totalTasksCreated);
+        // log.info("[Embedding任务创建] 共创建 {} 个任务记录", totalTasksCreated);
     }
 
     /**
@@ -271,11 +267,11 @@ public class CompetitionsRatedUtil {
     private int createEmbeddingTasks(Competitions competition) {
         Long competitionId = competition.getCompetition_id();
 
-        // 1. 检查是否已经创建过任务
-        Long existCount = embeddingTaskQueueService.countByCompetitionId(competitionId);
+        // 1. 检查是否已经创建过 EMBEDDING 任务
+        Long existCount = embeddingTaskQueueService.countEmbeddingTasksByCompetitionId(competitionId);
         
         if (existCount > 0) {
-            log.info("[Embedding任务创建] 竞赛 {} 已创建过任务,跳过", competitionId);
+            // log.info("[Embedding任务创建] 竞赛 {} 已创建过 EMBEDDING 任务,跳过", competitionId);
             return 0;
         }
 
@@ -294,7 +290,7 @@ public class CompetitionsRatedUtil {
         int totalUsers = allUsers.size();
 
         if (totalUsers == 0) {
-            log.info("[Embedding任务创建] 竞赛 {} 没有参赛用户", competitionId);
+            // log.info("[Embedding任务创建] 竞赛 {} 没有参赛用户", competitionId);
             return 0;
         }
 
@@ -318,6 +314,7 @@ public class CompetitionsRatedUtil {
             task.setBatchIndex(i / BATCH_SIZE + 1);
             task.setTotalBatches(totalBatches);
             task.setUserUuids(JSON.toJSONString(uuids));  // 转为JSON存储
+            task.setTaskType("EMBEDDING");
             task.setStatus("PENDING");
             task.setRetryCount(0);
             task.setCreatedAt(new Date());
@@ -329,7 +326,7 @@ public class CompetitionsRatedUtil {
         // 4. 批量插入数据库(在 Service 层有事务)
         if (!taskList.isEmpty()) {
             embeddingTaskQueueService.saveTasksBatch(taskList);
-            log.info("[Embedding任务创建] 竞赛 {} 创建 {} 个任务记录", competitionId, taskList.size());
+            // log.info("[Embedding任务创建] 竞赛 {} 创建 {} 个任务记录", competitionId, taskList.size());
         }
 
         return taskList.size();
@@ -349,7 +346,7 @@ public class CompetitionsRatedUtil {
             return;
         }
 
-        log.info("[任务分发] 发现 {} 个待处理任务", pendingTasks.size());
+        // log.info("[任务分发] 发现 {} 个待处理任务", pendingTasks.size());
 
         // 2. 逐个处理
         for (EmbeddingTaskQueue task : pendingTasks) {
@@ -362,8 +359,18 @@ public class CompetitionsRatedUtil {
                 // 构建消息
                 EmbeddingTaskMessage message = new EmbeddingTaskMessage();
                 message.setCompetitionId(task.getCompetitionId());
-                message.setUserUuids(JSON.parseArray(task.getUserUuids(), Long.class));
-                message.setTaskType("EMBEDDING");
+                
+                // 根据任务类型设置 userUuids
+                String taskType = task.getTaskType();
+                if ("CLUSTER".equals(taskType)) {
+                    // CLUSTER 任务不需要用户列表
+                    message.setUserUuids(null);
+                } else {
+                    // EMBEDDING 和 SIMILARITY 需要用户列表
+                    message.setUserUuids(JSON.parseArray(task.getUserUuids(), Long.class));
+                }
+                
+                message.setTaskType(taskType);
                 message.setBatchIndex(task.getBatchIndex());
                 message.setTotalBatches(task.getTotalBatches());
                 message.setCreateTime(System.currentTimeMillis());
@@ -376,8 +383,8 @@ public class CompetitionsRatedUtil {
                         message
                 );
 
-                log.info("[任务分发] 已发送任务 ID: {}, 竞赛: {}, 批次: {}/{}", 
-                        task.getId(), task.getCompetitionId(), task.getBatchIndex(), task.getTotalBatches());
+                // log.info("[任务分发] 已发送任务 ID: {}, 竞赛: {}, 类型: {}, 批次: {}/{}",
+//                        task.getId(), task.getCompetitionId(), taskType, task.getBatchIndex(), task.getTotalBatches());
 
             } catch (Exception e) {
                 log.error("[任务分发] 任务 ID: {} 发送失败: {}", task.getId(), e.getMessage(), e);
@@ -388,6 +395,7 @@ public class CompetitionsRatedUtil {
             }
         }
     }
+
     /**
      * 简化版：仅获取指定竞赛中指定用户的源代码列表
      * @param competition_id 竞赛ID
@@ -441,6 +449,7 @@ public class CompetitionsRatedUtil {
 
         return sourceCodeMap; // 返回结果：{1: "public class...", 2: "..."}
     }
+    
     /**
      * 获取当前分段的K值
      * @param rating 当前的分数

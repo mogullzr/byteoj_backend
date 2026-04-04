@@ -1,5 +1,6 @@
 package com.example.backend.mapper;
 
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.example.backend.models.domain.competiton.CompetitionsProblemsAlgorithm;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Param;

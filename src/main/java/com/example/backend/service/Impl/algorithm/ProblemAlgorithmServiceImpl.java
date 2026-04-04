@@ -87,7 +87,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
     public void init() {
         // 设置连接超时 5 秒，读取超时 30 秒
         HttpGlobalConfig.setTimeout(30000);
-        log.info("[ProblemAlgorithmServiceImpl] HTTP 超时配置已设置: 连接5s, 读取30s");
+//        log.info("[ProblemAlgorithmServiceImpl] HTTP 超时配置已设置: 连接5s, 读取30s");
     }
 
     // 🔥 ThreadLocal 存储当前请求的沙箱 URL（支持多沙箱负载均衡）
@@ -294,9 +294,9 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
                 // 5. 执行查询，获取该 problem_id 对应的所有标签
                 tags = jdbcTemplate.queryForList(query, String.class, problemId);
                 if (tags.isEmpty()) {
-                    log.info("No tags found for problem_id: " + problemId);
+                    // log.info("No tags found for problem_id: " + problemId);
                 } else {
-                    log.info("Found tags for problem_id " + problemId + ": " + tags);
+                    // log.info("Found tags for problem_id " + problemId + ": " + tags);
                 }
             } catch (Exception e) {
                 // 6. 捕获异常并处理
@@ -2252,7 +2252,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
     public Judge problemAlgorithmSubmitWithSandbox(JudgeRequest judgeRequest, Long uuid, String sandboxUrl) {
         try {
             currentSandboxUrl.set(sandboxUrl);
-            log.info("[多沙箱] 使用沙箱: {}", sandboxUrl);
+            // log.info("[多沙箱] 使用沙箱: {}", sandboxUrl);
             return problemAlgorithmSubmit(judgeRequest, uuid);
         } finally {
             currentSandboxUrl.remove();
