@@ -397,6 +397,14 @@ public class ProblemAlgorithmController {
         return ResultUtils.success(result);
     }
 
+    @AccessLimit(seconds=5, maxCount=15, needLogin=true)
+    @GetMapping("/aliyun/vod/add")
+    public BaseResponse<AliyunVodVo> AliyunVodAdd(@RequestParam("problem_id") Long problem_id)
+            throws Exception {
+        AliyunVodVo result = problemAlgorithmService.AliyunVodGet(problem_id);
+        return ResultUtils.success(result);
+    }
+
     @PostMapping("/record/add")
     public BaseResponse<Boolean> problemAlgorithmRecordAdd(@RequestBody JudgeRequest judgeRequest, HttpServletRequest httpServletRequest){
         if(httpServletRequest == null) {

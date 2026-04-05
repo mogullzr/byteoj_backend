@@ -38,6 +38,7 @@ import com.example.backend.models.request.JudgeRequest;
 import com.example.backend.models.request.problem.AlgorithmQueryRequest;
 import com.example.backend.models.request.problem.ProblemAlgorithmRequest;
 import com.example.backend.models.request.problem.ProblemAlgorithmTestCaseRequest;
+import com.example.backend.models.request.problem.video.VideoUploadRequest;
 import com.example.backend.models.vo.AliyunVodVo;
 import com.example.backend.models.vo.ProblemDailyVo;
 import com.example.backend.models.vo.competition.CompetitionProblemsVo;
@@ -54,10 +55,10 @@ import com.example.backend.models.domain.user.User;
 import com.example.backend.service.competition.CodeSimilarityResultService;
 import com.example.backend.service.user.UserService;
 import com.example.backend.utils.RedisUtils;
+import com.example.backend.utils.UploadVideo;
 import com.example.backend.utils.VodUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -147,6 +148,9 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 
     @Resource
     private CodeSimilarityResultService codeSimilarityResultService;
+
+    @Resource
+    private UploadVideo uploadVideo;
 
     @Resource
     private JdbcTemplate jdbcTemplate;
@@ -259,6 +263,7 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 
             // 设置描述，最多100个字符
             problemAlgorithmVO.setDescription(description.length() > 100 ? description.substring(0, 100) : description);
+            problemAlgorithmVO.setVid(problemAlgorithmBank.getVid());
 
             if (isFirst) {
                 problemAlgorithmVO.setPages(Math.toIntExact(pages));
@@ -2262,6 +2267,23 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         voPage.setRecords(voList);
 
         return voPage;
+    }
+
+    @Override
+    public Boolean videoUpload(Long problem_id, MultipartFile videoFile) {
+        // 1.题目是否存在？
+        QueryWrapper<ProblemAlgorithmBank> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("problem_id", problem_id);
+        ProblemAlgorithmBank problem = problemAlgorithmBankMapper.selectOne(queryWrapper);
+        if (problem == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "不存在这道题");
+        }
+        String vid = uploadVideo.uploadVideoToVod(videoFile, problem_id + "." + problem.getChinese_name() + " - 视频");
+
+        problem.setVid(vid);
+        problemAlgorithmBankMapper.updateById(problem);
+
+        return true;
     }
 
     /**

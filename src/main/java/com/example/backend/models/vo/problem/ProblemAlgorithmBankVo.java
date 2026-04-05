@@ -87,6 +87,11 @@ public class ProblemAlgorithmBankVo implements Serializable {
     private String url;
 
     /**
+     * 视频vid
+     */
+    private String vid;
+
+    /**
      * 总页数
      */
     private Integer pages;

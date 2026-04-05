@@ -10,6 +10,7 @@ import com.example.backend.models.request.JudgeRequest;
 import com.example.backend.models.request.problem.AlgorithmQueryRequest;
 import com.example.backend.models.request.problem.ProblemAlgorithmRequest;
 import com.example.backend.models.request.problem.ProblemAlgorithmTestCaseRequest;
+import com.example.backend.models.request.problem.video.VideoUploadRequest;
 import com.example.backend.models.vo.AliyunVodVo;
 import com.example.backend.models.vo.ProblemDailyVo;
 import com.example.backend.models.vo.competition.CompetitionProblemsVo;
@@ -283,4 +284,13 @@ public interface ProblemAlgorithmService extends IService<ProblemAlgorithmBank> 
      * @return
      */
     Page<CodeSimilarityVo> getSimilarityList(Long competitionId, Integer uuid, String problemIndex, Integer currentPage, Integer pageSize);
+
+    /**
+     * 视频上传服务
+     *
+     * @param problemId 问题ID
+     * @param videoFile 视频文件
+     * @return 是否上传成功
+     */
+    Boolean videoUpload(Long problemId, MultipartFile videoFile);
 }
