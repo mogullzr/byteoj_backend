@@ -1339,6 +1339,14 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
                     .execute();  // 执行请求
         }
 
+        // 如果是竞赛，则不输出结果
+        if (judgeRequest.getCompetition_id() != null && competitions.getEnd_time().after(currentDate)) {
+            lastJudge.setInput("竞赛期间不允许查看");
+            lastJudge.setOutput("竞赛期间不允许查看");
+            lastJudge.setCorrectOutput("竞赛期间不允许查看");
+            lastJudge.setTime(0L);
+            lastJudge.setMemory(0L);
+        }
         return lastJudge;
     }
 

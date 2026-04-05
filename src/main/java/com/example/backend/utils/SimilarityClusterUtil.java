@@ -111,7 +111,7 @@ public class SimilarityClusterUtil {
             QueryWrapper<CodeSimilarityResult> query = new QueryWrapper<>();
             query.eq("competition_id", competitionId)
                     .eq("problem_index", problemIndex)
-                    .ge("similarity_score", 0.85);  // 只处理高相似度
+                    .ge("similarity_score", 0.95);  // 只处理高相似度
             List<CodeSimilarityResult> results = codeSimilarityResultService.list(query);
 
             if (results.isEmpty()) {

@@ -331,7 +331,7 @@ public class EmbeddingConsumer {
 
         // 3. 对每个题目进行两两比对
         List<CodeSimilarityResult> similarityResults = new ArrayList<>();
-        double baseThreshold = 0.85;  // 基础阈值
+        double baseThreshold = 0.90;  // 基础阈值
         int minCodeLength = 50;  // 最小代码长度(过滤太短的代码)
 
         for (Map.Entry<String, List<ProblemCompetitionCodeEmbeddings>> entry : groupedByProblem.entrySet()) {
