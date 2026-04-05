@@ -36,6 +36,7 @@ import javax.swing.*;
 
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -104,7 +105,8 @@ public class UserController {
     }
     @AccessLimit(seconds=5, maxCount=20, needLogin=false)
     @PostMapping("/admin/login")
-    private BaseResponse<UserVo> adminLogin(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest httpServletRequest) {
+    private BaseResponse<UserVo> adminLogin(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest httpServletRequest,
+                                            HttpServletResponse response) {
         if (userLoginRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
@@ -148,12 +150,12 @@ public class UserController {
             throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "小伙子你还挺狂，敢抓我包？？？？");
         }
 
-        UserVo result = userService.AdminLogin(Account, Password, Token, httpServletRequest);
+        UserVo result = userService.AdminLogin(Account, Password, Token, httpServletRequest, response);
         return ResultUtils.success(result);
     }
     @PostMapping("/login")
     private BaseResponse<UserVo> userLogin(@RequestBody UserLoginRequest userLoginRequest,
-                                           HttpServletRequest httpServletRequest) {
+                                           HttpServletRequest httpServletRequest, HttpServletResponse response) {
         if (userLoginRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
@@ -190,7 +192,7 @@ public class UserController {
             throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "小伙子你还挺狂，敢抓我包？？？？");
         }
 
-        UserVo result = userService.UserLogin(Account, Password, httpServletRequest);
+        UserVo result = userService.UserLogin(Account, Password, httpServletRequest, response);
         return ResultUtils.success(result);
     }
 

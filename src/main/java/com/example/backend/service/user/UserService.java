@@ -65,7 +65,7 @@ public interface UserService extends IService<User> {
      * @param Password 密码
      * @return 脱敏后的用户信息
      */
-    UserVo AdminLogin(String Account, String Password, String Token, HttpServletRequest httpServletRequest);
+    UserVo AdminLogin(String Account, String Password, String Token, HttpServletRequest httpServletRequest, HttpServletResponse response);
 
     /**
      * 用户登录
@@ -75,7 +75,7 @@ public interface UserService extends IService<User> {
      * @param Password 密码
      * @return 脱敏后的用户信息
      */
-    UserVo UserLogin(String Account, String Password, HttpServletRequest httpServletRequest);
+    UserVo UserLogin(String Account, String Password, HttpServletRequest httpServletRequest, HttpServletResponse response);
 
     /**
      * 通过Github登录

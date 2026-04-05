@@ -276,7 +276,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
 
     @Override
-    public UserVo AdminLogin(String Account, String Password, String Token, HttpServletRequest httpServletRequest) {
+    public UserVo AdminLogin(String Account, String Password, String Token, HttpServletRequest httpServletRequest, HttpServletResponse response) {
         // 1.校验
         if (StringUtils.isAnyBlank(Account, Password,Token)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "账户或密码不能为空");
@@ -323,12 +323,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         HttpSession session = httpServletRequest.getSession();
         session.setAttribute(USER_LOGIN_STATE, user);
         session.setMaxInactiveInterval(3600 * 24 * 2);
-        safetyUser.setSessionId(httpServletRequest.getRequestedSessionId());
+
+        Cookie cookie = new Cookie("JSESSIONID", session.getId());
+        cookie.setPath("/");
+        cookie.setMaxAge(7 * 24 * 60 * 60);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+
+        response.addCookie(cookie);
+
         return safetyUser;
     }
 
     @Override
-    public UserVo UserLogin(String Account, String Password, HttpServletRequest httpServletRequest) {
+    public UserVo UserLogin(String Account, String Password, HttpServletRequest httpServletRequest,
+                            HttpServletResponse response) {
         // 1.校验
         if (StringUtils.isAnyBlank(Account, Password)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "账户或密码不能为空");
@@ -366,7 +375,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         HttpSession session = httpServletRequest.getSession();
         session.setAttribute(USER_LOGIN_STATE, user);
         session.setMaxInactiveInterval(3600 * 24 * 7);
-        safetyUser.setSessionId(httpServletRequest.getRequestedSessionId());
+
+        Cookie cookie = new Cookie("JSESSIONID", session.getId());
+        cookie.setPath("/");
+        cookie.setMaxAge(7 * 24 * 60 * 60);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+
+        response.addCookie(cookie);
         return safetyUser;
     }
 

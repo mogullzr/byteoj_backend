@@ -14,10 +14,6 @@ public class UserVo implements Serializable {
 
     private static final long serialVersionUID = 863250584695957573L;
     /**
-     * sessionId
-     */
-    private String sessionId;
-    /**
      * ID
      */
     private Long uuid;
