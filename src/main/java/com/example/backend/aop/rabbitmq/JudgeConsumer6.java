@@ -42,7 +42,8 @@ public class JudgeConsumer6 {
         String taskId = message.getTaskId();
         Long uuid = message.getUserUuid();
 
-        // log.info("[沙箱{}消费者] 开始处理任务, taskId: {}, uuid: {}, 沙箱地址: {}", SANDBOX_INDEX, taskId, uuid, SANDBOX_URL);
+        long startTime = System.currentTimeMillis();
+        log.info("[沙箱{}消费者] 开始处理任务, taskId: {}, uuid: {}", SANDBOX_INDEX, taskId, uuid);
 
         try {
             // 1. 推送 Running 状态
@@ -60,10 +61,20 @@ public class JudgeConsumer6 {
 
             // 4. 手动 ACK
             channel.basicAck(deliveryTag, false);
-            // log.info("[沙箱{}消费者] 任务处理成功, taskId: {}, 结果: {}", SANDBOX_INDEX, taskId, result.getStatus());
+            
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("[沙箱{}消费者] 任务处理成功, taskId: {}, 结果: {}, 耗时: {}ms", 
+                    SANDBOX_INDEX, taskId, result.getStatus(), duration);
+            
+            // 🔥 监控慢请求
+            if (duration > 10000) {
+                log.warn("[沙箱{}消费者] ⚠️ 判题耗时过长: {}ms, taskId: {}", SANDBOX_INDEX, duration, taskId);
+            }
 
         } catch (Exception e) {
-            log.error("[沙箱{}消费者] 任务处理失败, taskId: {}, 错误: {}", SANDBOX_INDEX, taskId, e.getMessage(), e);
+            long duration = System.currentTimeMillis() - startTime;
+            log.error("[沙箱{}消费者] 任务处理失败, taskId: {}, 耗时: {}ms, 错误: {}", 
+                    SANDBOX_INDEX, taskId, duration, e.getMessage(), e);
             handleFailure(taskId, uuid, e, channel, deliveryTag);
         }
     }

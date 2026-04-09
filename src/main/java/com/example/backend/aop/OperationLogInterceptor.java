@@ -161,6 +161,13 @@ public class OperationLogInterceptor implements HandlerInterceptor {
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             return;
         }
+        
+        // 🔥 跳过 WebSocket 相关请求（避免记录不必要的日志）
+        String requestUri = request.getRequestURI();
+        if (requestUri != null && (requestUri.contains("/ws/") || requestUri.contains("/sockjs/"))) {
+            return;
+        }
+        
         try {
             // 0.异常信息
             Exception finalEx = Optional.ofNullable(ex)
@@ -196,6 +203,14 @@ public class OperationLogInterceptor implements HandlerInterceptor {
                     logException.setModule(module);
                 }
             });
+            
+            // 🔥 如果 module 为空，设置默认值，避免数据库报错
+            if (logOperation.getModule() == null || logOperation.getModule().isEmpty()) {
+                logOperation.setModule("other");
+            }
+            if (logException.getModule() == null || logException.getModule().isEmpty()) {
+                logException.setModule("other");
+            }
 
             logOperation.setMethod("");
 

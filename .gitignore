@@ -3,6 +3,7 @@
 # Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
 application-dev.yml
 application-local.yml
+application-prod.yml
 target/
 test.sql
 log/

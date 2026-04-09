@@ -136,7 +136,7 @@ spring:
       max-request-size: 50MB
 server:
   # 端口
-  port: 7091
+  port: ${port}
   address: 0.0.0.0
   # 自定义路径
   servlet:

@@ -377,7 +377,9 @@ public class ProblemAlgorithmController {
         // 发送到RabbitMQ（使用线程池，避免 new Thread() 资源耗尽）
         judgeSubmitExecutor.submit(() -> {
             try {
-                Thread.sleep(100);  // 延迟 100ms，让前端有时间建立订阅
+                // 🔥 移除不必要的延迟，直接发送消息
+                // Thread.sleep(100);  // ❌ 已删除，前端使用纯 WebSocket，订阅更快
+                
                 // 🔥 使用轮询分配的路由键，发送到对应沙箱的队列
                 rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, routingKey, message);
                 // log.info("[提交判题] 任务已发送到队列 {} (沙箱{}), taskId: {}", routingKey, sandboxIndex, taskId);

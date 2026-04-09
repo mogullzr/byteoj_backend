@@ -1,3 +1,4 @@
+port: 7091
 domain:
   url_1: "http://localhost:8080/home"
 sandbox:
