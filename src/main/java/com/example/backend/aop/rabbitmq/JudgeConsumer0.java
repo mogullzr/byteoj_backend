@@ -43,6 +43,8 @@ public class JudgeConsumer0 {
         Long uuid = message.getUserUuid();
 
         long startTime = System.currentTimeMillis();
+        log.info("[=========沙箱{}消费者=========] 收到消息!", SANDBOX_INDEX);
+        log.info("[沙箱{}消费者] taskId: {}, uuid: {}", SANDBOX_INDEX, taskId, uuid);
         log.info("[沙箱{}消费者] 开始处理任务, taskId: {}, uuid: {}", SANDBOX_INDEX, taskId, uuid);
 
         try {
@@ -55,9 +57,18 @@ public class JudgeConsumer0 {
                 throw new IllegalArgumentException("JudgeRequest 为空");
             }
             Judge result = problemAlgorithmService.problemAlgorithmSubmitWithSandbox(request, uuid, SANDBOX_URL);
+            
+            // 🔥 设置 taskId（用于前端识别）
+            result.setTaskId(taskId);
 
             // 3. 推送成功结果
-            messagingTemplate.convertAndSend("/topic/judge/" + taskId, result);
+            try {
+                log.info("[沙箱{}消费者] 准备推送结果, taskId: {}, status: {}", SANDBOX_INDEX, taskId, result.getStatus());
+                messagingTemplate.convertAndSend("/topic/judge/" + taskId, result);
+                log.info("[沙箱{}消费者] 推送结果成功, taskId: {}", SANDBOX_INDEX, taskId);
+            } catch (Exception pushEx) {
+                log.error("[沙箱{}消费者] ⚠️ 推送WebSocket消息失败, taskId: {}", SANDBOX_INDEX, taskId, pushEx);
+            }
 
             // 4. 手动 ACK
             channel.basicAck(deliveryTag, false);
@@ -79,6 +90,18 @@ public class JudgeConsumer0 {
         }
     }
 
+    /**
+     * 🔥 兜底方法：捕获所有无法反序列化的消息
+     */
+    @RabbitHandler(isDefault = true)
+    public void handleDefaultMessage(Object message, Channel channel, Message amqpMessage) throws IOException {
+        long deliveryTag = amqpMessage.getMessageProperties().getDeliveryTag();
+        log.error("[沙箱{}消费者] ⚠️ 收到无法反序列化的消息: {}", SANDBOX_INDEX, message);
+        log.error("[沙箱{}消费者] 消息内容: {}", SANDBOX_INDEX, new String(amqpMessage.getBody()));
+        // 拒绝消息，不重新入队
+        channel.basicNack(deliveryTag, false, false);
+    }
+
     private void pushStatus(String taskId, String status, String message, Long uuid) {
         try {
             JudgeTask statusUpdate = new JudgeTask();
@@ -87,9 +110,11 @@ public class JudgeConsumer0 {
             statusUpdate.setMessage(message);
             statusUpdate.setUserUuid(uuid);
             statusUpdate.setSubmitTime(new Date());
+            log.info("[沙箱{}消费者] 推送状态: {}, taskId: {}", SANDBOX_INDEX, status, taskId);
             messagingTemplate.convertAndSend("/topic/judge/" + taskId, statusUpdate);
+            log.info("[沙箱{}消费者] 推送状态成功: {}, taskId: {}", SANDBOX_INDEX, status, taskId);
         } catch (Exception e) {
-            log.error("[沙箱{}消费者] WebSocket 推送失败, taskId: {}", SANDBOX_INDEX, taskId, e);
+            log.error("[沙箱{}消费者] ⚠️ WebSocket 推送状态失败, taskId: {}, 错误: {}", SANDBOX_INDEX, taskId, e.getMessage(), e);
         }
     }
 
@@ -102,10 +127,14 @@ public class JudgeConsumer0 {
             errorResult.setUserUuid(uuid);
             errorResult.setSubmitTime(new Date());
 
+            log.info("[沙箱{}消费者] 推送失败状态, taskId: {}", SANDBOX_INDEX, taskId);
             messagingTemplate.convertAndSend("/topic/judge/" + taskId, errorResult);
+            log.info("[沙箱{}消费者] 推送失败状态成功, taskId: {}", SANDBOX_INDEX, taskId);
             channel.basicNack(deliveryTag, false, false);
         } catch (IOException ioException) {
             log.error("[沙箱{}消费者] 消息确认失败, taskId: {}", SANDBOX_INDEX, taskId, ioException);
+        } catch (Exception pushEx) {
+            log.error("[沙箱{}消费者] ⚠️ 推送失败状态异常, taskId: {}", SANDBOX_INDEX, taskId, pushEx);
         }
     }
 }

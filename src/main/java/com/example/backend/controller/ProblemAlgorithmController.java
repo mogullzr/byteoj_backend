@@ -367,18 +367,18 @@ public class ProblemAlgorithmController {
         initialJudge.setSubmitTime(new Date());
 
         // 🔥 关键改动：立即推送 Pending 状态到 WebSocket
-        try {
-            messagingTemplate.convertAndSend("/topic/judge/" + taskId, initialJudge);
-            // log.info("[提交判题] 推送 Pending 状态成功, taskId: {}", taskId);
-        } catch (Exception e) {
-            log.warn("[提交判题] 推送 Pending 状态失败, taskId: {}", taskId, e);
-        }
+//        try {
+//            messagingTemplate.convertAndSend("/topic/judge/" + taskId, initialJudge);
+//            // log.info("[提交判题] 推送 Pending 状态成功, taskId: {}", taskId);
+//        } catch (Exception e) {
+//            log.warn("[提交判题] 推送 Pending 状态失败, taskId: {}", taskId, e);
+//        }
 
         // 发送到RabbitMQ（使用线程池，避免 new Thread() 资源耗尽）
         judgeSubmitExecutor.submit(() -> {
             try {
-                // 🔥 移除不必要的延迟，直接发送消息
-                // Thread.sleep(100);  // ❌ 已删除，前端使用纯 WebSocket，订阅更快
+                // 🔥 等待 50ms 确保前端已完成订阅（SockJS 需要时间）
+                Thread.sleep(300);
                 
                 // 🔥 使用轮询分配的路由键，发送到对应沙箱的队列
                 rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, routingKey, message);

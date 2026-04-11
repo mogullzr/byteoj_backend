@@ -55,6 +55,9 @@ public class JudgeConsumer9 {
                 throw new IllegalArgumentException("JudgeRequest 为空");
             }
             Judge result = problemAlgorithmService.problemAlgorithmSubmitWithSandbox(request, uuid, SANDBOX_URL);
+            
+            // 🔥 设置 taskId（用于前端识别）
+            result.setTaskId(taskId);
 
             // 3. 推送成功结果
             messagingTemplate.convertAndSend("/topic/judge/" + taskId, result);

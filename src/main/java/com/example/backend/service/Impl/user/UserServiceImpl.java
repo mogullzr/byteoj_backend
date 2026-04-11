@@ -31,10 +31,8 @@ import com.example.backend.utils.OssUtils;
 import com.example.backend.utils.RedisUtils;
 import com.yungouos.pay.entity.WxOauthInfo;
 import com.yungouos.pay.wxapi.WxApi;
-import io.swagger.models.auth.In;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.amqp.utils.MapBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -1183,7 +1181,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 //            safetyUser.setSessionId(httpServletRequest.getRequestedSessionId());
             return true;
     }
-
+//
     @Override
     public String getWeChatUrl() {
         JSONObject params = new JSONObject();

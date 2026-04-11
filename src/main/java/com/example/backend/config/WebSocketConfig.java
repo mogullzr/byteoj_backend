@@ -52,7 +52,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         config.enableSimpleBroker("/topic", "/user")
-                .setHeartbeatValue(new long[]{20000, 20000})
+                .setHeartbeatValue(new long[]{10000, 10000})
                 .setTaskScheduler(heartbeatScheduler());
         
         config.setApplicationDestinationPrefixes("/app");
@@ -64,12 +64,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws/judge")
                 .setAllowedOriginPatterns("*")
                 .setHandshakeHandler(new DefaultHandshakeHandler())
-                .withSockJS()
-                .setHeartbeatTime(20000)
-                .setDisconnectDelay(5000)
-                .setStreamBytesLimit(512 * 1024)
-                .setHttpMessageCacheSize(1000)
-                .setSessionCookieNeeded(false);
+                .withSockJS();
+                // 🔥 移除 withSockJS()，使用纯 WebSocket，避免降级到 HTTP 长轮询
     }
 
     @Override

@@ -1,0 +1,31 @@
+# 拉取基础镜像
+FROM openjdk:17
+
+# 设定时区
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# 拷贝jar包
+COPY ./backend-0.0.1-SNAPSHOT-2026-04-09.jar /app.jar
+
+# 🔥 修复 yungouos-pay-sdk 的 servlet-api 冲突
+RUN bash -c ' \
+    echo "🔧 开始修复 yungouos-pay-sdk servlet-api 冲突..." && \
+    SDK_JAR=$(find / -name "yungouos-pay-sdk-*.jar" 2>/dev/null | grep -v app.jar | head -n 1) && \
+    if [ -n "$SDK_JAR" ]; then \
+        echo "📦 找到 SDK: $SDK_JAR" && \
+        WORK_DIR=$(mktemp -d) && \
+        cd $WORK_DIR && \
+        jar xf $SDK_JAR && \
+        rm -rf javax/servlet jakarta/servlet 2>/dev/null && \
+        jar cf ${SDK_JAR}.fixed * && \
+        mv ${SDK_JAR}.fixed $SDK_JAR && \
+        cd / && \
+        rm -rf $WORK_DIR && \
+        echo "✅ yungouos-pay-sdk 修复完成！"; \
+    else \
+        echo "⚠️  未找到 yungouos-pay-sdk，跳过修复"; \
+    fi'
+
+# 入口
+ENTRYPOINT ["java", "-jar", "/app.jar"]

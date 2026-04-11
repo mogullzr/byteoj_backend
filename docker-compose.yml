@@ -96,15 +96,15 @@ services:
     environment:
       # 数据库配置（已添加 allowPublicKeyRetrieval=true）
       SPRING_PROFILES_ACTIVE: dev
-      # RabbitMQ 配置（密码已修复为与服务器一致）
+      # RabbitMQ 配置
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_PORT: 5672
-      SPRING_RABBITMQ_USERNAME: "xxxxxx" # 用户名，可以自己设
-      SPRING_RABBITMQ_PASSWORD: "xxxxxxxxxxx" # 数据库密码，可以自己设
+      SPRING_RABBITMQ_USERNAME: "xxxxxxxxxxxxx"
+      SPRING_RABBITMQ_PASSWORD: "xxxxxxxxxxxxx"
       SPRING_RABBITMQ_VIRTUAL_HOST: /
 
   nginx:
-    image: nginx
+    image: nginx:1.28.3
     container_name: nginx
     environment:
       - LANG=C.UTF-8

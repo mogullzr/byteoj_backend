@@ -9,6 +9,12 @@ import java.io.Serializable;
 public class Judge implements Serializable {
     @Serial
     private static final long serialVersionUID = -4730324887729132478L;
+    
+    /**
+     * 任务ID（用于WebSocket推送时前端识别）
+     */
+    private String taskId;
+    
     /**
      * 文件句柄ID
      */
