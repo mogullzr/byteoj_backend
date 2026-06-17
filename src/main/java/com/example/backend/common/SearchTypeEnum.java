@@ -1,0 +1,82 @@
+package com.example.backend.common;
+
+import com.baomidou.mybatisplus.core.toolkit.ObjectUtils;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * 搜索类型枚举
+ */
+public enum SearchTypeEnum {
+    ALGORITHM("算法", "algorithm"),
+
+    OTHER("其他类型题目",  "other"),
+
+    POST("帖子", "post"),
+
+    USER("用户", "user"),
+
+    BOSS_AUTH_SEARCH("BOSS管理员权限查询", "boss_auth_search"),
+
+    OJ("OJ", "oj"),
+
+    COMPETITION_USERS("巅峰Rating排行榜", "competition_user"),
+
+    LOG_INFO("日志信息", "log"),
+
+    RECORD("提交记录", "record"),
+
+    Lantu("蓝图支付", "lantu"),
+
+    PROCTER("监控信息", "procter"),
+
+    LOG_WEBSITE("网站日志", "log_website"),
+
+    EXAM("考试", "exam");
+
+    private final String text;
+
+    private final String value;
+
+    SearchTypeEnum(String text, String value) {
+        this.text = text;
+        this.value = value;
+    }
+
+    /**
+     * 获取列表值
+     *
+     * @return
+     */
+    public static List<String> getEnumByValue() {
+        return Arrays.stream(values()).map(item->item.value).collect(Collectors.toList());
+    }
+
+    /**
+     * 根据 value 获取枚举
+     *
+     * @param value
+     * @return
+     */
+    public static SearchTypeEnum getEnumByValue(String value) {
+        if (ObjectUtils.isEmpty(value)) {
+            return null;
+        }
+        for (SearchTypeEnum anEnum : SearchTypeEnum.values()) {
+            if (anEnum.value.equals(value)) {
+                return anEnum;
+            }
+        }
+        return null;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public String getValue() {
+        return value;
+    }
+}
