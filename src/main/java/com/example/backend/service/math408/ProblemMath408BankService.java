@@ -9,6 +9,8 @@ import com.example.backend.models.request.problem.Math408QueryRequest;
 import com.example.backend.models.request.problem.ProblemExamEditRequest;
 import com.example.backend.models.request.problem.ProblemExamRequest;
 import com.example.backend.models.vo.problem.ProblemExamSubmitVo;
+import com.example.backend.models.vo.problem.ProblemExamSheetPaperVo;
+import com.example.backend.models.vo.problem.ProblemExamSheetVo;
 import com.example.backend.models.vo.problem.ProblemExamVo;
 import com.example.backend.models.vo.problem.ProblemMath408BankVo;
 import com.example.backend.models.vo.problem.ProblemSimilarityVo;
@@ -101,4 +103,10 @@ public interface ProblemMath408BankService extends IService<ProblemMath408Bank> 
      * @return 获取考试信息
      */
     ProblemExamSubmitVo problemExamSubmit(ProblemExamSubmitRequest problemExamSubmitRequest, Long uuid, String username);
+
+    Boolean problemExamJoin(Long examId, Long uuid, String username);
+
+    List<ProblemExamSheetPaperVo> problemExamRecords(Long examId, Long uuid, Integer pageNum);
+
+    List<ProblemExamSheetVo> problemExamSheet(Long recordId, Long uuid);
 }

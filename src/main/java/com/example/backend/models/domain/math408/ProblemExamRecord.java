@@ -39,6 +39,8 @@ public class ProblemExamRecord {
      */
     private String answer;
 
+    private Integer score;
+
     /**
      * AI建议
      */

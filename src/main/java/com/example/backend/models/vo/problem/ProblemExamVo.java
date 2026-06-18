@@ -47,6 +47,8 @@ public class ProblemExamVo implements Serializable {
      */
     private Integer status;
 
+    private Boolean join;
+
     /**
      * 考试时间
      */

@@ -11,6 +11,8 @@ import com.example.backend.models.request.math408.ProblemExamSubmitRequest;
 import com.example.backend.models.request.problem.ProblemExamEditRequest;
 import com.example.backend.models.request.math408.ProblemRequest;
 import com.example.backend.models.vo.problem.ProblemExamSubmitVo;
+import com.example.backend.models.vo.problem.ProblemExamSheetPaperVo;
+import com.example.backend.models.vo.problem.ProblemExamSheetVo;
 import com.example.backend.models.vo.problem.ProblemExamVo;
 import com.example.backend.models.vo.problem.ProblemMath408BankVo;
 import com.example.backend.models.vo.problem.ProblemSimilarityVo;
@@ -51,6 +53,33 @@ public class ProblemsController {
     @GetMapping("/exam/problem")
     private BaseResponse<List<ProblemMath408BankVo>> ProblemExamSearchDetail(@Param("exam_id") Long exam_id) {
         List<ProblemMath408BankVo> result = problemsService.problemExamSearchDetail(exam_id);
+        return ResultUtils.success(result);
+    }
+
+    @AccessLimit(seconds = 1, maxCount = 10, needLogin = true)
+    @GetMapping("/exam/records")
+    private BaseResponse<List<ProblemExamSheetPaperVo>> ProblemExamRecords(@Param("exam_id") Long exam_id,
+                                                                           @Param("pageNum") Integer pageNum,
+                                                                           HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        List<ProblemExamSheetPaperVo> result = problemsService.problemExamRecords(exam_id, loginUser.getUuid(), pageNum);
+        return ResultUtils.success(result);
+    }
+
+    @AccessLimit(seconds = 1, maxCount = 10, needLogin = true)
+    @GetMapping("/exam/sheet")
+    private BaseResponse<List<ProblemExamSheetVo>> ProblemExamSheet(@Param("recordId") Long recordId,
+                                                                    HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        List<ProblemExamSheetVo> result = problemsService.problemExamSheet(recordId, loginUser.getUuid());
+        return ResultUtils.success(result);
+    }
+
+    @AccessLimit(seconds = 1, maxCount = 5, needLogin = true)
+    @GetMapping("/exam/join")
+    private BaseResponse<Boolean> ProblemExamJoin(@Param("exam_id") Long exam_id, HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        Boolean result = problemsService.problemExamJoin(exam_id, loginUser.getUuid(), loginUser.getUsername());
         return ResultUtils.success(result);
     }
 

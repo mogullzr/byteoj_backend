@@ -326,6 +326,49 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
     }
 
     @Override
+    public Boolean problemExamJoin(Long examId, Long uuid, String username) {
+        if (examId == null || examId <= 0 || uuid == null || uuid <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid params");
+        }
+
+        ProblemExam problemExam = problemExamMapper.selectOne(
+                new QueryWrapper<ProblemExam>().eq("id", examId)
+        );
+        if (problemExam == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "exam not found");
+        }
+
+        QueryWrapper<ProblemExamUser> userQueryWrapper = new QueryWrapper<>();
+        userQueryWrapper.eq("exam_id", examId);
+        userQueryWrapper.eq("uuid", uuid);
+        userQueryWrapper.eq("status", 0);
+        userQueryWrapper.eq("is_delete", 0);
+        ProblemExamUser existUser = problemExamUserMapper.selectOne(userQueryWrapper);
+        if (existUser != null) {
+            return true;
+        }
+
+        Date now = new Date();
+        ProblemExamUser problemExamUser = new ProblemExamUser();
+        problemExamUser.setExam_id(examId);
+        problemExamUser.setUuid(uuid);
+        problemExamUser.setUsername(username);
+        problemExamUser.setScore_option(0);
+        problemExamUser.setScore_subjective(0);
+        problemExamUser.setStatus(0);
+        problemExamUser.setCreate_date(now);
+        problemExamUser.setUpdate_date(now);
+        problemExamUser.setIs_delete(0);
+        if (problemExamUserMapper.insert(problemExamUser) <= 0) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "join failed");
+        }
+
+        problemExam.setJoins(problemExam.getJoins() == null ? 1 : problemExam.getJoins() + 1);
+        problemExamMapper.updateById(problemExam);
+        return true;
+    }
+
+    @Override
     public ProblemExamVo problemSearchExamId(Long examId) {
         QueryWrapper<ProblemExam> problemExamQueryWrapper = new QueryWrapper<>();
         ProblemExamVo problemExamVo = new ProblemExamVo();
@@ -747,6 +790,84 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         return problemExamSubmitVo;
     }
 
+    @Override
+    public List<ProblemExamSheetPaperVo> problemExamRecords(Long examId, Long uuid, Integer pageNum) {
+        if (examId == null || examId <= 0 || uuid == null || uuid <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid params");
+        }
+
+        ProblemExam problemExam = problemExamMapper.selectOne(
+                new QueryWrapper<ProblemExam>().eq("id", examId)
+        );
+        if (problemExam == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "exam not found");
+        }
+
+        int current = pageNum == null || pageNum <= 0 ? 1 : pageNum;
+        Page<ProblemExamUser> page = new Page<>(current, 10);
+        QueryWrapper<ProblemExamUser> userQueryWrapper = new QueryWrapper<>();
+        userQueryWrapper.eq("exam_id", examId);
+        userQueryWrapper.eq("uuid", uuid);
+        userQueryWrapper.eq("is_delete", 0);
+        userQueryWrapper.orderByDesc("update_date");
+        Page<ProblemExamUser> pageInfo = problemExamUserMapper.selectPage(page, userQueryWrapper);
+
+        List<ProblemExamSheetPaperVo> result = new ArrayList<>();
+        for (ProblemExamUser examUser : pageInfo.getRecords()) {
+            ProblemExamSheetPaperVo vo = new ProblemExamSheetPaperVo();
+            vo.setId(examUser.getId());
+            vo.setExam_id(String.valueOf(examId));
+            vo.setExam_name(problemExam.getExam_name());
+            vo.setStart_date(formatDate(problemExam.getStart_time()));
+            vo.setEnd_date(formatDate(problemExam.getEnd_time()));
+            vo.setTime(problemExam.getTime());
+            int optionScore = examUser.getScore_option() == null ? 0 : examUser.getScore_option();
+            int subjectiveScore = examUser.getScore_subjective() == null ? 0 : examUser.getScore_subjective();
+            vo.setScore(optionScore + subjectiveScore);
+            vo.setTotal_score(problemExam.getTotal_score());
+            result.add(vo);
+        }
+        return result;
+    }
+
+    @Override
+    public List<ProblemExamSheetVo> problemExamSheet(Long recordId, Long uuid) {
+        if (recordId == null || recordId <= 0 || uuid == null || uuid <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid params");
+        }
+
+        ProblemExamUser examUser = problemExamUserMapper.selectOne(
+                new QueryWrapper<ProblemExamUser>()
+                        .eq("id", recordId)
+                        .eq("uuid", uuid)
+                        .eq("is_delete", 0)
+        );
+        if (examUser == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "record not found");
+        }
+
+        List<ProblemExamRecord> records = problemExamRecordService.list(
+                new QueryWrapper<ProblemExamRecord>()
+                        .eq("exam_user_id", recordId)
+                        .eq("uuid", uuid)
+                        .eq("is_delete", 0)
+                        .orderByAsc("problem_id")
+        );
+
+        List<ProblemExamSheetVo> result = new ArrayList<>();
+        for (ProblemExamRecord record : records) {
+            ProblemExamSheetVo vo = new ProblemExamSheetVo();
+            vo.setProblem_id(record.getProblem_id());
+            vo.setAnswer(record.getAnswer());
+            vo.setScore(record.getScore());
+            vo.setAi_advise(record.getAi_advise());
+            vo.setPerson(record.getScore() == null);
+            vo.setUuid(uuid);
+            result.add(vo);
+        }
+        return result;
+    }
+
     private Integer getAlgorithmScore(List<ProblemSimpleInfo> problem_algorithm, Map<String, Integer> problemScoreMap, Long uuid) {
         AtomicReference<Integer> totalScore = new AtomicReference<>(0);
         problem_algorithm.forEach((problem)->{
@@ -1107,6 +1228,17 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         problemMath408BankVo.setAnalysis(problemMath408Bank.getAnalysis());
 
         return problemMath408BankVo;
+    }
+
+    private String formatDate(Date date) {
+        if (date == null) {
+            return null;
+        }
+        try {
+            return date.toInstant().toString();
+        } catch (Exception e) {
+            return date.toString();
+        }
     }
 
     /**

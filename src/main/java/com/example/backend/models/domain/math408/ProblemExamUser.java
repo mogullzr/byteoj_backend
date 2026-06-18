@@ -29,6 +29,8 @@ public class ProblemExamUser {
      */
     private Long uuid;
 
+    private String username;
+
     /**
      * 选择题分值
      */
