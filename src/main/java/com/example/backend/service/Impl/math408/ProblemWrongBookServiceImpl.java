@@ -15,6 +15,7 @@ import com.example.backend.models.domain.math408.ProblemMath408Bank;
 import com.example.backend.models.domain.math408.ProblemMath408Tags;
 import com.example.backend.models.domain.math408.ProblemMath408TagsRelation;
 import com.example.backend.models.domain.math408.ProblemWrongBook;
+import com.example.backend.models.request.problem.ProblemWrongBookAddRequest;
 import com.example.backend.models.request.problem.ProblemWrongBookQueryRequest;
 import com.example.backend.models.request.problem.ProblemWrongBookSyncItem;
 import com.example.backend.models.vo.problem.ProblemWrongBookVo;
@@ -126,6 +127,54 @@ public class ProblemWrongBookServiceImpl extends ServiceImpl<ProblemWrongBookMap
         wrongBook.setIs_delete(1);
         wrongBook.setUpdate_date(new Date());
         return problemWrongBookMapper.updateById(wrongBook) > 0;
+    }
+
+    @Override
+    public ProblemWrongBookVo addWrongBook(Long uuid, ProblemWrongBookAddRequest addRequest) {
+        validateLoginUser(uuid);
+        if (addRequest == null || addRequest.getProblem_id() == null || addRequest.getProblem_id() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid problem_id");
+        }
+
+        ProblemSnapshot snapshot = loadProblemSnapshot(addRequest.getProblem_id(), addRequest.getProblem_status(), addRequest.getOption_type());
+        Date now = new Date();
+        ProblemWrongBook wrongBook = problemWrongBookMapper.selectOne(
+                new QueryWrapper<ProblemWrongBook>()
+                        .eq("uuid", uuid)
+                        .eq("problem_id", addRequest.getProblem_id())
+                        .eq("is_delete", 0)
+                        .last("LIMIT 1")
+        );
+
+        boolean created = false;
+        if (wrongBook == null) {
+            wrongBook = new ProblemWrongBook();
+            wrongBook.setUuid(uuid);
+            wrongBook.setProblem_id(addRequest.getProblem_id());
+            wrongBook.setWrong_count(defaultZero(addRequest.getScore()) < defaultZero(addRequest.getTotal_score()) ? 1 : 0);
+            wrongBook.setCreate_date(now);
+            wrongBook.setIs_delete(0);
+            created = true;
+        }
+
+        wrongBook.setProblem_name(snapshot.problemName);
+        wrongBook.setProblem_status(snapshot.problemStatus);
+        wrongBook.setOption_type(snapshot.optionType);
+        wrongBook.setExam_id(addRequest.getExam_id());
+        wrongBook.setExam_user_id(addRequest.getExam_user_id());
+        wrongBook.setLatest_answer(addRequest.getAnswer());
+        wrongBook.setLatest_score(defaultZero(addRequest.getScore()));
+        wrongBook.setTotal_score(defaultZero(addRequest.getTotal_score()));
+        wrongBook.setLatest_ai_advise(addRequest.getAi_advise());
+        wrongBook.setMastery_status(0);
+        wrongBook.setUpdate_date(now);
+
+        if (created) {
+            problemWrongBookMapper.insert(wrongBook);
+        } else {
+            problemWrongBookMapper.updateById(wrongBook);
+        }
+        return buildWrongBookDetailVo(wrongBook);
     }
 
     @Override
@@ -285,6 +334,50 @@ public class ProblemWrongBookServiceImpl extends ServiceImpl<ProblemWrongBookMap
                     .forEach(problem -> result.put(problem.getProblem_id(), problem.getChinese_name()));
         }
         return result;
+    }
+
+    private ProblemSnapshot loadProblemSnapshot(Long problemId, Integer problemStatus, Integer optionType) {
+        if (problemStatus != null && problemStatus == 3) {
+            ProblemAlgorithmBank algorithmBank = problemAlgorithmBankMapper.selectById(problemId);
+            if (algorithmBank == null) {
+                throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "problem not found");
+            }
+            ProblemSnapshot snapshot = new ProblemSnapshot();
+            snapshot.problemName = algorithmBank.getChinese_name();
+            snapshot.problemStatus = 3;
+            snapshot.optionType = 4;
+            return snapshot;
+        }
+
+        ProblemMath408Bank mathBank = problemMath408BankMapper.selectById(problemId);
+        if (mathBank != null) {
+            ProblemSnapshot snapshot = new ProblemSnapshot();
+            snapshot.problemName = mathBank.getProblem_name();
+            snapshot.problemStatus = mathBank.getStatus();
+            snapshot.optionType = mathBank.getOption_type();
+            return snapshot;
+        }
+
+        ProblemAlgorithmBank algorithmBank = problemAlgorithmBankMapper.selectById(problemId);
+        if (algorithmBank != null) {
+            ProblemSnapshot snapshot = new ProblemSnapshot();
+            snapshot.problemName = algorithmBank.getChinese_name();
+            snapshot.problemStatus = 3;
+            snapshot.optionType = 4;
+            return snapshot;
+        }
+
+        ProblemSnapshot snapshot = new ProblemSnapshot();
+        snapshot.problemName = "unknown problem";
+        snapshot.problemStatus = problemStatus;
+        snapshot.optionType = optionType;
+        return snapshot;
+    }
+
+    private static class ProblemSnapshot {
+        private String problemName;
+        private Integer problemStatus;
+        private Integer optionType;
     }
 
     private ProblemWrongBookVo buildWrongBookDetailVo(ProblemWrongBook wrongBook) {

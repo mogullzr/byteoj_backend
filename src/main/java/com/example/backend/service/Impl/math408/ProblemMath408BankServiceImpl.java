@@ -24,6 +24,7 @@ import com.example.backend.models.request.problem.ProblemExamEditRequest;
 import com.example.backend.models.request.problem.ProblemExamGeneratePaperSqlRequest;
 import com.example.backend.models.request.problem.ProblemExamProblemInfo;
 import com.example.backend.models.request.problem.ProblemExamRequest;
+import com.example.backend.models.request.problem.ProblemWrongBookSyncItem;
 import com.example.backend.models.vo.problem.*;
 import com.example.backend.service.ai.DeepSeekService;
 import com.example.backend.service.algorithm.ProblemAlgorithmService;
@@ -112,6 +113,9 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
 
     @Resource
     private ProblemExamRecordService problemExamRecordService;
+
+    @Resource
+    private ProblemWrongBookService problemWrongBookService;
 
     @Resource
     private DeepSeekService deepSeekService;
@@ -998,6 +1002,8 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
 
         // 4.报名信息作废 + 考试成绩保存
         // TODO
+        syncExamWrongBook(uuid, exam_id, problemExamUser.getId(), problemExamTissues);
+
          problemExamUser.setStatus(1);
         problemExamUser.setScore_option(option_score);
         problemExamUser.setScore_subjective(subjective_score);
@@ -1016,6 +1022,50 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         problemExamSubmitVo.setTotal_score(problemExam.getTotal_score());
 
         return problemExamSubmitVo;
+    }
+
+    private void syncExamWrongBook(Long uuid, Long examId, Long examUserId, List<ProblemExamTissue> problemExamTissues) {
+        if (uuid == null || uuid <= 0 || examId == null || examUserId == null
+                || problemExamTissues == null || problemExamTissues.isEmpty()) {
+            return;
+        }
+
+        List<ProblemExamRecord> records = problemExamRecordService.list(
+                new QueryWrapper<ProblemExamRecord>()
+                        .eq("exam_user_id", examUserId)
+                        .eq("uuid", uuid)
+                        .eq("is_delete", 0)
+        );
+        if (records == null || records.isEmpty()) {
+            return;
+        }
+
+        Map<Long, ProblemExamTissue> tissueMap = problemExamTissues.stream()
+                .filter(Objects::nonNull)
+                .filter(item -> item.getProblem_id() != null)
+                .collect(Collectors.toMap(ProblemExamTissue::getProblem_id, item -> item, (left, right) -> left));
+
+        List<ProblemWrongBookSyncItem> syncItems = new ArrayList<>();
+        for (ProblemExamRecord record : records) {
+            ProblemExamTissue tissue = tissueMap.get(record.getProblem_id());
+            if (tissue == null || tissue.getScore() == null || tissue.getScore() <= 0) {
+                continue;
+            }
+            ProblemWrongBookSyncItem item = new ProblemWrongBookSyncItem();
+            item.setUuid(uuid);
+            item.setExam_id(examId);
+            item.setExam_user_id(examUserId);
+            item.setProblem_id(record.getProblem_id());
+            item.setProblem_status(tissue.getStatus());
+            item.setOption_type(tissue.getType());
+            item.setTotal_score(tissue.getScore());
+            item.setScore(record.getScore());
+            item.setAnswer(record.getAnswer());
+            item.setAi_advise(record.getAi_advise());
+            syncItems.add(item);
+        }
+
+        problemWrongBookService.syncWrongBook(uuid, syncItems);
     }
 
     @Override
