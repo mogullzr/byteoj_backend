@@ -23,6 +23,6 @@ public class ProblemExamSource implements DataSource<ProblemExamVo> {
         ProblemExamRequest problemExamRequest = new ProblemExamRequest();
         problemExamRequest.setSource(keyword);
         problemExamRequest.setPageNum(pageNum);
-        return problemsService.problemExamSearch(problemExamRequest);
+        return problemsService.problemExamSearch(problemExamRequest, uuid);
     }
 }

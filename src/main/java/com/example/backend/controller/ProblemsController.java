@@ -9,6 +9,7 @@ import com.example.backend.exception.BusinessException;
 import com.example.backend.models.domain.user.User;
 import com.example.backend.models.request.math408.ProblemExamSubmitRequest;
 import com.example.backend.models.request.problem.ProblemExamEditRequest;
+import com.example.backend.models.request.problem.ProblemExamGeneratePaperSqlRequest;
 import com.example.backend.models.request.math408.ProblemRequest;
 import com.example.backend.models.vo.problem.ProblemExamSubmitVo;
 import com.example.backend.models.vo.problem.ProblemExamSheetPaperVo;
@@ -45,8 +46,9 @@ public class ProblemsController {
     }
     @GetMapping("/exam")
     private BaseResponse<ProblemExamVo> ProblemSearchExamId(@Param("exam_id") Long exam_id, HttpServletRequest request) {
-
-        ProblemExamVo result = problemsService.problemSearchExamId(exam_id);
+        User loginUser = userService.getLoginUser(request);
+        Long uuid = loginUser == null ? null : loginUser.getUuid();
+        ProblemExamVo result = problemsService.problemSearchExamId(exam_id, uuid);
         return ResultUtils.success(result);
     }
 
@@ -100,6 +102,18 @@ public class ProblemsController {
         User user = userService.getLoginUser(request);
         Boolean result = problemsService.problemExamEdit(problemExamRequest, user);
 
+        return ResultUtils.success(result);
+    }
+
+    @AccessLimit(seconds = 1, maxCount = 1, needLogin = true)
+    @PostMapping("/exam/generate-paper-sql")
+    private BaseResponse<String> ProblemExamGeneratePaperSql(@RequestBody ProblemExamGeneratePaperSqlRequest problemExamRequest,
+                                                             HttpServletRequest request) {
+        if (!userService.isAdmin(request)) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "admin required");
+        }
+        User user = userService.getLoginUser(request);
+        String result = problemsService.problemExamGeneratePaperSql(problemExamRequest, user);
         return ResultUtils.success(result);
     }
 

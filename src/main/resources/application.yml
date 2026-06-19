@@ -203,7 +203,10 @@ ai:
       model: ${hm.ai.api.Qwen-VL.model}
       url: ${hm.ai.api.Qwen-VL.url}
       key: ${hm.ai.api.Qwen-VL.key}
-
+    openai-gpt-5.4:
+      model: ${hm.ai.api.openai-gpt-5.4.model}
+      url: ${hm.ai.api.openai-gpt-5.4.url}
+      key: ${hm.ai.api.openai-gpt-5.4.key}
 domain:
   url_1: ${domain.url_1} # 自己的域名地址，替换一下
 avatar:

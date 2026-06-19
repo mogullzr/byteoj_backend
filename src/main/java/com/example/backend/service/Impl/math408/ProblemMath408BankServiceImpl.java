@@ -21,6 +21,7 @@ import com.example.backend.models.request.math408.ProblemRequest;
 import com.example.backend.models.request.math408.ProblemSimpleInfo;
 import com.example.backend.models.request.problem.Math408QueryRequest;
 import com.example.backend.models.request.problem.ProblemExamEditRequest;
+import com.example.backend.models.request.problem.ProblemExamGeneratePaperSqlRequest;
 import com.example.backend.models.request.problem.ProblemExamProblemInfo;
 import com.example.backend.models.request.problem.ProblemExamRequest;
 import com.example.backend.models.vo.problem.*;
@@ -29,15 +30,30 @@ import com.example.backend.service.algorithm.ProblemAlgorithmService;
 import com.example.backend.service.math408.*;
 import com.example.backend.service.user.UserService;
 import com.example.backend.utils.EmbeddingConvertUtil;
+import com.example.backend.utils.examAgent.GradingAgentUtil;
 import com.example.backend.models.domain.usage.UsagePlans;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
+import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.Statement;
 import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -46,8 +62,15 @@ import java.util.stream.Collectors;
 * @createDate 2026-01-25 20:23:07
 */
 @Service
+@Slf4j
 public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408BankMapper, ProblemMath408Bank>
     implements ProblemMath408BankService {
+    private static final Pattern PAPER_NAME_PATTERN = Pattern.compile(
+            "^(.+?)\\s*\\u7b2c\\s*([0-9\\uFF10-\\uFF19\\u4e00\\u4e8c\\u4e09\\u56db\\u4e94\\u516d\\u4e03\\u516b\\u4e5d\\u5341\\u767e\\u5343\\u4e24\\u96f6]+)\\s*\\u9898.*$");
+    private static final Pattern QUESTION_ORDER_PATTERN = Pattern.compile(
+            "\\u7b2c\\s*([0-9\\uFF10-\\uFF19\\u4e00\\u4e8c\\u4e09\\u56db\\u4e94\\u516d\\u4e03\\u516b\\u4e5d\\u5341\\u767e\\u5343\\u4e24\\u96f6]+)\\s*\\u9898");
+    private static final Pattern PROBLEM_REDIRECT_PATTERN = Pattern.compile("/problems/other/(\\d+)");
+
     @Resource
     private ProblemMath408BankMapper problemMath408BankMapper;
 
@@ -97,7 +120,13 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
     private EmbeddingConvertUtil embeddingConvertUtil;
 
     @Resource
+    private GradingAgentUtil gradingAgentUtil;
+
+    @Resource
     private JdbcTemplate jdbcTemplate;
+
+    @Resource
+    private ObjectMapper objectMapper;
 
     @Autowired
     private ProblemAlgorithmBankMapper problemAlgorithmBankMapper;
@@ -285,7 +314,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
     }
 
     @Override
-    public List<ProblemExamVo> problemExamSearch(ProblemExamRequest problemExamRequest) {
+    public List<ProblemExamVo> problemExamSearch(ProblemExamRequest problemExamRequest, Long uuid) {
         String source = problemExamRequest.getSource();
         Page<ProblemExam> page = new Page<>(problemExamRequest.getPageNum(), 9);
         QueryWrapper<ProblemExam> queryWrapper = new QueryWrapper<>();
@@ -315,6 +344,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
             problemExamVo.setTime(problemExam.getTime());
             problemExamVo.setStatus(problemExam.getStatus());
             problemExamVo.setJoins(problemExam.getJoins());
+            problemExamVo.setJoin(hasJoinedExam(problemExam.getId(), uuid));
 
             if (flag[0]) {
                 flag[0] = false;
@@ -369,13 +399,16 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
     }
 
     @Override
-    public ProblemExamVo problemSearchExamId(Long examId) {
+    public ProblemExamVo problemSearchExamId(Long examId, Long uuid) {
         QueryWrapper<ProblemExam> problemExamQueryWrapper = new QueryWrapper<>();
         ProblemExamVo problemExamVo = new ProblemExamVo();
 
         problemExamQueryWrapper.eq("id", examId);
 
         ProblemExam problemExam = problemExamMapper.selectOne(problemExamQueryWrapper);
+        if (problemExam == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "exam not found");
+        }
         problemExamVo.setExam_id(examId);
         problemExamVo.setExam_name(problemExam.getExam_name());
         problemExamVo.setStart_time(problemExam.getStart_time());
@@ -385,6 +418,10 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         problemExamVo.setPicture(problemExam.getPicture());
         problemExamVo.setStatus(problemExam.getStatus());
         problemExamVo.setJoins(problemExam.getJoins());
+        problemExamVo.setJoin(hasJoinedExam(examId, uuid));
+        problemExamVo.setPages(problemExamTissueMapper.selectCount(
+                new QueryWrapper<ProblemExamTissue>().eq("exam_id", examId)
+        ));
         return problemExamVo;
     }
 
@@ -424,6 +461,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
 
         List<ProblemAlgorithmBankVo> problemAlgorithmVoList = getAlgorithmProblem(problemAlgorithmBankList, problemAlgorithmTagsMap);
         List<ProblemMath408BankVo> problemMath408BankVoList = getProblemMath408(problemMath408BankList, problemMath408TagsWithNames);
+        Map<Long, ProblemMath408BankVo> redirectedMathProblemVoMap = buildRedirectedMathProblemVoMap(problemMath408BankList);
 
         // 设置考试试题详细信息
         problemExamTissues.forEach(problemExamTissue -> {
@@ -452,12 +490,16 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
                         .findFirst()
                         .orElse(null);
                 assert math408BankVo != null;
-                problemMath408BankVo.setProblem_name(math408BankVo.getProblem_name());
-                problemMath408BankVo.setDescription(math408BankVo.getDescription());
-                problemMath408BankVo.setSource_name(math408BankVo.getSource_name());
-                problemMath408BankVo.setTagsList(math408BankVo.getTagsList());
-                problemMath408BankVo.setOptions(math408BankVo.getOptions());
-                problemMath408BankVo.setOption_type(problemExamTissue.getType());
+                ProblemMath408BankVo displayMath408BankVo = redirectedMathProblemVoMap.getOrDefault(problem_id, math408BankVo);
+                problemMath408BankVo.setProblem_name(displayMath408BankVo.getProblem_name());
+                problemMath408BankVo.setDescription(displayMath408BankVo.getDescription());
+                problemMath408BankVo.setSource_name(displayMath408BankVo.getSource_name());
+                problemMath408BankVo.setTagsList(displayMath408BankVo.getTagsList());
+                problemMath408BankVo.setOptions(displayMath408BankVo.getOptions());
+                problemMath408BankVo.setDifficulty_name(displayMath408BankVo.getDifficulty_name());
+                problemMath408BankVo.setOption_type(displayMath408BankVo.getOption_type() == null
+                        ? problemExamTissue.getType()
+                        : displayMath408BankVo.getOption_type());
             }
 
             problemMath408BankVos.add(problemMath408BankVo);
@@ -466,7 +508,119 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         return problemMath408BankVos;
     }
 
+    private Map<Long, ProblemMath408BankVo> buildRedirectedMathProblemVoMap(List<ProblemMath408Bank> problemMath408BankList) {
+        if (problemMath408BankList == null || problemMath408BankList.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        Map<Long, Long> redirectProblemIdMap = new HashMap<>();
+        Set<Long> redirectTargetIds = new LinkedHashSet<>();
+        for (ProblemMath408Bank problem : problemMath408BankList) {
+            ProblemMath408Bank effectiveProblem = resolveEffectiveMathProblem(problem);
+            if (effectiveProblem == null || Objects.equals(effectiveProblem.getProblem_id(), problem.getProblem_id())) {
+                continue;
+            }
+            redirectProblemIdMap.put(problem.getProblem_id(), effectiveProblem.getProblem_id());
+            redirectTargetIds.add(effectiveProblem.getProblem_id());
+        }
+        if (redirectTargetIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        List<ProblemMath408Bank> redirectedProblemList = problemMath408BankMapper.selectList(
+                new QueryWrapper<ProblemMath408Bank>()
+                        .in("problem_id", redirectTargetIds)
+                        .eq("is_delete", 0)
+        );
+        if (redirectedProblemList == null || redirectedProblemList.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        Map<Long, List<String>> redirectedTagsMap = getProblemMath408TagsWithNames(new ArrayList<>(redirectTargetIds));
+        Map<Long, ProblemMath408BankVo> redirectedProblemVoById = new HashMap<>();
+        for (ProblemMath408Bank redirectedProblem : redirectedProblemList) {
+            List<String> tags = redirectedTagsMap.get(redirectedProblem.getProblem_id());
+            ProblemMath408BankVo redirectedVo = getProbleMath408mVO(redirectedProblem, tags);
+            redirectedVo.setAnalysis(null);
+            redirectedVo.setCorrect_answer(null);
+            redirectedProblemVoById.put(redirectedProblem.getProblem_id(), redirectedVo);
+        }
+
+        Map<Long, ProblemMath408BankVo> result = new HashMap<>();
+        for (Map.Entry<Long, Long> entry : redirectProblemIdMap.entrySet()) {
+            ProblemMath408BankVo redirectedVo = redirectedProblemVoById.get(entry.getValue());
+            if (redirectedVo != null) {
+                result.put(entry.getKey(), redirectedVo);
+            }
+        }
+        return result;
+    }
+
+    private Long extractRedirectProblemId(ProblemMath408Bank problem) {
+        if (problem == null) {
+            return null;
+        }
+        Long redirectProblemId = extractRedirectProblemId(problem.getDescription());
+        if (redirectProblemId != null) {
+            return redirectProblemId;
+        }
+        redirectProblemId = extractRedirectProblemId(problem.getProblem_name());
+        if (redirectProblemId != null) {
+            return redirectProblemId;
+        }
+        return extractRedirectProblemId(problem.getSource_name());
+    }
+
+    private Long extractRedirectProblemId(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return null;
+        }
+        Matcher matcher = PROBLEM_REDIRECT_PATTERN.matcher(text);
+        if (!matcher.find()) {
+            return null;
+        }
+        try {
+            return Long.parseLong(matcher.group(1));
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
     // 提取的批量查询标签方法，包括标签名称
+    private ProblemMath408Bank resolveEffectiveMathProblem(ProblemMath408Bank problem) {
+        if (problem == null) {
+            return null;
+        }
+        ProblemMath408Bank current = problem;
+        Set<Long> visited = new HashSet<>();
+        for (int i = 0; i < 5; i++) {
+            Long currentProblemId = current.getProblem_id();
+            if (currentProblemId == null || !visited.add(currentProblemId)) {
+                return current;
+            }
+            Long redirectProblemId = extractRedirectProblemId(current);
+            if (redirectProblemId == null || redirectProblemId <= 0 || visited.contains(redirectProblemId)) {
+                return current;
+            }
+            ProblemMath408Bank redirectProblem = problemMath408BankMapper.selectOne(
+                    new QueryWrapper<ProblemMath408Bank>()
+                            .eq("problem_id", redirectProblemId)
+                            .eq("is_delete", 0)
+                            .last("LIMIT 1")
+            );
+            if (redirectProblem == null) {
+                return current;
+            }
+            current = redirectProblem;
+        }
+        return current;
+    }
+
+    private Integer resolveEffectiveOptionType(ProblemMath408Bank problem) {
+        ProblemMath408Bank effectiveProblem = resolveEffectiveMathProblem(problem);
+        return effectiveProblem == null ? null : effectiveProblem.getOption_type();
+    }
+
     private Map<Long, List<String>> getProblemAlgorithmTagsWithNames(List<Long> problemIds) {
         // 1. 检查 problemIds 是否为空，如果为空，则直接返回空结果
         if (problemIds == null || problemIds.isEmpty()) {
@@ -504,6 +658,74 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
 
     @Override
     public Boolean problemExamEdit(ProblemExamEditRequest problemExamEditRequest, User user) {
+        ExamBuildResult examBuildResult = buildExamResult(problemExamEditRequest, user);
+        ProblemExam problemExam = examBuildResult.problemExam;
+
+        if (examBuildResult.isNew) {
+            problemExamMapper.insert(problemExam);
+        } else {
+            problemExamMapper.updateById(problemExam);
+        }
+
+        QueryWrapper<ProblemExamTissue> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("exam_id", problemExam.getId());
+        problemExamTissueMapper.delete(queryWrapper);
+
+        for (ProblemExamTissue tissue : examBuildResult.problemExamTissues) {
+            tissue.setExam_id(problemExam.getId());
+        }
+        problemExamTissueService.saveBatch(examBuildResult.problemExamTissues);
+        return true;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public String problemExamGeneratePaperSql(ProblemExamGeneratePaperSqlRequest request, User user) {
+        validateGeneratePaperSqlRequest(request);
+
+        List<ProblemMath408Bank> problems = loadProblemsForGeneratePaperSql(request);
+        Map<String, List<ProblemMath408Bank>> groupedProblems = groupProblemsByPaperName(problems);
+        List<PaperSqlExamGroup> examGroups = buildPaperSqlExamGroups(groupedProblems, request);
+        if (examGroups.isEmpty()) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "no paper matched minQuestionCount");
+        }
+
+        String author = request.getAuthor();
+        if (author == null || author.trim().isEmpty()) {
+            author = user.getUsername();
+        } else {
+            author = author.trim();
+        }
+
+        Date startTime = parseSqlDate(request.getStartTime(), "startTime");
+        Date endTime = parseSqlDate(request.getEndTime(), "endTime");
+        Boolean overwriteTissues = Boolean.TRUE.equals(request.getOverwriteTissues());
+        Integer examStatus = request.getExamStatus() == null ? 0 : request.getExamStatus();
+        Integer examTime = request.getTime() == null ? 0 : request.getTime();
+        Date now = new Date();
+        if (startTime != null && endTime != null && startTime.after(endTime)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "startTime must be earlier than or equal to endTime");
+        }
+
+        List<String> sqlStatements = new ArrayList<>();
+        for (PaperSqlExamGroup examGroup : examGroups) {
+            appendExamSqlStatements(sqlStatements, examGroup, request.getPicture(), author, startTime, endTime,
+                    examStatus, examTime, overwriteTissues, now, request);
+        }
+
+        executeSqlStatements(sqlStatements);
+
+        int totalProblemCount = examGroups.stream()
+                .mapToInt(item -> item.getProblems() == null ? 0 : item.getProblems().size())
+                .sum();
+        return "execute success"
+                + ", paperCount=" + examGroups.size()
+                + ", problemCount=" + totalProblemCount
+                + ", sqlCount=" + sqlStatements.size()
+                + ", overwriteTissues=" + overwriteTissues;
+    }
+
+    private Boolean problemExamEditLegacy(ProblemExamEditRequest problemExamEditRequest, User user) {
         Long startDate = problemExamEditRequest.getStart_date();
         Long endDate = problemExamEditRequest.getEnd_date();
         String picture = problemExamEditRequest.getPicture();
@@ -693,6 +915,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public ProblemExamSubmitVo problemExamSubmit(ProblemExamSubmitRequest problemExamSubmitRequest, Long uuid, String username) {
         Integer option_score = 0;
         Integer subjective_score = 0;
@@ -716,6 +939,11 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         // 搜索生效报名信息
         problemExamUserQueryWrapper.eq("status", 0);
         ProblemExamUser problemExamUser = problemExamUserMapper.selectOne(problemExamUserQueryWrapper);
+        if (problemExamUser != null) {
+            problemExamRecordService.remove(new QueryWrapper<ProblemExamRecord>()
+                    .eq("exam_user_id", problemExamUser.getId())
+                    .eq("uuid", uuid));
+        }
         if (problemExamUser == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "没有查找到有效报名信息");
         }
@@ -760,17 +988,17 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
                         (existingValue, newValue) -> existingValue
                 ));
         // 1.选择题
-        option_score = getOptionScore(problem_options, problemScoreMap);
+        option_score = getOptionScore(problem_options, problemScoreMap, uuid, problemExamUser.getId());
 
         // 2.填空/简答题
         subjective_score = getSubjectScore(problem_other, problemScoreMap, uuid, problemExamUser.getId());
 
         // 3.算法题
-        subjective_score += getAlgorithmScore(problem_algorithm, problemScoreMap, uuid);
+        subjective_score += getAlgorithmScore(problem_algorithm, problemScoreMap, uuid, problemExamUser.getId());
 
         // 4.报名信息作废 + 考试成绩保存
         // TODO
-        // problemExamUser.setStatus(1);
+         problemExamUser.setStatus(1);
         problemExamUser.setScore_option(option_score);
         problemExamUser.setScore_subjective(subjective_score);
         problemExamUser.setUpdate_date(new Date());
@@ -808,11 +1036,13 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         QueryWrapper<ProblemExamUser> userQueryWrapper = new QueryWrapper<>();
         userQueryWrapper.eq("exam_id", examId);
         userQueryWrapper.eq("uuid", uuid);
+        userQueryWrapper.eq("status", 1);
         userQueryWrapper.eq("is_delete", 0);
         userQueryWrapper.orderByDesc("update_date");
         Page<ProblemExamUser> pageInfo = problemExamUserMapper.selectPage(page, userQueryWrapper);
 
         List<ProblemExamSheetPaperVo> result = new ArrayList<>();
+        boolean first = true;
         for (ProblemExamUser examUser : pageInfo.getRecords()) {
             ProblemExamSheetPaperVo vo = new ProblemExamSheetPaperVo();
             vo.setId(examUser.getId());
@@ -825,6 +1055,10 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
             int subjectiveScore = examUser.getScore_subjective() == null ? 0 : examUser.getScore_subjective();
             vo.setScore(optionScore + subjectiveScore);
             vo.setTotal_score(problemExam.getTotal_score());
+            if (first) {
+                first = false;
+                vo.setPages(pageInfo.getPages());
+            }
             result.add(vo);
         }
         return result;
@@ -861,15 +1095,18 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
             vo.setAnswer(record.getAnswer());
             vo.setScore(record.getScore());
             vo.setAi_advise(record.getAi_advise());
-            vo.setPerson(record.getScore() == null);
+            vo.setConfidence(record.getConfidence());
+            vo.setPerson(Boolean.TRUE.equals(record.getIs_person()));
             vo.setUuid(uuid);
             result.add(vo);
         }
         return result;
     }
 
-    private Integer getAlgorithmScore(List<ProblemSimpleInfo> problem_algorithm, Map<String, Integer> problemScoreMap, Long uuid) {
-        AtomicReference<Integer> totalScore = new AtomicReference<>(0);
+    private Integer getAlgorithmScore(List<ProblemSimpleInfo> problem_algorithm, Map<String, Integer> problemScoreMap, Long uuid, Long examUserId) {
+        final int[] totalScore = {0};
+        List<ProblemExamRecord> problemExamRecords = new ArrayList<>();
+        Date now = new Date();
         problem_algorithm.forEach((problem)->{
 
             Long problemId = problem.getProblem_id();
@@ -881,18 +1118,137 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
             judgeRequest.setSource_code(answer);
             judgeRequest.setProblem_id(problemId);
 
+            Integer scoreValue = problemScoreMap.get(problemId.toString() + "-4");
+            if (scoreValue == null) {
+                throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "problem score not found");
+            }
+
             Judge judge = problemAlgorithmService.problemAlgorithmSubmit(judgeRequest, uuid);
+            int awardedScore = 0;
             if (judge != null) {
                 if(judge.getStatus().equals("Accepted")) {
-                    totalScore.updateAndGet(v -> v + problemScoreMap.get(problemId.toString() + "-4"));
+                    awardedScore = scoreValue;
                 }
             }
+            totalScore[0] += awardedScore;
+
+            ProblemExamRecord problemExamRecord = new ProblemExamRecord();
+            problemExamRecord.setProblem_id(problemId);
+            problemExamRecord.setUuid(uuid);
+            problemExamRecord.setExam_user_id(examUserId);
+            problemExamRecord.setAnswer(answer);
+            problemExamRecord.setScore(awardedScore);
+            problemExamRecord.setAi_advise(judge == null ? "algorithm judge result is null"
+                    : "judge_status=" + judge.getStatus());
+            problemExamRecord.setConfidence("1.0");
+            problemExamRecord.setIs_person(false);
+            problemExamRecord.setCreate_date(now);
+            problemExamRecord.setUpdate_date(now);
+            problemExamRecord.setIs_delete(0);
+            problemExamRecords.add(problemExamRecord);
         });
 
-        return totalScore.get();
+        if (!problemExamRecords.isEmpty()) {
+            problemExamRecordService.saveBatch(problemExamRecords);
+        }
+        return totalScore[0];
     }
 
     private Integer getSubjectScore(List<ProblemSimpleInfo> problem_other, Map<String, Integer> problemScoreMap, Long uuid, Long id) {
+        if (problem_other == null || problem_other.isEmpty()) {
+            return 0;
+        }
+
+        long batchStart = System.currentTimeMillis();
+        log.info("[exam-submit-ai] start subject grading, examUserId={}, uuid={}, count={}", id, uuid, problem_other.size());
+        List<CompletableFuture<ProblemExamRecord>> futures = problem_other.stream()
+                .map(problem -> CompletableFuture.supplyAsync(() -> buildSubjectRecord(problem, problemScoreMap, uuid, id)))
+                .collect(Collectors.toList());
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        List<ProblemExamRecord> problemExamRecords = new ArrayList<>();
+        int totalScore = 0;
+        for (CompletableFuture<ProblemExamRecord> future : futures) {
+            try {
+                ProblemExamRecord record = future.join();
+                problemExamRecords.add(record);
+                totalScore += record.getScore() == null ? 0 : record.getScore();
+            } catch (CompletionException e) {
+                Throwable cause = e.getCause() == null ? e : e.getCause();
+                if (cause instanceof BusinessException businessException) {
+                    throw businessException;
+                }
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "subject grading failed: " + cause.getMessage());
+            }
+        }
+
+        if (!problemExamRecords.isEmpty()) {
+            problemExamRecordService.saveBatch(problemExamRecords);
+        }
+        log.info("[exam-submit-ai] finish subject grading, examUserId={}, uuid={}, count={}, totalScore={}, costMs={}",
+                id, uuid, problemExamRecords.size(), totalScore, System.currentTimeMillis() - batchStart);
+        return totalScore;
+    }
+
+    private ProblemExamRecord buildSubjectRecord(ProblemSimpleInfo problem, Map<String, Integer> problemScoreMap, Long uuid, Long examUserId) {
+        long start = System.currentTimeMillis();
+        Date now = new Date();
+        ProblemExamRecord problemExamRecord = new ProblemExamRecord();
+        problemExamRecord.setProblem_id(problem.getProblem_id());
+        problemExamRecord.setUuid(uuid);
+        problemExamRecord.setExam_user_id(examUserId);
+        problemExamRecord.setAnswer(problem.getAnswer());
+        problemExamRecord.setCreate_date(now);
+        problemExamRecord.setUpdate_date(now);
+        problemExamRecord.setIs_delete(0);
+
+        int status = problem.getStatus();
+        Integer scoreValue = problemScoreMap.get(problem.getProblem_id() + "-" + status);
+        if (scoreValue == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "problem score not found");
+        }
+
+        String rawAnswer = problem.getAnswer();
+        boolean blankAnswer = rawAnswer == null || rawAnswer.trim().isEmpty();
+        boolean imageAnswer = isImageAnswerUrl(rawAnswer);
+        log.info("[exam-submit-ai] problem start, examUserId={}, uuid={}, problemId={}, status={}, answerMode={}, answerLength={}",
+                examUserId, uuid, problem.getProblem_id(), status,
+                blankAnswer ? "blank" : (imageAnswer ? "image" : "text"),
+                rawAnswer == null ? 0 : rawAnswer.length());
+
+        ProblemMath408BankVo problemMath408BankVo = problemSearchByProblemId(problem.getProblem_id());
+        GradingAgentUtil.GradingInput gradingInput = new GradingAgentUtil.GradingInput();
+        String questionType = resolveQuestionType(status);
+        gradingInput.setQuestionType(questionType);
+        gradingInput.setTotalScore(scoreValue.doubleValue());
+        gradingInput.setQuestionContent(problemMath408BankVo.getDescription());
+        gradingInput.setReferenceAnswer(problemMath408BankVo.getCorrect_answer());
+        gradingInput.setSolutionExplanation(problemMath408BankVo.getAnalysis());
+        gradingInput.setExtraContext(buildExamGradingExtraContext(status, questionType, scoreValue));
+        applyStudentAnswer(gradingInput, rawAnswer);
+        gradingInput.setForceAi(Boolean.TRUE);
+        gradingInput.setTemperature(0F);
+        gradingInput.setTopP(0.9F);
+
+        GradingAgentUtil.GradingResult gradingResult = gradingAgentUtil.gradeAnswerBlocking(gradingInput);
+        int awardedScore = gradingResult.getAwardedScore() == null
+                ? 0
+                : (int) Math.round(gradingResult.getAwardedScore());
+
+        problemExamRecord.setScore(awardedScore);
+        problemExamRecord.setAi_advise(buildGradingAdvice(gradingResult));
+        problemExamRecord.setConfidence(formatConfidence(gradingResult.getConfidence()));
+        problemExamRecord.setIs_person(gradingResult.isNeedsManualReview());
+        log.info("[exam-submit-ai] problem finish, examUserId={}, uuid={}, problemId={}, status={}, mode={}, gradingMode={}, score={}, manualReview={}, costMs={}",
+                examUserId, uuid, problem.getProblem_id(), status,
+                blankAnswer ? "blank" : (imageAnswer ? "image" : "text"),
+                gradingResult.getGradingMode(), awardedScore, gradingResult.isNeedsManualReview(),
+                System.currentTimeMillis() - start);
+        return problemExamRecord;
+    }
+
+    private Integer getSubjectScoreLegacy(List<ProblemSimpleInfo> problem_other, Map<String, Integer> problemScoreMap, Long uuid, Long id) {
         AtomicReference<Integer> totalScore = new AtomicReference<>(0);
         List<ProblemExamRecord> problemExamRecords = new ArrayList<>();
 
@@ -903,7 +1259,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
             problemExamRecord.setExam_user_id(id);
             problemExamRecord.setAnswer(problem.getAnswer());
 
-            String picture = problem.getAnswer();
+            String picture = isImageAnswerUrl(problem.getAnswer()) ? problem.getAnswer() : null;
             DeepSeekRequest deepSeekRequest = new DeepSeekRequest();
             deepSeekRequest.setStatus(0);
             deepSeekRequest.setModel("Qwen/Qwen2.5-VL-72B-Instruct");
@@ -1025,7 +1381,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         problemExamRecordService.saveBatch(problemExamRecords);
         return totalScore.get();
     }
-    private Integer getOptionScore(List<ProblemSimpleInfo> problem_options, Map<String, Integer> problemScoreMap) {
+    private Integer getOptionScore(List<ProblemSimpleInfo> problem_options, Map<String, Integer> problemScoreMap, Long uuid, Long examUserId) {
         if (problem_options.isEmpty()) {
             return 0;
         }
@@ -1047,6 +1403,8 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         List<ProblemMath408Bank> problemMath408BankList = problemMath408BankMapper.selectList(queryWrapper);
 
         int totalScore = 0;
+        List<ProblemExamRecord> problemExamRecords = new ArrayList<>();
+        Date now = new Date();
         // 将查询结果转为 Map，方便快速查找: key=problem_id, value=correct_answer
         Map<Long, String> correctAnswerMap = problemMath408BankList.stream()
                 .collect(Collectors.toMap(ProblemMath408Bank::getProblem_id, ProblemMath408Bank::getCorrect_answer, (k1, k2) -> k1));
@@ -1059,13 +1417,49 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
             if (correctAnswerMap.containsKey(pid)) {
                 String correctAnswer = correctAnswerMap.get(pid);
                 // 对比答案 (注意大小写或去空格需求)
-                if (Objects.equals(correctAnswer, userAnswer)) {
-                    totalScore += problemScoreMap.get(pid + "-" + option.getStatus());
+                Integer scoreValue = problemScoreMap.get(pid + "-" + option.getStatus());
+                if (scoreValue == null) {
+                    throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "problem score not found");
                 }
+                int awardedScore = 0;
+                if (Objects.equals(correctAnswer, userAnswer)) {
+                    awardedScore = scoreValue;
+                }
+                totalScore += awardedScore;
+                ProblemExamRecord problemExamRecord = new ProblemExamRecord();
+                problemExamRecord.setProblem_id(pid);
+                problemExamRecord.setUuid(uuid);
+                problemExamRecord.setExam_user_id(examUserId);
+                problemExamRecord.setAnswer(userAnswer);
+                problemExamRecord.setScore(awardedScore);
+                problemExamRecord.setAi_advise(awardedScore > 0 ? "objective exact match" : "objective answer mismatch");
+                problemExamRecord.setConfidence("1.0");
+                problemExamRecord.setIs_person(false);
+                problemExamRecord.setCreate_date(now);
+                problemExamRecord.setUpdate_date(now);
+                problemExamRecord.setIs_delete(0);
+                problemExamRecords.add(problemExamRecord);
             }
         }
 
+        if (!problemExamRecords.isEmpty()) {
+            problemExamRecordService.saveBatch(problemExamRecords);
+        }
         return totalScore;
+    }
+
+    private Boolean hasJoinedExam(Long examId, Long uuid) {
+        if (examId == null || uuid == null || uuid <= 0) {
+            return false;
+        }
+        Long count = problemExamUserMapper.selectCount(
+                new QueryWrapper<ProblemExamUser>()
+                        .eq("exam_id", examId)
+                        .eq("uuid", uuid)
+                        .eq("status", 0)
+                        .eq("is_delete", 0)
+        );
+        return count != null && count > 0;
     }
 
 
@@ -1230,6 +1624,747 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         return problemMath408BankVo;
     }
 
+    private void buildExamByKeyword(ProblemExamEditRequest problemExamEditRequest) {
+        String keyword = problemExamEditRequest.getKeyword();
+        if (keyword == null || keyword.trim().isEmpty()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "keyword is required");
+        }
+
+        List<ProblemMath408Bank> problems = problemMath408BankMapper.selectList(
+                new QueryWrapper<ProblemMath408Bank>()
+                        .eq("is_delete", 0)
+                        .and(wrapper -> wrapper.like("problem_name", keyword).or().like("source_name", keyword))
+                        .orderByAsc("problem_id")
+        );
+        if (problems == null || problems.isEmpty()) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "no problem matched keyword");
+        }
+
+        Integer defaultScore = problemExamEditRequest.getDefault_score();
+        if (defaultScore == null || defaultScore <= 0) {
+            defaultScore = 1;
+        }
+
+        String examName = problemExamEditRequest.getExam_name();
+        if (examName == null || examName.trim().isEmpty()) {
+            examName = resolveExamNameByKeyword(keyword, problems);
+            problemExamEditRequest.setExam_name(examName);
+        }
+
+        if (problemExamEditRequest.getStatus() == null) {
+            problemExamEditRequest.setStatus(0);
+        }
+        if (problemExamEditRequest.getTime() == null) {
+            problemExamEditRequest.setTime(180);
+        }
+
+        List<ProblemExamProblemInfo> problemInfos = new ArrayList<>();
+        for (ProblemMath408Bank problem : problems) {
+            ProblemExamProblemInfo info = new ProblemExamProblemInfo();
+            info.setProblem_id(problem.getProblem_id());
+            info.setScore(defaultScore);
+            info.setStatus(resolveEffectiveOptionType(problem));
+            problemInfos.add(info);
+        }
+        problemExamEditRequest.setProblemExamProblemInfos(problemInfos);
+    }
+
+    private String resolveExamNameByKeyword(String keyword, List<ProblemMath408Bank> problems) {
+        String trimmedKeyword = keyword == null ? "" : keyword.trim();
+        for (ProblemMath408Bank problem : problems) {
+            String name = extractPaperName(problem == null ? null : problem.getProblem_name());
+            if (name != null && !name.isEmpty()) {
+                return name;
+            }
+            String sourceName = problem == null ? null : problem.getSource_name();
+            if (sourceName != null && !sourceName.trim().isEmpty()) {
+                return sourceName.trim();
+            }
+        }
+        return trimmedKeyword;
+    }
+
+    private String extractPaperName(String problemName) {
+        if (problemName == null) {
+            return null;
+        }
+        String normalized = problemName.trim();
+        if (normalized.isEmpty()) {
+            return null;
+        }
+        normalized = normalized.replace('：', ':');
+        int index = normalized.indexOf("第");
+        if (index > 0) {
+            int questionIndex = normalized.indexOf("题", index);
+            if (questionIndex > index) {
+                return normalized.substring(0, index).trim();
+            }
+        }
+        return normalized;
+    }
+
+    private void validateGeneratePaperSqlRequest(ProblemExamGeneratePaperSqlRequest request) {
+        if (request == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "request is required");
+        }
+        if (request.getKeyword() == null || request.getKeyword().trim().isEmpty()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "keyword is required");
+        }
+        Integer defaultScore = request.getDefaultScore();
+        if (defaultScore != null && defaultScore <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "defaultScore must be greater than 0");
+        }
+        Integer minQuestionCount = request.getMinQuestionCount();
+        if (minQuestionCount != null && minQuestionCount <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "minQuestionCount must be greater than 0");
+        }
+        Integer examStatus = request.getExamStatus();
+        if (examStatus != null && examStatus < 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "examStatus must be greater than or equal to 0");
+        }
+        Integer examTime = request.getTime();
+        if (examTime != null && examTime < 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "time must be greater than or equal to 0");
+        }
+        Map<String, Integer> optionTypeScoreMap = request.getOptionTypeScoreMap();
+        if (optionTypeScoreMap != null) {
+            for (Map.Entry<String, Integer> entry : optionTypeScoreMap.entrySet()) {
+                Integer score = entry.getValue();
+                if (score == null || score <= 0) {
+                    throw new BusinessException(ErrorCode.PARAMS_ERROR,
+                            "optionTypeScoreMap score must be greater than 0, key=" + entry.getKey());
+                }
+            }
+        }
+    }
+
+    private List<ProblemMath408Bank> loadProblemsForGeneratePaperSql(ProblemExamGeneratePaperSqlRequest request) {
+        QueryWrapper<ProblemMath408Bank> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("is_delete", 0)
+                .and(wrapper -> wrapper.like("problem_name", request.getKeyword().trim()).or().like("source_name", request.getKeyword().trim()))
+                .orderByAsc("problem_id");
+        if (request.getStatusList() != null && !request.getStatusList().isEmpty()) {
+            queryWrapper.in("status", request.getStatusList());
+        }
+
+        List<ProblemMath408Bank> problems = problemMath408BankMapper.selectList(queryWrapper);
+        if (problems == null || problems.isEmpty()) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "no problem matched keyword");
+        }
+        return problems;
+    }
+
+    private Map<String, List<ProblemMath408Bank>> groupProblemsByPaperName(List<ProblemMath408Bank> problems) {
+        Map<String, List<ProblemMath408Bank>> groupedProblems = new LinkedHashMap<>();
+        for (ProblemMath408Bank problem : problems) {
+            String examName = resolveProblemPaperName(problem);
+            groupedProblems.computeIfAbsent(examName, key -> new ArrayList<>()).add(problem);
+        }
+
+        for (List<ProblemMath408Bank> paperProblems : groupedProblems.values()) {
+            paperProblems.sort(Comparator
+                    .comparingInt(this::extractQuestionOrderSafe)
+                    .thenComparing(ProblemMath408Bank::getProblem_id));
+        }
+        return groupedProblems;
+    }
+
+    private List<PaperSqlExamGroup> buildPaperSqlExamGroups(Map<String, List<ProblemMath408Bank>> groupedProblems,
+                                                            ProblemExamGeneratePaperSqlRequest request) {
+        int minQuestionCount = request.getMinQuestionCount() == null ? 1 : request.getMinQuestionCount();
+        List<PaperSqlExamGroup> examGroups = new ArrayList<>();
+        for (Map.Entry<String, List<ProblemMath408Bank>> entry : groupedProblems.entrySet()) {
+            List<ProblemMath408Bank> paperProblems = entry.getValue();
+            if (paperProblems == null || paperProblems.size() < minQuestionCount) {
+                continue;
+            }
+
+            int totalScore = 0;
+            for (ProblemMath408Bank paperProblem : paperProblems) {
+                totalScore += resolveProblemScore(paperProblem, request);
+            }
+
+            PaperSqlExamGroup examGroup = new PaperSqlExamGroup();
+            examGroup.setExamName(entry.getKey());
+            examGroup.setProblems(paperProblems);
+            examGroup.setTotalScore(totalScore);
+            examGroups.add(examGroup);
+        }
+        return examGroups;
+    }
+
+    private String resolveProblemPaperName(ProblemMath408Bank problem) {
+        if (problem == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid problem");
+        }
+        String problemName = problem.getProblem_name();
+        String paperName = extractPaperNameByQuestionPatternSafe(problemName);
+        if (paperName != null && !paperName.isEmpty()) {
+            return paperName;
+        }
+        String sourceName = problem.getSource_name();
+        if (sourceName != null && !sourceName.trim().isEmpty()) {
+            return sourceName.trim();
+        }
+        if (problemName != null && !problemName.trim().isEmpty()) {
+            return problemName.trim();
+        }
+        throw new BusinessException(ErrorCode.PARAMS_ERROR, "problem name is empty, problem_id=" + problem.getProblem_id());
+    }
+
+    private String extractPaperNameByQuestionPattern(String problemName) {
+        if (problemName == null) {
+            return null;
+        }
+        String normalized = problemName.trim();
+        if (normalized.isEmpty()) {
+            return null;
+        }
+        Matcher matcher = Pattern.compile("^(.+?)第\\s*[0-9０-９一二三四五六七八九十百千两零]+\\s*题.*$").matcher(normalized);
+        if (matcher.matches()) {
+            return matcher.group(1).trim();
+        }
+        return null;
+    }
+
+    private String extractPaperNameByQuestionPatternSafe(String problemName) {
+        if (problemName == null) {
+            return null;
+        }
+        String normalized = problemName.trim();
+        if (normalized.isEmpty()) {
+            return null;
+        }
+        Matcher matcher = PAPER_NAME_PATTERN.matcher(normalized);
+        if (matcher.matches()) {
+            return matcher.group(1).trim();
+        }
+        return null;
+    }
+
+    private int extractQuestionOrder(ProblemMath408Bank problem) {
+        if (problem == null || problem.getProblem_name() == null) {
+            return Integer.MAX_VALUE;
+        }
+        Matcher matcher = Pattern.compile("第\\s*([0-9０-９]+)\\s*题").matcher(problem.getProblem_name());
+        if (matcher.find()) {
+            try {
+                return Integer.parseInt(toHalfWidthDigits(matcher.group(1)));
+            } catch (NumberFormatException ignored) {
+                return Integer.MAX_VALUE;
+            }
+        }
+        return Integer.MAX_VALUE;
+    }
+
+    private int extractQuestionOrderSafe(ProblemMath408Bank problem) {
+        if (problem == null || problem.getProblem_name() == null) {
+            return Integer.MAX_VALUE;
+        }
+        Matcher matcher = QUESTION_ORDER_PATTERN.matcher(problem.getProblem_name());
+        if (matcher.find()) {
+            return parseQuestionOrderValue(matcher.group(1));
+        }
+        return Integer.MAX_VALUE;
+    }
+
+    private String toHalfWidthDigits(String value) {
+        if (value == null || value.isEmpty()) {
+            return value;
+        }
+        StringBuilder builder = new StringBuilder(value.length());
+        for (char ch : value.toCharArray()) {
+            if (ch >= '０' && ch <= '９') {
+                builder.append((char) (ch - '０' + '0'));
+            } else {
+                builder.append(ch);
+            }
+        }
+        return builder.toString();
+    }
+
+    private int parseQuestionOrderValue(String rawValue) {
+        if (rawValue == null || rawValue.trim().isEmpty()) {
+            return Integer.MAX_VALUE;
+        }
+        String normalized = toHalfWidthDigitsSafe(rawValue.trim());
+        if (normalized.matches("\\d+")) {
+            try {
+                return Integer.parseInt(normalized);
+            } catch (NumberFormatException ignored) {
+                return Integer.MAX_VALUE;
+            }
+        }
+        return parseChineseNumber(normalized);
+    }
+
+    private String toHalfWidthDigitsSafe(String value) {
+        if (value == null || value.isEmpty()) {
+            return value;
+        }
+        StringBuilder builder = new StringBuilder(value.length());
+        for (char ch : value.toCharArray()) {
+            if (ch >= '\uFF10' && ch <= '\uFF19') {
+                builder.append((char) (ch - '\uFF10' + '0'));
+            } else {
+                builder.append(ch);
+            }
+        }
+        return builder.toString();
+    }
+
+    private int parseChineseNumber(String value) {
+        if (value == null || value.isEmpty()) {
+            return Integer.MAX_VALUE;
+        }
+        int result = 0;
+        int current = 0;
+        int number = 0;
+        for (char ch : value.toCharArray()) {
+            Integer digit = resolveChineseDigit(ch);
+            if (digit != null) {
+                number = digit;
+                continue;
+            }
+            int unit = resolveChineseUnit(ch);
+            if (unit > 0) {
+                if (number == 0) {
+                    number = 1;
+                }
+                current += number * unit;
+                number = 0;
+                continue;
+            }
+            return Integer.MAX_VALUE;
+        }
+        result += current + number;
+        return result > 0 ? result : Integer.MAX_VALUE;
+    }
+
+    private Integer resolveChineseDigit(char ch) {
+        return switch (ch) {
+            case '\u96f6' -> 0;
+            case '\u4e00' -> 1;
+            case '\u4e8c', '\u4e24' -> 2;
+            case '\u4e09' -> 3;
+            case '\u56db' -> 4;
+            case '\u4e94' -> 5;
+            case '\u516d' -> 6;
+            case '\u4e03' -> 7;
+            case '\u516b' -> 8;
+            case '\u4e5d' -> 9;
+            default -> null;
+        };
+    }
+
+    private int resolveChineseUnit(char ch) {
+        return switch (ch) {
+            case '\u5341' -> 10;
+            case '\u767e' -> 100;
+            case '\u5343' -> 1000;
+            default -> -1;
+        };
+    }
+
+    private int resolveProblemScore(ProblemMath408Bank problem, ProblemExamGeneratePaperSqlRequest request) {
+        Map<String, Integer> optionTypeScoreMap = request.getOptionTypeScoreMap();
+        Integer optionType = resolveEffectiveOptionType(problem);
+        if (optionTypeScoreMap != null && optionType != null) {
+            Integer optionTypeScore = optionTypeScoreMap.get(String.valueOf(optionType));
+            if (optionTypeScore != null) {
+                if (optionTypeScore <= 0) {
+                    throw new BusinessException(ErrorCode.PARAMS_ERROR, "optionTypeScoreMap score must be greater than 0");
+                }
+                return optionTypeScore;
+            }
+        }
+        Integer defaultScore = request.getDefaultScore();
+        if (defaultScore == null || defaultScore <= 0) {
+            return 1;
+        }
+        return defaultScore;
+    }
+
+    private Date parseSqlDate(String value, String fieldName) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        dateFormat.setLenient(false);
+        try {
+            return dateFormat.parse(value.trim());
+        } catch (ParseException e) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, fieldName + " format must be yyyy-MM-dd HH:mm:ss");
+        }
+    }
+
+    private void appendExamSqlStatements(List<String> sqlStatements,
+                                         PaperSqlExamGroup examGroup,
+                                         String picture,
+                                         String author,
+                                         Date startTime,
+                                         Date endTime,
+                                         Integer examStatus,
+                                         Integer examTime,
+                                         boolean overwriteTissues,
+                                         Date now,
+                                         ProblemExamGeneratePaperSqlRequest request) {
+        sqlStatements.add("SET @paper_exam_name := " + sqlValue(examGroup.getExamName()));
+        sqlStatements.add("SET @paper_existing_exam_id := (SELECT id FROM problem_exam WHERE exam_name = @paper_exam_name AND is_delete = 0 ORDER BY id DESC LIMIT 1)");
+        sqlStatements.add("INSERT INTO problem_exam (exam_name, password, author, picture, joins, start_time, end_time, time, total_score, status, create_time, update_time, is_delete)\n"
+                + "SELECT @paper_exam_name, NULL, "
+                + sqlValue(author) + ", "
+                + sqlValue(picture) + ", 0, "
+                + sqlValue(formatSqlDate(startTime)) + ", "
+                + sqlValue(formatSqlDate(endTime)) + ", "
+                + sqlValue(examTime) + ", "
+                + sqlValue(examGroup.getTotalScore()) + ", "
+                + sqlValue(examStatus) + ", "
+                + sqlValue(formatSqlDate(now)) + ", "
+                + sqlValue(formatSqlDate(now)) + ", 0 "
+                + "FROM DUAL WHERE @paper_existing_exam_id IS NULL");
+        sqlStatements.add("SET @paper_exam_id := IFNULL(@paper_existing_exam_id, LAST_INSERT_ID())");
+        sqlStatements.add("UPDATE problem_exam SET "
+                + "author = " + sqlValue(author) + ", "
+                + "picture = " + sqlValue(picture) + ", "
+                + "start_time = " + sqlValue(formatSqlDate(startTime)) + ", "
+                + "end_time = " + sqlValue(formatSqlDate(endTime)) + ", "
+                + "time = " + sqlValue(examTime) + ", "
+                + "total_score = " + sqlValue(examGroup.getTotalScore()) + ", "
+                + "status = " + sqlValue(examStatus) + ", "
+                + "update_time = " + sqlValue(formatSqlDate(now)) + ", "
+                + "is_delete = 0 "
+                + "WHERE id = @paper_exam_id");
+
+        if (overwriteTissues) {
+            sqlStatements.add("DELETE FROM problem_exam_tissue WHERE exam_id = @paper_exam_id");
+            StringBuilder batchInsertSql = new StringBuilder();
+            batchInsertSql.append("INSERT INTO problem_exam_tissue (problem_id, exam_id, score, status, type, create_date, update_date, is_delete)\nVALUES\n");
+            for (int i = 0; i < examGroup.getProblems().size(); i++) {
+                ProblemMath408Bank problem = examGroup.getProblems().get(i);
+                batchInsertSql.append("(")
+                        .append(problem.getProblem_id()).append(", ")
+                        .append("@paper_exam_id").append(", ")
+                        .append(resolveProblemScore(problem, request)).append(", ")
+                        .append(sqlValue(problem.getStatus())).append(", ")
+                        .append(sqlValue(resolveEffectiveOptionType(problem))).append(", ")
+                        .append(sqlValue(formatSqlDate(now))).append(", ")
+                        .append(sqlValue(formatSqlDate(now))).append(", 0)");
+                if (i != examGroup.getProblems().size() - 1) {
+                    batchInsertSql.append(",\n");
+                }
+            }
+            sqlStatements.add(batchInsertSql.toString());
+        } else {
+            for (ProblemMath408Bank problem : examGroup.getProblems()) {
+                sqlStatements.add("INSERT INTO problem_exam_tissue (problem_id, exam_id, score, status, type, create_date, update_date, is_delete)\n"
+                        + "SELECT "
+                        + problem.getProblem_id() + ", @paper_exam_id, "
+                        + resolveProblemScore(problem, request) + ", "
+                        + sqlValue(problem.getStatus()) + ", "
+                        + sqlValue(resolveEffectiveOptionType(problem)) + ", "
+                        + sqlValue(formatSqlDate(now)) + ", "
+                        + sqlValue(formatSqlDate(now)) + ", 0 "
+                        + "FROM DUAL WHERE NOT EXISTS ("
+                        + "SELECT 1 FROM problem_exam_tissue WHERE exam_id = @paper_exam_id AND problem_id = "
+                        + problem.getProblem_id() + " AND is_delete = 0"
+                        + ")");
+            }
+        }
+    }
+
+    private void executeSqlStatements(List<String> sqlStatements) {
+        try {
+            jdbcTemplate.execute((Connection connection) -> {
+                try (Statement statement = connection.createStatement()) {
+                    for (String sql : sqlStatements) {
+                        statement.execute(sql);
+                    }
+                }
+                return null;
+            });
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "execute exam sql failed: " + e.getMessage());
+        }
+    }
+
+    private ExamBuildResult buildExamResult(ProblemExamEditRequest problemExamEditRequest, User user) {
+        String examName = problemExamEditRequest.getExam_name();
+        Long examId = problemExamEditRequest.getExam_id();
+        List<ProblemExamProblemInfo> problemExamProblemInfos = problemExamEditRequest.getProblemExamProblemInfos();
+
+        if (examName == null || examName.trim().isEmpty()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid exam name");
+        }
+        if (problemExamProblemInfos == null || problemExamProblemInfos.isEmpty()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "empty paper");
+        }
+        for (ProblemExamProblemInfo info : problemExamProblemInfos) {
+            if (info.getProblem_id() == null || info.getProblem_id() <= 0) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid problem id");
+            }
+            if (info.getStatus() == null) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid problem type");
+            }
+            if (info.getScore() == null) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid score");
+            }
+        }
+
+        QueryWrapper<ProblemExam> problemExamQueryWrapper = new QueryWrapper<>();
+        ProblemExam problemExam = new ProblemExam();
+        boolean isNew = true;
+        if (examId != null) {
+            problemExamQueryWrapper.eq("id", examId);
+            problemExam = problemExamMapper.selectOne(problemExamQueryWrapper);
+            if (problemExam == null) {
+                throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "exam not found");
+            }
+            isNew = false;
+        }
+
+        Date now = new Date();
+        problemExam.setAuthor(user.getUsername());
+        problemExam.setExam_name(examName);
+        problemExam.setPicture(problemExamEditRequest.getPicture());
+        problemExam.setPassword(problemExamEditRequest.getPassword());
+        problemExam.setTime(problemExamEditRequest.getTime());
+        problemExam.setStatus(problemExamEditRequest.getStatus());
+        problemExam.setUpdate_time(now);
+        problemExam.setIs_delete(0);
+        if (isNew) {
+            problemExam.setJoins(problemExam.getJoins() == null ? 0 : problemExam.getJoins());
+            problemExam.setCreate_time(now);
+        }
+        if (problemExamEditRequest.getStart_date() != null) {
+            problemExam.setStart_time(new Date(problemExamEditRequest.getStart_date()));
+        }
+        if (problemExamEditRequest.getEnd_date() != null) {
+            problemExam.setEnd_time(new Date(problemExamEditRequest.getEnd_date()));
+        }
+
+        List<Long> problemIds = problemExamProblemInfos.stream()
+                .map(ProblemExamProblemInfo::getProblem_id)
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<Long, ProblemMath408Bank> mathProblemMap = new HashMap<>();
+        if (!problemIds.isEmpty()) {
+            List<ProblemMath408Bank> mathProblems = problemMath408BankMapper.selectList(
+                    new QueryWrapper<ProblemMath408Bank>().in("problem_id", problemIds)
+            );
+            mathProblemMap = mathProblems.stream()
+                    .collect(Collectors.toMap(ProblemMath408Bank::getProblem_id, item -> item, (a, b) -> a));
+        }
+
+        Map<Long, ProblemAlgorithmBank> algorithmProblemMap = new HashMap<>();
+        if (!problemIds.isEmpty()) {
+            List<ProblemAlgorithmBank> algorithmProblems = problemAlgorithmBankMapper.selectList(
+                    new QueryWrapper<ProblemAlgorithmBank>().in("problem_id", problemIds)
+            );
+            algorithmProblemMap = algorithmProblems.stream()
+                    .collect(Collectors.toMap(ProblemAlgorithmBank::getProblem_id, item -> item, (a, b) -> a));
+        }
+
+        List<ProblemExamTissue> tissues = new ArrayList<>();
+        int totalScore = 0;
+        for (ProblemExamProblemInfo info : problemExamProblemInfos) {
+            Long problemId = info.getProblem_id();
+            Integer moduleStatus;
+            if (algorithmProblemMap.containsKey(problemId)) {
+                moduleStatus = 3;
+            } else {
+                ProblemMath408Bank mathProblem = mathProblemMap.get(problemId);
+                if (mathProblem == null) {
+                    throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "problem not found");
+                }
+                moduleStatus = mathProblem.getStatus();
+            }
+
+            ProblemExamTissue tissue = new ProblemExamTissue();
+            tissue.setProblem_id(problemId);
+            tissue.setScore(info.getScore());
+            tissue.setType(info.getStatus());
+            tissue.setStatus(moduleStatus);
+            tissue.setCreate_date(now);
+            tissue.setUpdate_date(now);
+            tissue.setIs_delete(0);
+            tissues.add(tissue);
+            totalScore += info.getScore();
+        }
+
+        problemExam.setTotal_score(totalScore);
+
+        ExamBuildResult result = new ExamBuildResult();
+        result.isNew = isNew;
+        result.problemExam = problemExam;
+        result.problemExamTissues = tissues;
+        return result;
+    }
+
+    private String formatSqlDate(Date date) {
+        if (date == null) {
+            return null;
+        }
+        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
+    }
+
+    private String sqlValue(Object value) {
+        if (value == null) {
+            return "NULL";
+        }
+        if (value instanceof Number) {
+            return String.valueOf(value);
+        }
+        String escaped = String.valueOf(value).replace("'", "''");
+        return "'" + escaped + "'";
+    }
+
+    private String resolveQuestionType(Integer status) {
+        if (status == null) {
+            return "major_question";
+        }
+        return switch (status) {
+            case 0 -> "major_question";
+            case 3 -> "fill_blank";
+            default -> "major_question";
+        };
+    }
+
+    private Map<String, Object> buildExamGradingExtraContext(Integer status, String questionType, Integer totalScore) {
+        Map<String, Object> context = new LinkedHashMap<>();
+        context.put("exam_problem_status", status);
+        context.put("question_type_from_backend", questionType);
+        context.put("total_score_from_backend", totalScore);
+        if ("fill_blank".equals(questionType)) {
+            context.put("grading_policy", "This is a fill-in-the-blank question. A final answer alone is sufficient for full credit if it is mathematically or semantically equivalent to reference_answer.");
+            context.put("answer_only_rule", "For fill_blank, do not require reasoning or process unless the question explicitly asks for it.");
+            context.put("process_required", false);
+        } else {
+            context.put("grading_policy", "This is a major subjective question. Award points only for visible reasoning, method, key steps, calculation process, proof process, and final conclusion.");
+            context.put("answer_only_rule", "For major_question/calculation/proof/essay, a final answer alone without visible reasoning or key process must receive 0, even if it matches reference_answer.");
+            context.put("process_required", true);
+            context.put("manual_review_rule", "If the student answer is unclear and you cannot determine whether valid process exists, set needs_manual_review=true and do not award full credit.");
+        }
+        return context;
+    }
+
+    private void applyStudentAnswer(GradingAgentUtil.GradingInput gradingInput, String rawAnswer) {
+        if (gradingInput == null) {
+            return;
+        }
+        if (rawAnswer == null || rawAnswer.trim().isEmpty()) {
+            gradingInput.setStudentAnswer(null);
+            gradingInput.setStudentAnswerImageUrl(null);
+            gradingInput.setStudentAnswerImageUrls(null);
+            return;
+        }
+        String trimmedAnswer = rawAnswer.trim();
+        if (isImageAnswerUrl(trimmedAnswer)) {
+            gradingInput.setStudentAnswer(null);
+            gradingInput.setStudentAnswerImageUrl(trimmedAnswer);
+            return;
+        }
+        gradingInput.setStudentAnswer(trimmedAnswer);
+        gradingInput.setStudentAnswerImageUrl(null);
+        gradingInput.setStudentAnswerImageUrls(null);
+    }
+
+    private boolean isImageAnswerUrl(String answer) {
+        if (answer == null) {
+            return false;
+        }
+        String normalized = answer.trim().toLowerCase(Locale.ROOT);
+        if (!(normalized.startsWith("http://") || normalized.startsWith("https://"))) {
+            return false;
+        }
+        return normalized.contains(".png")
+                || normalized.contains(".jpg")
+                || normalized.contains(".jpeg")
+                || normalized.contains(".webp")
+                || normalized.contains(".bmp")
+                || normalized.contains(".gif");
+    }
+
+    private String buildGradingAdvice(GradingAgentUtil.GradingResult gradingResult) {
+        if (gradingResult == null) {
+            return "";
+        }
+        if ("blank_submission".equals(gradingResult.getGradingMode())) {
+            return "【得分】0/" + formatScore(gradingResult.getTotalScore()) + "\n"
+                    + "【判分总结】未提交作答图片，无法识别学生作答。\n"
+                    + "【人工复核】true";
+        }
+        String totalScore = formatScore(gradingResult.getTotalScore());
+        String awardedScore = formatScore(gradingResult.getAwardedScore());
+        StringBuilder builder = new StringBuilder();
+        builder.append("【得分】").append(awardedScore).append("/").append(totalScore).append('\n');
+        builder.append("【判分总结】").append(normalizeMathMarkdown(blankToDefault(gradingResult.getSummary(), ""))).append('\n');
+        if (StringUtils.hasText(gradingResult.getAdvice())) {
+            builder.append("【修改建议】").append(normalizeMathMarkdown(gradingResult.getAdvice().trim())).append('\n');
+        }
+        if (StringUtils.hasText(gradingResult.getStudentNormalizedAnswer())) {
+            builder.append("【识别作答】").append(normalizeMathMarkdown(gradingResult.getStudentNormalizedAnswer().trim())).append('\n');
+        }
+        builder.append("【置信度】").append(formatConfidence(gradingResult.getConfidence())).append('\n');
+        builder.append("【人工复核】").append(gradingResult.isNeedsManualReview()).append('\n');
+        builder.append("【结构化结果】").append(normalizeMathMarkdown(toJson(gradingResult)));
+        return normalizeMathMarkdown(builder.toString());
+    }
+
+    private String normalizeMathMarkdown(String text) {
+        if (text == null || text.isEmpty()) {
+            return text;
+        }
+        String normalized = text;
+        normalized = normalized.replaceAll("\\$\\$\\s*([\\s\\S]*?)\\s*\\$\\$", "\\$$1\\$");
+        normalized = normalized.replaceAll("\\\\\\(\\s*([\\s\\S]*?)\\s*\\\\\\)", "\\$$1\\$");
+        normalized = normalized.replaceAll("\\\\\\[\\s*([\\s\\S]*?)\\s*\\\\\\]", "\\$$1\\$");
+        while (normalized.contains("$$")) {
+            normalized = normalized.replace("$$", "$");
+        }
+        return normalized;
+    }
+
+    private String formatConfidence(Double confidence) {
+        if (confidence == null) {
+            return "";
+        }
+        return BigDecimal.valueOf(confidence)
+                .stripTrailingZeros()
+                .toPlainString();
+    }
+
+    private String formatScore(Double score) {
+        if (score == null) {
+            return "0";
+        }
+        return BigDecimal.valueOf(score)
+                .stripTrailingZeros()
+                .toPlainString();
+    }
+
+    private String blankToDefault(String value, String defaultValue) {
+        if (value == null || value.trim().isEmpty()) {
+            return defaultValue;
+        }
+        return value.trim();
+    }
+
+    private String toJson(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            return "{}";
+        }
+    }
+
+    private static class ExamBuildResult {
+        private boolean isNew;
+        private ProblemExam problemExam;
+        private List<ProblemExamTissue> problemExamTissues;
+    }
+
     private String formatDate(Date date) {
         if (date == null) {
             return null;
@@ -1273,7 +2408,3 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         return problemMath408TagsRelationMapper.selectOne(problemAlgorithmTagsRelationQueryWrapper).getTag_name();
     }
 }
-
-
-
-

@@ -34,7 +34,9 @@ public enum SearchTypeEnum {
 
     LOG_WEBSITE("网站日志", "log_website"),
 
-    EXAM("考试", "exam");
+    EXAM("考试", "exam"),
+
+    EXAM_SHEET("答题卡页面", "exam_sheet");
 
     private final String text;
 

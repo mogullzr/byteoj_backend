@@ -23,4 +23,6 @@ public class ProblemExamSheetPaperVo implements Serializable {
     private Integer score;
 
     private Integer total_score;
+
+    private Long pages;
 }

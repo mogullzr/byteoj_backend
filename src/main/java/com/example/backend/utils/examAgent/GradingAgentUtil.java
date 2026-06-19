@@ -1,10 +1,12 @@
 package com.example.backend.utils.examAgent;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -31,31 +33,23 @@ import java.util.Set;
  * <p>该类独立封装 AI 请求构造、调用、JSON 解析和结果校验，不直接依赖 DeepSeekService。</p>
  */
 @Component
+@Slf4j
 public class GradingAgentUtil {
 
-    private static final Duration DEFAULT_BLOCK_TIMEOUT = Duration.ofSeconds(90);
+    private static final Duration DEFAULT_BLOCK_TIMEOUT = Duration.ofSeconds(180);
     private static final double EPSILON = 0.0001D;
     private static final Set<String> LOCAL_GRADING_TYPES = Set.of("choice", "true_false", "fill_blank");
 
     private final ObjectMapper objectMapper;
 
-    @Value("${ai.api.v3-1.model}")
+    @Value("${ai.api.openai-gpt-5.4.model}")
     private String defaultModel;
 
-    @Value("${ai.api.v3-1.url}")
+    @Value("${ai.api.openai-gpt-5.4.url}")
     private String apiUrl;
 
-    @Value("${ai.api.v3-1.key}")
+    @Value("${ai.api.openai-gpt-5.4.key}")
     private String apiKey;
-
-    @Value("${ai.api.Qwen-VL.model}")
-    private String visionModel;
-
-    @Value("${ai.api.Qwen-VL.url}")
-    private String visionApiUrl;
-
-    @Value("${ai.api.Qwen-VL.key}")
-    private String visionApiKey;
 
     public GradingAgentUtil(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
@@ -66,6 +60,11 @@ public class GradingAgentUtil {
      */
     public Mono<GradingResult> gradeAnswer(GradingInput input) {
         validateInput(input);
+        if (isBlankSubmission(input)) {
+            log.info("[grading-agent] skip ai because submission is blank, questionType={}, totalScore={}",
+                    input.getQuestionType(), input.getTotalScore());
+            return Mono.just(buildBlankSubmissionResult(input));
+        }
 
         Optional<GradingResult> localResult = tryGradeByLocalRules(input);
         if (localResult.isPresent()) {
@@ -82,16 +81,26 @@ public class GradingAgentUtil {
      */
     public Mono<GradingResult> gradeAnswerByAi(GradingInput input) {
         validateInput(input);
+        if (isBlankSubmission(input)) {
+            log.info("[grading-agent] skip ai because submission is blank, questionType={}, totalScore={}",
+                    input.getQuestionType(), input.getTotalScore());
+            return Mono.just(buildBlankSubmissionResult(input));
+        }
 
+        long start = System.currentTimeMillis();
         ChatCompletionRequest request = new ChatCompletionRequest();
         request.setModel(resolveModel(input));
         request.setStream(false);
         request.setTemperature(input.getTemperature() == null ? 0.1F : input.getTemperature());
         request.setTopP(input.getTopP() == null ? 0.2F : input.getTopP());
         request.setMessages(buildMessages(input));
+        String targetApiUrl = resolveApiUrl(input);
+        boolean hasImage = !getStudentAnswerImageUrls(input).isEmpty();
+        log.info("[grading-agent] ai request start, model={}, url={}, hasImage={}, questionType={}, totalScore={}",
+                request.getModel(), targetApiUrl, hasImage, input.getQuestionType(), input.getTotalScore());
 
         return WebClient.builder()
-                .baseUrl(resolveApiUrl(input))
+                .baseUrl(targetApiUrl)
                 .defaultHeader("Authorization", "Bearer " + resolveApiKey(input))
                 .build()
                 .post()
@@ -101,7 +110,13 @@ public class GradingAgentUtil {
                 .bodyToMono(String.class)
                 .map(this::extractAssistantContent)
                 .map(this::parseResultJson)
-                .map(result -> normalizeResult(result, input.getTotalScore(), input.getQuestionType()));
+                .map(result -> normalizeResult(result, input.getTotalScore(), input.getQuestionType()))
+                .doOnSuccess(result -> log.info("[grading-agent] ai request success, model={}, hasImage={}, gradingMode={}, manualReview={}, awardedScore={}, costMs={}",
+                        request.getModel(), hasImage, result.getGradingMode(), result.isNeedsManualReview(),
+                        result.getAwardedScore(), System.currentTimeMillis() - start))
+                .doOnError(ex -> log.error("[grading-agent] ai request failed, model={}, url={}, hasImage={}, questionType={}, costMs={}, error={}",
+                        request.getModel(), targetApiUrl, hasImage, input.getQuestionType(),
+                        System.currentTimeMillis() - start, ex.getMessage(), ex));
     }
 
     /**
@@ -124,9 +139,6 @@ public class GradingAgentUtil {
         }
         if (input.getTotalScore() == null || input.getTotalScore() < 0) {
             throw new IllegalArgumentException("total_score must be greater than or equal to 0");
-        }
-        if (!StringUtils.hasText(input.getStudentAnswer()) && getStudentAnswerImageUrls(input).isEmpty()) {
-            throw new IllegalArgumentException("student_answer or student_answer_image_url must not be blank");
         }
     }
 
@@ -235,7 +247,7 @@ public class GradingAgentUtil {
         result.setCorrect(matched);
         result.setPartiallyCorrect(false);
         result.setConfidence(matched ? 0.98D : 0.95D);
-        result.setNeedsManualReview(false);
+        result.setNeedsManualReview(true);
         result.setGradingMode(gradingMode);
         result.setAcceptedAnswers(acceptedAnswers);
         result.setStudentNormalizedAnswer(normalizedStudentAnswer);
@@ -287,6 +299,39 @@ public class GradingAgentUtil {
         return normalizeResult(result, input.getTotalScore(), input.getQuestionType());
     }
 
+    private boolean isBlankSubmission(GradingInput input) {
+        return !StringUtils.hasText(input.getStudentAnswer()) && getStudentAnswerImageUrls(input).isEmpty();
+    }
+
+    private GradingResult buildBlankSubmissionResult(GradingInput input) {
+        GradingResult result = new GradingResult();
+        result.setQuestionType(normalizeType(input.getQuestionType()));
+        result.setTotalScore(input.getTotalScore());
+        result.setAwardedScore(0D);
+        result.setScoreRate(0D);
+        result.setCorrect(false);
+        result.setPartiallyCorrect(false);
+        result.setConfidence(1D);
+        result.setNeedsManualReview(false);
+        result.setGradingMode("blank_submission");
+        result.setAcceptedAnswers(splitAcceptedAnswers(input.getReferenceAnswer()));
+        result.setStudentNormalizedAnswer("");
+        result.setRubricUsed(new ArrayList<>(Collections.singletonList(
+                buildRubricItem("blank_submission", "未作答", input.getTotalScore(), 0D,
+                        "student answer and answer images are both empty",
+                        "", 1D)
+        )));
+        Mistake mistake = new Mistake();
+        mistake.setType("blank_submission");
+        mistake.setDescription("未检测到文字作答，也未检测到有效图片作答。");
+        mistake.setSeverity("high");
+        mistake.setRelatedRubricItemId("blank_submission");
+        result.setMistakes(new ArrayList<>(Collections.singletonList(mistake)));
+        result.setSummary("未作答，得 0 分。");
+        result.setAdvice("如需得分，请补充文字答案或上传清晰的作答图片。");
+        return normalizeResult(result, input.getTotalScore(), input.getQuestionType());
+    }
+
     private RubricItem buildRubricItem(String id,
                                        String name,
                                        Double maxScore,
@@ -309,15 +354,15 @@ public class GradingAgentUtil {
         if (StringUtils.hasText(input.getModel())) {
             return input.getModel();
         }
-        return getStudentAnswerImageUrls(input).isEmpty() ? defaultModel : visionModel;
+        return defaultModel;
     }
 
     private String resolveApiUrl(GradingInput input) {
-        return getStudentAnswerImageUrls(input).isEmpty() ? apiUrl : visionApiUrl;
+        return apiUrl;
     }
 
     private String resolveApiKey(GradingInput input) {
-        return getStudentAnswerImageUrls(input).isEmpty() ? apiKey : visionApiKey;
+        return apiKey;
     }
 
     private List<ChatMessage> buildMessages(GradingInput input) {
@@ -358,7 +403,7 @@ public class GradingAgentUtil {
                 }
             }
         }
-        return imageUrls;
+        return imageUrls.stream().distinct().collect(java.util.stream.Collectors.toList());
     }
 
     private String extractAssistantContent(String responseBody) {
@@ -664,6 +709,14 @@ public class GradingAgentUtil {
 
     private String buildUserPrompt(GradingInput input) {
         return """
+                STRICT BACKEND GRADING POLICY:
+                - If question_type is fill_blank, a final answer alone may receive full credit when it is equivalent to reference_answer.
+                - If question_type is major_question, calculation, proof, or essay, visible process is required.
+                - For major_question, calculation, proof, or essay, if the student only provides a final answer without visible reasoning, method, key steps, calculation, or proof, awarded_score must be 0 even when the final answer matches reference_answer.
+                - Do not infer missing process from reference_answer or solution_explanation. Only grade what is visible in student_answer or student_answer_image_urls.
+                - If extra_context.process_required is true, this process-required rule overrides any answer-equivalence shortcut.
+                - Markdown math must use single dollar delimiters like $x-y+z=0$. Never use double dollar delimiters or bracket math delimiters.
+
                 请根据以下信息完成判题，并返回严格 JSON。
 
                 【题目类型 question_type】
@@ -707,6 +760,7 @@ public class GradingAgentUtil {
                 5. 如果学生答案与参考答案表达不同，但语义或数学上等价，应判为正确。
                 6. 如果无法可靠判断，应设置 needs_manual_review = true，并说明原因。
                 7. 最终只返回 JSON，不要返回 Markdown，不要返回额外说明。
+                8. 数学表达式必须使用单美元符号包裹，例如 $x-y+z=0$；严禁使用 $$...$$、\\(...\\)、\\[...\\]。
 
                 请严格使用以下 JSON 结构：
                 {
@@ -805,6 +859,14 @@ public class GradingAgentUtil {
     }
 
     private static final String SYSTEM_PROMPT = """
+            STRICT BACKEND GRADING POLICY:
+            - fill_blank is answer-equivalence grading: a final answer alone can receive full credit if it matches reference_answer mathematically or semantically.
+            - major_question, calculation, proof, and essay are process grading: final answer alone is insufficient.
+            - For major_question, calculation, proof, or essay, if the student only gives a final answer and does not show visible reasoning, method, key steps, calculation process, or proof process, awarded_score must be 0.
+            - Do not reconstruct or assume missing student steps from reference_answer or solution_explanation.
+            - When extra_context.process_required is true, process grading is mandatory and answer-only full credit is forbidden.
+            - Markdown math must use single dollar delimiters like $x-y+z=0$. Never use double dollar delimiters or bracket math delimiters.
+
             你是一个考试判题 Agent，负责根据题型、题目、总分、标准答案/参考答案、标准解析、评分细则和学生作答进行判分。
 
             你的目标不是机械字符串匹配，而是判断学生答案在语义、数学等价性、表达完整性、过程合理性上是否满足得分要求。
@@ -825,6 +887,7 @@ public class GradingAgentUtil {
             13. 不要输出 Markdown。
             14. 不要输出解释性闲聊。
             15. 不要输出隐藏推理过程，只输出判分结论、得分依据、错误原因和改进建议。
+            16. 数学表达式必须使用单美元符号包裹，例如 $x-y+z=0$；严禁使用 $$...$$、\\(...\\)、\\[...\\]。
 
             评分风格：
             - 默认使用 strict_normal 模式，即严格但不极端。
@@ -869,16 +932,18 @@ public class GradingAgentUtil {
         private String studentAnswer;
 
         @JsonProperty("student_answer_image_url")
+        @JsonAlias({"studentAnswerImageUrl", "StudentAnswerImageUrl"})
         private String studentAnswerImageUrl;
 
         @JsonProperty("student_answer_image_urls")
+        @JsonAlias({"studentAnswerImageUrls", "StudentAnswerImageUrls"})
         private List<String> studentAnswerImageUrls;
 
         @JsonProperty("extra_context")
         private Object extraContext;
 
         /**
-         * 可选：覆盖默认模型。为空时使用 ai.api.v3-1.model。
+         * 可选：覆盖默认模型。为空时使用 ai.api.openai-gpt-5.4.model。
          */
         private String model;
 
@@ -892,6 +957,44 @@ public class GradingAgentUtil {
          */
         @JsonProperty("force_ai")
         private Boolean forceAi;
+
+        public void setStudentAnswerImageUrl(String studentAnswerImageUrl) {
+            this.studentAnswerImageUrl = studentAnswerImageUrl;
+            if (!StringUtils.hasText(studentAnswerImageUrl)) {
+                return;
+            }
+            String normalizedUrl = studentAnswerImageUrl.trim();
+            if (this.studentAnswerImageUrls == null) {
+                this.studentAnswerImageUrls = new ArrayList<>();
+            }
+            boolean exists = this.studentAnswerImageUrls.stream()
+                    .filter(StringUtils::hasText)
+                    .map(String::trim)
+                    .anyMatch(normalizedUrl::equals);
+            if (!exists) {
+                this.studentAnswerImageUrls.add(normalizedUrl);
+            }
+        }
+
+        public void setStudentAnswerImageUrls(List<String> studentAnswerImageUrls) {
+            if (studentAnswerImageUrls == null) {
+                this.studentAnswerImageUrls = null;
+                return;
+            }
+            List<String> normalizedUrls = new ArrayList<>();
+            for (String imageUrl : studentAnswerImageUrls) {
+                if (StringUtils.hasText(imageUrl)) {
+                    String normalizedUrl = imageUrl.trim();
+                    if (!normalizedUrls.contains(normalizedUrl)) {
+                        normalizedUrls.add(normalizedUrl);
+                    }
+                }
+            }
+            this.studentAnswerImageUrls = normalizedUrls;
+            if (!StringUtils.hasText(this.studentAnswerImageUrl) && !normalizedUrls.isEmpty()) {
+                this.studentAnswerImageUrl = normalizedUrls.get(0);
+            }
+        }
     }
 
     @Data

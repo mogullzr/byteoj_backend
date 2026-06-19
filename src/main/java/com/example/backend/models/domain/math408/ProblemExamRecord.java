@@ -46,6 +46,10 @@ public class ProblemExamRecord {
      */
     private String ai_advise;
 
+    private String confidence;
+
+    private Boolean is_person;
+
     /**
      * 创建时间
      */

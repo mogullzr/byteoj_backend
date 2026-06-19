@@ -49,6 +49,10 @@ public class ProblemExamEditRequest implements Serializable {
      */
     private Integer time;
 
+    private String keyword;
+
+    private Integer default_score;
+
     /**
      * 试题信息
      */

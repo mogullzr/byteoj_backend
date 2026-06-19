@@ -16,6 +16,8 @@ public class ProblemExamSheetVo implements Serializable {
 
     private String ai_advise;
 
+    private String confidence;
+
     private Boolean person;
 
     private Long uuid;

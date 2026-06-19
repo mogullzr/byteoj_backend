@@ -7,6 +7,7 @@ import com.example.backend.models.request.math408.ProblemExamSubmitRequest;
 import com.example.backend.models.request.math408.ProblemRequest;
 import com.example.backend.models.request.problem.Math408QueryRequest;
 import com.example.backend.models.request.problem.ProblemExamEditRequest;
+import com.example.backend.models.request.problem.ProblemExamGeneratePaperSqlRequest;
 import com.example.backend.models.request.problem.ProblemExamRequest;
 import com.example.backend.models.vo.problem.ProblemExamSubmitVo;
 import com.example.backend.models.vo.problem.ProblemExamSheetPaperVo;
@@ -58,7 +59,7 @@ public interface ProblemMath408BankService extends IService<ProblemMath408Bank> 
      * @param problemExamRequest 请求信息
      * @return 考试信息
      */
-    List<ProblemExamVo> problemExamSearch(ProblemExamRequest problemExamRequest);
+    List<ProblemExamVo> problemExamSearch(ProblemExamRequest problemExamRequest, Long uuid);
 
     /**
      * 查看考试详细信息
@@ -66,7 +67,7 @@ public interface ProblemMath408BankService extends IService<ProblemMath408Bank> 
      * @param examId 考试ID
      * @return 考试题目信息
      */
-    ProblemExamVo problemSearchExamId(Long examId);
+    ProblemExamVo problemSearchExamId(Long examId, Long uuid);
 
     /**
      * 查找考试详细试题
@@ -109,4 +110,6 @@ public interface ProblemMath408BankService extends IService<ProblemMath408Bank> 
     List<ProblemExamSheetPaperVo> problemExamRecords(Long examId, Long uuid, Integer pageNum);
 
     List<ProblemExamSheetVo> problemExamSheet(Long recordId, Long uuid);
+
+    String problemExamGeneratePaperSql(ProblemExamGeneratePaperSqlRequest request, User user);
 }

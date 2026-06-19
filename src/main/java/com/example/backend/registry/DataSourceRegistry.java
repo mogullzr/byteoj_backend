@@ -37,6 +37,8 @@ public class DataSourceRegistry {
     private ProblemDataSource problemDataSource;
     @Resource
     private ProblemExamSource problemExamSource;
+    @Resource
+    private ProblemExamSheetSource problemExamSheetSource;
 
     private Map<String, DataSource<?>> typeDataSourceMap;
 
@@ -56,6 +58,7 @@ public class DataSourceRegistry {
             put(SearchTypeEnum.LOG_WEBSITE.getValue(), logWebSiteDataSource);
             put(SearchTypeEnum.OTHER.getValue(), problemDataSource);
             put(SearchTypeEnum.EXAM.getValue(), problemExamSource);
+            put(SearchTypeEnum.EXAM_SHEET.getValue(), problemExamSheetSource);
         }};
     }
 
