@@ -192,6 +192,12 @@ public class ProblemWrongBookServiceImpl extends ServiceImpl<ProblemWrongBookMap
             return;
         }
 
+        Map<Long, ProblemWrongBookSyncItem> uniqueItemMap = new LinkedHashMap<>();
+        for (ProblemWrongBookSyncItem item : normalizedItems) {
+            uniqueItemMap.putIfAbsent(item.getProblem_id(), item);
+        }
+        normalizedItems = new ArrayList<>(uniqueItemMap.values());
+
         Set<Long> problemIds = normalizedItems.stream()
                 .map(ProblemWrongBookSyncItem::getProblem_id)
                 .collect(Collectors.toSet());
