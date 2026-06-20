@@ -6,11 +6,15 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.backend.common.ErrorCode;
 import com.example.backend.exception.BusinessException;
 import com.example.backend.mapper.ProblemAlgorithmBankMapper;
+import com.example.backend.mapper.ProblemAlgorithmTagsMapper;
+import com.example.backend.mapper.ProblemAlgorithmTagsRelationMapper;
 import com.example.backend.mapper.ProblemMath408BankMapper;
 import com.example.backend.mapper.ProblemMath408TagsMapper;
 import com.example.backend.mapper.ProblemMath408TagsRelationMapper;
 import com.example.backend.mapper.ProblemWrongBookMapper;
 import com.example.backend.models.domain.algorithm.probleminfo.ProblemAlgorithmBank;
+import com.example.backend.models.domain.algorithm.tag.ProblemAlgorithmTags;
+import com.example.backend.models.domain.algorithm.tag.ProblemAlgorithmTagsRelation;
 import com.example.backend.models.domain.math408.ProblemMath408Bank;
 import com.example.backend.models.domain.math408.ProblemMath408Tags;
 import com.example.backend.models.domain.math408.ProblemMath408TagsRelation;
@@ -18,6 +22,7 @@ import com.example.backend.models.domain.math408.ProblemWrongBook;
 import com.example.backend.models.request.problem.ProblemWrongBookAddRequest;
 import com.example.backend.models.request.problem.ProblemWrongBookQueryRequest;
 import com.example.backend.models.request.problem.ProblemWrongBookSyncItem;
+import com.example.backend.models.vo.problem.ProblemWrongBookTagStatVo;
 import com.example.backend.models.vo.problem.ProblemWrongBookVo;
 import com.example.backend.service.math408.ProblemWrongBookService;
 import org.apache.commons.lang3.StringUtils;
@@ -50,6 +55,12 @@ public class ProblemWrongBookServiceImpl extends ServiceImpl<ProblemWrongBookMap
     private ProblemAlgorithmBankMapper problemAlgorithmBankMapper;
 
     @Resource
+    private ProblemAlgorithmTagsMapper problemAlgorithmTagsMapper;
+
+    @Resource
+    private ProblemAlgorithmTagsRelationMapper problemAlgorithmTagsRelationMapper;
+
+    @Resource
     private ProblemMath408TagsMapper problemMath408TagsMapper;
 
     @Resource
@@ -74,6 +85,85 @@ public class ProblemWrongBookServiceImpl extends ServiceImpl<ProblemWrongBookMap
         resultPage.setPages(rawPage.getPages());
         resultPage.setRecords(records);
         return resultPage;
+    }
+
+    @Override
+    public List<ProblemWrongBookTagStatVo> listAlgorithmTagStats(Long uuid, ProblemWrongBookQueryRequest queryRequest) {
+        queryRequest = normalizeQueryRequest(queryRequest);
+        queryRequest.setStat_type("tag");
+        return listWrongBookStats(uuid, queryRequest);
+    }
+
+    @Override
+    public List<ProblemWrongBookTagStatVo> listWrongBookStats(Long uuid, ProblemWrongBookQueryRequest queryRequest) {
+        validateLoginUser(uuid);
+        queryRequest = normalizeQueryRequest(queryRequest);
+
+        QueryWrapper<ProblemWrongBook> queryWrapper = buildStatsQueryWrapper(uuid, queryRequest);
+        List<ProblemWrongBook> wrongBooks = problemWrongBookMapper.selectList(queryWrapper);
+        if (wrongBooks == null || wrongBooks.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return buildTagStats(wrongBooks);
+    }
+
+    private QueryWrapper<ProblemWrongBook> buildStatsQueryWrapper(Long uuid, ProblemWrongBookQueryRequest queryRequest) {
+        QueryWrapper<ProblemWrongBook> queryWrapper = new QueryWrapper<ProblemWrongBook>()
+                .eq("uuid", uuid)
+                .eq("is_delete", 0)
+                .eq("mastery_status", queryRequest.getMastery_status() == null ? 0 : queryRequest.getMastery_status());
+        if (queryRequest.getProblem_status() != null) {
+            queryWrapper.eq("problem_status", queryRequest.getProblem_status());
+        }
+        if (queryRequest.getOption_type() != null) {
+            queryWrapper.eq("option_type", queryRequest.getOption_type());
+        }
+        if (StringUtils.isNotBlank(queryRequest.getKeyword())) {
+            queryWrapper.like("problem_name", queryRequest.getKeyword().trim());
+        }
+        return queryWrapper;
+    }
+
+    private List<ProblemWrongBookTagStatVo> buildTagStats(List<ProblemWrongBook> wrongBooks) {
+        Set<Long> mathProblemIds = wrongBooks.stream()
+                .filter(item -> !isAlgorithmWrongBook(item))
+                .map(ProblemWrongBook::getProblem_id)
+                .collect(Collectors.toSet());
+        Set<Long> algorithmProblemIds = wrongBooks.stream()
+                .filter(this::isAlgorithmWrongBook)
+                .map(ProblemWrongBook::getProblem_id)
+                .collect(Collectors.toSet());
+
+        Map<Long, List<String>> mathTagsMap = loadMathTagsMap(mathProblemIds);
+        Map<Long, List<String>> algorithmTagsMap = loadAlgorithmTagsMap(algorithmProblemIds);
+        Map<String, Integer> statMap = new LinkedHashMap<>();
+        for (ProblemWrongBook wrongBook : wrongBooks) {
+            boolean algorithm = isAlgorithmWrongBook(wrongBook);
+            List<String> tags = algorithm
+                    ? algorithmTagsMap.getOrDefault(wrongBook.getProblem_id(), new ArrayList<>())
+                    : mathTagsMap.getOrDefault(wrongBook.getProblem_id(), new ArrayList<>());
+            int count = Math.max(defaultZero(wrongBook.getWrong_count()), 1);
+            if (tags.isEmpty()) {
+                String emptyTagName = algorithm ? "未标注算法标签" : "未标注知识点标签";
+                statMap.put(emptyTagName, statMap.getOrDefault(emptyTagName, 0) + count);
+                continue;
+            }
+            for (String tag : tags) {
+                if (StringUtils.isNotBlank(tag)) {
+                    statMap.put(tag, statMap.getOrDefault(tag, 0) + count);
+                }
+            }
+        }
+
+        return toSortedStats(statMap);
+    }
+
+    private List<ProblemWrongBookTagStatVo> toSortedStats(Map<String, Integer> statMap) {
+        return statMap.entrySet().stream()
+                .map(entry -> new ProblemWrongBookTagStatVo(entry.getKey(), entry.getValue()))
+                .sorted((left, right) -> right.getValue().compareTo(left.getValue()))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -400,11 +490,11 @@ public class ProblemWrongBookServiceImpl extends ServiceImpl<ProblemWrongBookMap
         }
 
         Set<Long> mathProblemIds = wrongBooks.stream()
-                .filter(item -> item.getProblem_status() == null || item.getProblem_status() != 3)
+                .filter(item -> !isAlgorithmWrongBook(item))
                 .map(ProblemWrongBook::getProblem_id)
                 .collect(Collectors.toSet());
         Set<Long> algorithmProblemIds = wrongBooks.stream()
-                .filter(item -> item.getProblem_status() != null && item.getProblem_status() == 3)
+                .filter(this::isAlgorithmWrongBook)
                 .map(ProblemWrongBook::getProblem_id)
                 .collect(Collectors.toSet());
 
@@ -417,10 +507,11 @@ public class ProblemWrongBookServiceImpl extends ServiceImpl<ProblemWrongBookMap
                 : problemAlgorithmBankMapper.selectBatchIds(algorithmProblemIds).stream()
                 .collect(Collectors.toMap(ProblemAlgorithmBank::getProblem_id, item -> item, (left, right) -> left));
         Map<Long, List<String>> mathTagsMap = loadMathTagsMap(mathProblemIds);
+        Map<Long, List<String>> algorithmTagsMap = loadAlgorithmTagsMap(algorithmProblemIds);
 
         List<ProblemWrongBookVo> result = new ArrayList<>(wrongBooks.size());
         for (ProblemWrongBook wrongBook : wrongBooks) {
-            result.add(buildWrongBookVo(wrongBook, mathProblemMap, algorithmProblemMap, mathTagsMap));
+            result.add(buildWrongBookVo(wrongBook, mathProblemMap, algorithmProblemMap, mathTagsMap, algorithmTagsMap));
         }
         return result;
     }
@@ -428,7 +519,8 @@ public class ProblemWrongBookServiceImpl extends ServiceImpl<ProblemWrongBookMap
     private ProblemWrongBookVo buildWrongBookVo(ProblemWrongBook wrongBook,
                                                 Map<Long, ProblemMath408Bank> mathProblemMap,
                                                 Map<Long, ProblemAlgorithmBank> algorithmProblemMap,
-                                                Map<Long, List<String>> mathTagsMap) {
+                                                Map<Long, List<String>> mathTagsMap,
+                                                Map<Long, List<String>> algorithmTagsMap) {
         ProblemWrongBookVo vo = new ProblemWrongBookVo();
         vo.setId(wrongBook.getId());
         vo.setProblem_id(wrongBook.getProblem_id());
@@ -445,7 +537,7 @@ public class ProblemWrongBookServiceImpl extends ServiceImpl<ProblemWrongBookMap
         vo.setLatest_ai_advise(wrongBook.getLatest_ai_advise());
         vo.setUpdate_date(wrongBook.getUpdate_date());
 
-        if (wrongBook.getProblem_status() != null && wrongBook.getProblem_status() == 3) {
+        if (isAlgorithmWrongBook(wrongBook)) {
             ProblemAlgorithmBank algorithmBank = algorithmProblemMap.get(wrongBook.getProblem_id());
             if (algorithmBank != null) {
                 vo.setProblem_name(algorithmBank.getChinese_name());
@@ -453,6 +545,7 @@ public class ProblemWrongBookServiceImpl extends ServiceImpl<ProblemWrongBookMap
                 vo.setDifficulty_name(algorithmBank.getDifficulty_name());
                 vo.setSource_name(algorithmBank.getSource_name());
             }
+            vo.setTagsList(algorithmTagsMap.getOrDefault(wrongBook.getProblem_id(), new ArrayList<>()));
             return vo;
         }
 
@@ -502,6 +595,46 @@ public class ProblemWrongBookServiceImpl extends ServiceImpl<ProblemWrongBookMap
             }
         }
         return result;
+    }
+
+    private Map<Long, List<String>> loadAlgorithmTagsMap(Set<Long> problemIds) {
+        if (problemIds == null || problemIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<ProblemAlgorithmTags> tags = problemAlgorithmTagsMapper.selectList(
+                new QueryWrapper<ProblemAlgorithmTags>()
+                        .in("problem_id", problemIds)
+                        .eq("is_delete", 0));
+        if (tags.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Set<Integer> tagIds = tags.stream().map(ProblemAlgorithmTags::getTag_id).collect(Collectors.toSet());
+        Map<Integer, String> tagNameMap = problemAlgorithmTagsRelationMapper.selectList(
+                        new QueryWrapper<ProblemAlgorithmTagsRelation>().in("tag_id", tagIds))
+                .stream()
+                .collect(Collectors.toMap(
+                        ProblemAlgorithmTagsRelation::getTag_id,
+                        ProblemAlgorithmTagsRelation::getTag_name,
+                        (left, right) -> left,
+                        LinkedHashMap::new));
+
+        Map<Long, List<String>> result = new HashMap<>();
+        for (ProblemAlgorithmTags tag : tags) {
+            result.computeIfAbsent(tag.getProblem_id(), key -> new ArrayList<>());
+            String tagName = tagNameMap.get(tag.getTag_id());
+            if (StringUtils.isNotBlank(tagName)) {
+                result.get(tag.getProblem_id()).add(tagName);
+            }
+        }
+        return result;
+    }
+
+    private boolean isAlgorithmWrongBook(ProblemWrongBook wrongBook) {
+        return wrongBook != null
+                && ((wrongBook.getProblem_status() != null && wrongBook.getProblem_status() == 3)
+                || (wrongBook.getOption_type() != null && wrongBook.getOption_type() == 4));
     }
 
     private int defaultZero(Integer value) {

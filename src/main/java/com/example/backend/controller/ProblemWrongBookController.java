@@ -8,6 +8,7 @@ import com.example.backend.models.domain.user.User;
 import com.example.backend.models.request.problem.ProblemWrongBookAddRequest;
 import com.example.backend.models.request.problem.ProblemWrongBookQueryRequest;
 import com.example.backend.models.request.problem.ProblemWrongBookUpdateRequest;
+import com.example.backend.models.vo.problem.ProblemWrongBookTagStatVo;
 import com.example.backend.models.vo.problem.ProblemWrongBookVo;
 import com.example.backend.service.math408.ProblemWrongBookService;
 import com.example.backend.service.user.UserService;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 @RestController
 @RequestMapping("/problem/wrong-book")
@@ -33,6 +35,22 @@ public class ProblemWrongBookController {
                                                                   HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
         return ResultUtils.success(problemWrongBookService.listWrongBooks(loginUser.getUuid(), queryRequest));
+    }
+
+    @AccessLimit(seconds = 1, maxCount = 10, needLogin = true)
+    @PostMapping("/stats")
+    private BaseResponse<List<ProblemWrongBookTagStatVo>> listWrongBookStats(@RequestBody(required = false) ProblemWrongBookQueryRequest queryRequest,
+                                                                             HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        return ResultUtils.success(problemWrongBookService.listWrongBookStats(loginUser.getUuid(), queryRequest));
+    }
+
+    @AccessLimit(seconds = 1, maxCount = 10, needLogin = true)
+    @PostMapping("/stats/algorithm-tags")
+    private BaseResponse<List<ProblemWrongBookTagStatVo>> listAlgorithmTagStats(@RequestBody(required = false) ProblemWrongBookQueryRequest queryRequest,
+                                                                                HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        return ResultUtils.success(problemWrongBookService.listAlgorithmTagStats(loginUser.getUuid(), queryRequest));
     }
 
     @AccessLimit(seconds = 1, maxCount = 10, needLogin = true)

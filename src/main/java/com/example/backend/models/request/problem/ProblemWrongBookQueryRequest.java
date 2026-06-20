@@ -37,4 +37,9 @@ public class ProblemWrongBookQueryRequest implements Serializable {
      * 题型：0简答，1单选，2多选，3填空，4算法
      */
     private Integer option_type;
+
+    /**
+     * 统计维度：option_type题型，problem_status科目来源，tag标签
+     */
+    private String stat_type;
 }
