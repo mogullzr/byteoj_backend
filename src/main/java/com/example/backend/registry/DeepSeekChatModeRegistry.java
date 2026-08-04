@@ -56,6 +56,15 @@ public class DeepSeekChatModeRegistry {
     @Value("${ai.api.Qwen-VL.key}")
     private String QwenVLKey;
 
+    @Value("${ai.api.openai-gpt-5.4.model:}")
+    private String openaiGpt54Model;
+
+    @Value("${ai.api.openai-gpt-5.4.url:}")
+    private String openaiGpt54ApiUrl;
+
+    @Value("${ai.api.openai-gpt-5.4.key:}")
+    private String openaiGpt54ApiKey;
+
     private Map<String, List<String>> modelInfo;
 
     @PostConstruct
@@ -91,6 +100,14 @@ public class DeepSeekChatModeRegistry {
         qwen_keyInfo.add(QwenVLUrl);
         qwen_keyInfo.add(QwenVLKey);
         modelInfo.put(QwenVLModel, qwen_keyInfo);
+
+        if (openaiGpt54Model != null && !openaiGpt54Model.isBlank()
+                && openaiGpt54ApiUrl != null && !openaiGpt54ApiUrl.isBlank()) {
+            List<String> openaiGpt54Info = new ArrayList<>();
+            openaiGpt54Info.add(openaiGpt54ApiUrl);
+            openaiGpt54Info.add(openaiGpt54ApiKey);
+            modelInfo.put(openaiGpt54Model, openaiGpt54Info);
+        }
     }
 
     public List<String> getChatModeInfo(String model) {
