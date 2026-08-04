@@ -21,6 +21,9 @@ import java.time.Duration;
 public class JudgeTaskStateService {
     private static final String PREFIX = "judge:task:";
     private static final String SUBMISSION_SANDBOX_PREFIX = "judge:submission:sandbox:";
+    private static final String SUBMISSION_TASK_PREFIX = "judge:submission:task:";
+    private static final String SANDBOX_QUEUE_PREFIX = "judge:queue:sandbox:";
+    private static final String QUEUE_SEQUENCE_KEY = "judge:queue:sequence";
     private static final Duration TTL = Duration.ofHours(2);
 
     @Resource
@@ -59,10 +62,34 @@ public class JudgeTaskStateService {
         );
     }
 
-    public void clearSubmissionSandbox(Long submissionId) {
-        if (submissionId == null) return;
+    /**
+     * 记录任务在指定沙箱队列中的先后顺序。调试任务也进入有序集合，保证提交记录看到的
+     * 前方任务数包含真实占用该沙箱的所有任务。
+     */
+    public void registerQueuePosition(String taskId, Long submissionId, int sandboxIndex) {
+        if (taskId == null || taskId.isBlank()) return;
+        Long sequence = redis.opsForValue().increment(QUEUE_SEQUENCE_KEY);
+        if (sequence == null) throw new IllegalStateException("生成判题队列序号失败");
+        String queueKey = sandboxQueueKey(sandboxIndex);
+        redis.opsForZSet().add(queueKey, taskId, sequence.doubleValue());
+        redis.expire(queueKey, TTL);
+        if (submissionId != null) {
+            redis.opsForValue().set(SUBMISSION_TASK_PREFIX + submissionId, taskId, TTL);
+        }
+    }
+
+    /** 清理完成或失败任务的队列排名及提交运行态映射。 */
+    public void clearQueuePosition(String taskId, Integer sandboxIndex, Long submissionId) {
         try {
-            redis.delete(SUBMISSION_SANDBOX_PREFIX + submissionId);
+            if (taskId != null && !taskId.isBlank() && sandboxIndex != null) {
+                redis.opsForZSet().remove(sandboxQueueKey(sandboxIndex), taskId);
+            }
+            if (submissionId != null) {
+                redis.delete(List.of(
+                        SUBMISSION_SANDBOX_PREFIX + submissionId,
+                        SUBMISSION_TASK_PREFIX + submissionId
+                ));
+            }
         } catch (RuntimeException ignored) {
             // 运行态清理失败只等待 TTL，不改变已经完成的判题结果。
         }
@@ -87,5 +114,36 @@ public class JudgeTaskStateService {
             }
         }
         return result;
+    }
+
+    /**
+     * 返回每条 Pending 提交在所属沙箱队列中前方的任务数量。当前正在执行的任务仍保留
+     * 在有序集合中，因此会被后续任务计入等待位置。
+     */
+    public Map<Long, Long> getSubmissionQueueAhead(Collection<Long> submissionIds,
+                                                    Map<Long, Integer> sandboxBySubmission) {
+        if (submissionIds == null || submissionIds.isEmpty()
+                || sandboxBySubmission == null || sandboxBySubmission.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<Long> ids = submissionIds.stream().filter(Objects::nonNull).toList();
+        if (ids.isEmpty()) return Collections.emptyMap();
+        List<String> taskIds = redis.opsForValue().multiGet(ids.stream()
+                .map(id -> SUBMISSION_TASK_PREFIX + id).toList());
+        Map<Long, Long> result = new LinkedHashMap<>();
+        if (taskIds == null) return result;
+        for (int i = 0; i < Math.min(ids.size(), taskIds.size()); i++) {
+            Long submissionId = ids.get(i);
+            String taskId = taskIds.get(i);
+            Integer sandboxIndex = sandboxBySubmission.get(submissionId);
+            if (taskId == null || taskId.isBlank() || sandboxIndex == null) continue;
+            Long rank = redis.opsForZSet().rank(sandboxQueueKey(sandboxIndex), taskId);
+            if (rank != null) result.put(submissionId, rank);
+        }
+        return result;
+    }
+
+    private String sandboxQueueKey(int sandboxIndex) {
+        return SANDBOX_QUEUE_PREFIX + sandboxIndex;
     }
 }

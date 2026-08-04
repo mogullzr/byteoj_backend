@@ -362,6 +362,18 @@ public class ProblemAlgorithmController {
                 pageNum, pageSize, result, username, problem, language, startTime, endTime));
     }
 
+    /** 当前用户的 Pending 摘要，不受全站记录列表分页和筛选条件影响。 */
+    @AccessLimit(seconds = 5, maxCount = 30, needLogin = true)
+    @GetMapping("/records/pending/mine")
+    public BaseResponse<List<SubmissionsAlgorithmRecordsVo>> problemAlgorithmPendingRecordsMine(
+            @RequestParam(defaultValue = "5") Integer limit,
+            HttpServletRequest httpServletRequest) {
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        if (loginUser == null) throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        return ResultUtils.success(problemAlgorithmService.problemAlgorithmPendingRecordsByUuid(
+                loginUser.getUuid(), limit));
+    }
+
     @AccessLimit(seconds = 5, maxCount = 60, needLogin = true)
     @GetMapping("/judge/task/{taskId}")
     public BaseResponse<JudgeTask> problemAlgorithmJudgeTask(@PathVariable String taskId,

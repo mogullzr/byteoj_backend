@@ -38,9 +38,7 @@ public class JudgeTaskProcessor {
         try {
             JudgeTask existing = stateService.get(taskId);
             if (existing != null && isTerminal(existing.getStatus())) {
-                if (message.getSubmissionId() != null) {
-                    stateService.clearSubmissionSandbox(message.getSubmissionId());
-                }
+                stateService.clearQueuePosition(taskId, message.getSandboxIndex(), message.getSubmissionId());
                 channel.basicAck(deliveryTag, false);
                 publish(existing);
                 return;
@@ -62,8 +60,8 @@ public class JudgeTaskProcessor {
             JudgeTask finished = fromJudge(taskId, message, result);
             if (message.getSubmissionId() != null) {
                 problemAlgorithmService.updatePendingSubmission(message.getSubmissionId(), finished.getStatus());
-                stateService.clearSubmissionSandbox(message.getSubmissionId());
             }
+            stateService.clearQueuePosition(taskId, message.getSandboxIndex(), message.getSubmissionId());
             saveAndPublish(finished);
             channel.basicAck(deliveryTag, false);
         } catch (Exception e) {
@@ -72,11 +70,11 @@ public class JudgeTaskProcessor {
             if (message.getSubmissionId() != null) {
                 try {
                     problemAlgorithmService.updatePendingSubmission(message.getSubmissionId(), "Failed");
-                    stateService.clearSubmissionSandbox(message.getSubmissionId());
                 } catch (Exception updateError) {
                     log.error("提交记录 {} 最终状态写回失败", message.getSubmissionId(), updateError);
                 }
             }
+            stateService.clearQueuePosition(taskId, message.getSandboxIndex(), message.getSubmissionId());
             saveAndPublish(failed);
             channel.basicAck(deliveryTag, false);
         }

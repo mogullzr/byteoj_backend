@@ -58,6 +58,7 @@ public class JudgeTaskQueueService {
         if (submissionId != null) {
             stateService.saveSubmissionSandbox(submissionId, sandboxIndex);
         }
+        stateService.registerQueuePosition(taskId, submissionId, sandboxIndex);
 
         JudgeTaskMessage message = new JudgeTaskMessage();
         message.setTaskId(taskId);
@@ -92,8 +93,8 @@ public class JudgeTaskQueueService {
             stateService.save(failed);
             if (submissionId != null) {
                 problemAlgorithmService.updatePendingSubmission(submissionId, "Failed");
-                stateService.clearSubmissionSandbox(submissionId);
             }
+            stateService.clearQueuePosition(taskId, sandboxIndex, submissionId);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, failed.getMessage());
         }
         return pending;

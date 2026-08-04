@@ -93,5 +93,11 @@ public class SubmissionsAlgorithmRecordsVo implements Serializable {
     /** 仅 Pending 状态返回，范围为 0-9；最终状态不保留该运行态信息。 */
     private Integer sandbox_index;
 
+    /** 仅 Pending 状态返回，表示所属沙箱队列中排在当前任务前方的任务数量。 */
+    private Long queue_ahead;
+
+    /** “我的 Pending”接口返回的当前用户 Pending 总数。 */
+    private Long pending_total;
+
     private List<SubmissionAlgorithmDetailRecordVo> submission_list;
 }

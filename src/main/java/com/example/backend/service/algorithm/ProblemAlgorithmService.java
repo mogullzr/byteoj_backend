@@ -60,6 +60,9 @@ public interface ProblemAlgorithmService extends IService<ProblemAlgorithmBank> 
             Integer pageNum, Integer pageSize, String result, String username, String problem,
             String language, String startTime, String endTime);
 
+    /** 当前登录用户最靠前的 Pending 提交及 Pending 总数。 */
+    List<SubmissionsAlgorithmRecordsVo> problemAlgorithmPendingRecordsByUuid(Long uuid, Integer limit);
+
     /** 入队时创建 Pending 记录，返回提交记录 ID。 */
     Long createPendingSubmission(JudgeRequest judgeRequest, Long uuid);
 

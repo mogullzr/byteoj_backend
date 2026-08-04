@@ -2,13 +2,17 @@ package com.example.backend.controller;
 
 import com.example.backend.common.BaseResponse;
 import com.example.backend.common.ResultUtils;
+import com.example.backend.config.RabbitMQConfig;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -33,26 +37,53 @@ public class JudgeMonitorController {
         
         try {
             if (rabbitAdmin != null) {
-                Properties queueProperties = rabbitAdmin.getQueueProperties("judge.submit.queue");
-                Properties dlqProperties = rabbitAdmin.getQueueProperties("judge.submit.dlq");
-                
-                if (queueProperties != null) {
-                    stats.put("mainQueue", Map.of(
-                        "name", "judge.submit.queue",
-                        "messageCount", queueProperties.getOrDefault("QUEUE_MESSAGE_COUNT", 0),
-                        "consumerCount", queueProperties.getOrDefault("QUEUE_CONSUMER_COUNT", 0)
-                    ));
+                List<Map<String, Object>> queues = new ArrayList<>();
+                long totalMessageCount = 0;
+                long totalConsumerCount = 0;
+                int availableQueueCount = 0;
+
+                for (int index = 0; index < RabbitMQConfig.SANDBOX_COUNT; index++) {
+                    String queueName = RabbitMQConfig.QUEUE_NAMES[index];
+                    Properties queueProperties = rabbitAdmin.getQueueProperties(queueName);
+                    long messageCount = propertyAsLong(queueProperties, "QUEUE_MESSAGE_COUNT");
+                    long consumerCount = propertyAsLong(queueProperties, "QUEUE_CONSUMER_COUNT");
+                    boolean available = queueProperties != null;
+                    if (available) availableQueueCount++;
+                    totalMessageCount += messageCount;
+                    totalConsumerCount += consumerCount;
+
+                    Map<String, Object> queue = new LinkedHashMap<>();
+                    queue.put("sandboxIndex", index);
+                    queue.put("name", queueName);
+                    queue.put("messageCount", messageCount);
+                    queue.put("consumerCount", consumerCount);
+                    queue.put("available", available);
+                    queues.add(queue);
                 }
+
+                Properties dlqProperties = rabbitAdmin.getQueueProperties("judge.submit.dlq");
+
+                stats.put("mainQueue", Map.of(
+                        "name", "judge.submit.queue.*",
+                        "messageCount", totalMessageCount,
+                        "consumerCount", totalConsumerCount
+                ));
+                stats.put("queues", queues);
+                stats.put("totalWaiting", totalMessageCount);
+                stats.put("totalConsumers", totalConsumerCount);
+                stats.put("sandboxCount", RabbitMQConfig.SANDBOX_COUNT);
+                stats.put("availableQueueCount", availableQueueCount);
                 
                 if (dlqProperties != null) {
                     stats.put("deadLetterQueue", Map.of(
                         "name", "judge.submit.dlq",
-                        "messageCount", dlqProperties.getOrDefault("QUEUE_MESSAGE_COUNT", 0),
-                        "consumerCount", dlqProperties.getOrDefault("QUEUE_CONSUMER_COUNT", 0)
+                        "messageCount", propertyAsLong(dlqProperties, "QUEUE_MESSAGE_COUNT"),
+                        "consumerCount", propertyAsLong(dlqProperties, "QUEUE_CONSUMER_COUNT")
                     ));
                 }
                 
-                stats.put("status", "healthy");
+                stats.put("status", availableQueueCount == RabbitMQConfig.SANDBOX_COUNT
+                        ? "healthy" : "partial");
             } else {
                 stats.put("status", "unavailable");
                 stats.put("message", "RabbitAdmin not available");
@@ -63,6 +94,18 @@ public class JudgeMonitorController {
         }
         
         return ResultUtils.success(stats);
+    }
+
+    private long propertyAsLong(Properties properties, String key) {
+        if (properties == null) return 0L;
+        Object value = properties.get(key);
+        if (value instanceof Number) return ((Number) value).longValue();
+        if (value == null) return 0L;
+        try {
+            return Long.parseLong(String.valueOf(value));
+        } catch (NumberFormatException ignored) {
+            return 0L;
+        }
     }
 
     /**

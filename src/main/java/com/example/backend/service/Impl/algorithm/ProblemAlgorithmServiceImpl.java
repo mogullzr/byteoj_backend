@@ -438,17 +438,70 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
                 .collect(Collectors.toSet());
         Map<Long, Integer> sandboxBySubmission = judgeTaskStateService
                 .getSubmissionSandboxes(pendingSubmissionIds);
+        Map<Long, Long> queueAheadBySubmission = judgeTaskStateService
+                .getSubmissionQueueAhead(pendingSubmissionIds, sandboxBySubmission);
         for (SubmissionsAlgorithm submission : submissions) {
             SubmissionsAlgorithmRecordsVo vo = buildSubmissionRecordVO(submission,
                     detailsBySubmission.get(submission.getSubmission_id()), usersById.get(submission.getUuid()),
                     problemsById.get(submission.getProblem_id()));
             if ("Pending".equals(submission.getResults())) {
                 vo.setSandbox_index(sandboxBySubmission.get(submission.getSubmission_id()));
+                vo.setQueue_ahead(queueAheadBySubmission.get(submission.getSubmission_id()));
             }
             vo.setPage_num(page.getPages());
             resultList.add(vo);
         }
         return resultList;
+    }
+
+    @Override
+    public List<SubmissionsAlgorithmRecordsVo> problemAlgorithmPendingRecordsByUuid(Long uuid, Integer limit) {
+        if (uuid == null || limit == null || limit < 1 || limit > 20) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "Pending 查询参数错误");
+        }
+        QueryWrapper<SubmissionsAlgorithm> countQuery = new QueryWrapper<>();
+        countQuery.eq("uuid", uuid).eq("results", "Pending");
+        long pendingTotal = submissionsAlgorithmMapper.selectCount(countQuery);
+        if (pendingTotal == 0) return new ArrayList<>();
+
+        Page<SubmissionsAlgorithm> page = new Page<>(1, limit, false);
+        QueryWrapper<SubmissionsAlgorithm> listQuery = new QueryWrapper<>();
+        listQuery.eq("uuid", uuid)
+                .eq("results", "Pending")
+                .orderByAsc("submission_id");
+        List<SubmissionsAlgorithm> submissions = submissionsAlgorithmMapper.selectPage(page, listQuery).getRecords();
+        if (submissions.isEmpty()) return new ArrayList<>();
+
+        Set<Long> submissionIds = submissions.stream()
+                .map(SubmissionsAlgorithm::getSubmission_id).collect(Collectors.toSet());
+        Set<Long> problemIds = submissions.stream()
+                .map(SubmissionsAlgorithm::getProblem_id).collect(Collectors.toSet());
+        Map<Long, SubmissionAlgorithmDetails> detailsBySubmission = submissionAlgorithmDetailsMapper.selectList(
+                        new QueryWrapper<SubmissionAlgorithmDetails>().in("submission_id", submissionIds)).stream()
+                .collect(Collectors.toMap(SubmissionAlgorithmDetails::getSubmission_id,
+                        item -> item, (left, right) -> left));
+        User user = userMapper.selectById(uuid);
+        Map<Long, ProblemAlgorithmBank> problemsById = problemAlgorithmBankMapper.selectList(
+                        new QueryWrapper<ProblemAlgorithmBank>().in("problem_id", problemIds)).stream()
+                .collect(Collectors.toMap(ProblemAlgorithmBank::getProblem_id,
+                        item -> item, (left, right) -> left));
+        Map<Long, Integer> sandboxBySubmission = judgeTaskStateService.getSubmissionSandboxes(submissionIds);
+        Map<Long, Long> queueAheadBySubmission = judgeTaskStateService
+                .getSubmissionQueueAhead(submissionIds, sandboxBySubmission);
+
+        List<SubmissionsAlgorithmRecordsVo> result = new ArrayList<>();
+        for (SubmissionsAlgorithm submission : submissions) {
+            SubmissionsAlgorithmRecordsVo vo = buildSubmissionRecordVO(
+                    submission,
+                    detailsBySubmission.get(submission.getSubmission_id()),
+                    user,
+                    problemsById.get(submission.getProblem_id()));
+            vo.setSandbox_index(sandboxBySubmission.get(submission.getSubmission_id()));
+            vo.setQueue_ahead(queueAheadBySubmission.get(submission.getSubmission_id()));
+            vo.setPending_total(pendingTotal);
+            result.add(vo);
+        }
+        return result;
     }
 
     private String trimQueryKeyword(String value) {
