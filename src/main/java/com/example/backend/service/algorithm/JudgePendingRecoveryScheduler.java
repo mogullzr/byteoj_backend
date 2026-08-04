@@ -1,6 +1,7 @@
 package com.example.backend.service.algorithm;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.backend.models.domain.algorithm.submission.SubmissionsAlgorithm;
 import com.example.backend.mapper.SubmissionsAlgorithmMapper;
@@ -48,10 +49,11 @@ public class JudgePendingRecoveryScheduler {
                 .orderByAsc("submission_id");
         List<SubmissionsAlgorithm> stale = submissionsAlgorithmMapper.selectPage(page, query).getRecords();
         for (SubmissionsAlgorithm submission : stale) {
-            SubmissionsAlgorithm update = new SubmissionsAlgorithm();
-            update.setSubmission_id(submission.getSubmission_id());
-            update.setResults("Internal Error");
-            int updated = submissionsAlgorithmMapper.updateById(update);
+            UpdateWrapper<SubmissionsAlgorithm> update = new UpdateWrapper<>();
+            update.eq("submission_id", submission.getSubmission_id())
+                    .eq("results", "Pending")
+                    .set("results", "Internal Error");
+            int updated = submissionsAlgorithmMapper.update(null, update);
             if (updated == 1) {
                 stateService.clearSubmissionRuntime(submission.getSubmission_id());
                 log.error("提交 {} 超过 {} 分钟仍为 Pending，已标记 Internal Error",
