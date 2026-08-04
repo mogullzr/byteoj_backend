@@ -28,20 +28,6 @@ public class RabbitMQConfig {
     // ==================== 沙箱配置 ====================
     public static final int SANDBOX_COUNT = 10;  // 沙箱数量
 
-    // 10个沙箱地址
-    public static final String[] SANDBOX_URLS = {
-            "http://101.43.48.120:6048",
-            "http://101.43.48.120:6049",
-            "http://101.43.48.120:6050",
-            "http://101.43.48.120:6051",
-            "http://101.43.48.120:6052",
-            "http://101.43.48.120:6053",
-            "http://101.43.48.120:6054",
-            "http://101.43.48.120:6055",
-            "http://101.43.48.120:6056",
-            "http://101.43.48.120:6057",
-    };
-
     // ==================== 队列配置 ====================
     // 队列名称模板
     public static final String QUEUE_NAME_PREFIX = "judge.submit.queue.";
@@ -287,10 +273,9 @@ public class RabbitMQConfig {
         factory.setConnectionFactory(connectionFactory);
         factory.setMessageConverter(jsonMessageConverter());
 
-        // 🔥 并发配置：每个队列 1-2 个消费者
-        // 总共 10 个队列 × 2 = 最多 20 个并发判题
-        factory.setConcurrentConsumers(1);  // 每个队列初始 1 个消费者
-        factory.setMaxConcurrentConsumers(2);  // 每个队列最大 2 个消费者
+        // 一个队列固定对应一个沙箱。不能扩成 2 个消费者，否则同一沙箱会并发执行两个任务。
+        factory.setConcurrentConsumers(1);
+        factory.setMaxConcurrentConsumers(1);
 
         // QoS 配置：每个消费者一次只预取1条消息
         factory.setPrefetchCount(1);

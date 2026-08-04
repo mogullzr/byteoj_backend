@@ -31,7 +31,7 @@ spring:
     # 解决升级Spring Boot2.6后,因依赖循环引用导致启动时报错的问题
     allow-circular-references: true
   profiles:
-    active: local
+    active: prod
     name: backend
   datasource:
     dynamic:
@@ -105,6 +105,8 @@ spring:
     # 开启消息发送确认
     publisher-returns: true
     publisher-confirm-type: correlated  # 确认发送
+    template:
+      mandatory: true
     cache:
       channel:
         checkout-timeout: 10s  # 通道池

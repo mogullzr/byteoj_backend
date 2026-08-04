@@ -26,6 +26,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
 /**
  * @author Mogullzr
@@ -53,6 +54,15 @@ public interface ProblemAlgorithmService extends IService<ProblemAlgorithmBank> 
     List<ProblemAlgorithmBankVo> ListAlgorithmVoByPage(AlgorithmQueryRequest algorithmQueryRequest, Long uuid, boolean isAdmin);
 
     List<SubmissionsAlgorithmRecordsVo> problemAlgorithmRecordsAllByUuidByPage(Long uuid, Integer pageNum);
+
+    /** 全站提交监控列表，按提交时间倒序。 */
+    List<SubmissionsAlgorithmRecordsVo> problemAlgorithmRecordsGlobalByPage(Integer pageNum, Integer pageSize, String result);
+
+    /** 入队时创建 Pending 记录，返回提交记录 ID。 */
+    Long createPendingSubmission(JudgeRequest judgeRequest, Long uuid);
+
+    /** 将异步任务最终结果写回已创建的提交记录。 */
+    void updatePendingSubmission(Long submissionId, String result);
 
     /**
      * 根据submission_id搜索
@@ -214,6 +224,11 @@ public interface ProblemAlgorithmService extends IService<ProblemAlgorithmBank> 
     List<Judge> problemAlgorithmJudge(JudgeRequest judgeRequest);
 
     /**
+     * 调试代码（指定沙箱执行）。
+     */
+    List<Judge> problemAlgorithmJudgeWithSandbox(JudgeRequest judgeRequest, String sandboxUrl);
+
+    /**
      * 提交代码产生记录
      *
      * @param uuid 用户id
@@ -232,6 +247,8 @@ public interface ProblemAlgorithmService extends IService<ProblemAlgorithmBank> 
      * @return 测试记录
      */
     Judge problemAlgorithmSubmitWithSandbox(JudgeRequest judgeRequest, Long uuid, String sandboxUrl);
+
+    Judge problemAlgorithmSubmitWithSandbox(JudgeRequest judgeRequest, Long uuid, String sandboxUrl, Long submissionId);
 
     /**
      * 返回当前用户上一次访问题目的链接

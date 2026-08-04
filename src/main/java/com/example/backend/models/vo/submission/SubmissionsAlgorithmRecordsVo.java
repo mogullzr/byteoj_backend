@@ -13,6 +13,8 @@ public class SubmissionsAlgorithmRecordsVo implements Serializable {
      * 提交ID
      */
     private Long submission_id;
+    private Long problem_id;
+    private Long competition_id;
     /**
      * 代码长度
      */
@@ -87,6 +89,9 @@ public class SubmissionsAlgorithmRecordsVo implements Serializable {
      * 总页数
      */
     private Long page_num;
+
+    /** 仅 Pending 状态返回，范围为 0-9；最终状态不保留该运行态信息。 */
+    private Integer sandbox_index;
 
     private List<SubmissionAlgorithmDetailRecordVo> submission_list;
 }

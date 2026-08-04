@@ -82,12 +82,22 @@ public class ReferenceSolutionService {
 
     public ReferenceSolutionVO validate(Long id, Long userId) {
         ProblemAlgorithmReferenceSolution entity = require(id);
-        List<AlgorithmTestCase> cases = testCaseMapper.selectList(new QueryWrapper<AlgorithmTestCase>().eq("problem_id", entity.getProblem_id()));
-        if (cases.isEmpty()) throw new BusinessException(ErrorCode.PARAMS_ERROR, "题目没有现有测试数据，无法验证参考解");
-        List<String> inputs = cases.stream().map(AlgorithmTestCase::getInput).toList();
-        List<String> outputs = run(entity, inputs);
         ProblemAlgorithmLimit limit = limitMapper.selectOne(new QueryWrapper<ProblemAlgorithmLimit>().eq("problem_id", entity.getProblem_id()));
         String checker = limit == null ? null : limit.getRun_code();
+        QueryWrapper<AlgorithmTestCase> caseQuery = new QueryWrapper<AlgorithmTestCase>()
+                .eq("problem_id", entity.getProblem_id())
+                .isNotNull("input");
+        if (checker == null || checker.isBlank()) {
+            // 普通输出题只能用已有非空标准输出验证。此前“不生成输出”的 AI 样例不能作为参考答案。
+            caseQuery.isNotNull("output").ne("output", "");
+        }
+        List<AlgorithmTestCase> cases = testCaseMapper.selectList(caseQuery.orderByAsc("id"));
+        if (cases.isEmpty()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,
+                    checker == null || checker.isBlank() ? "题目没有带标准输出的现有样例，无法验证参考解" : "题目没有现有测试输入，无法验证参考解");
+        }
+        List<String> inputs = cases.stream().map(AlgorithmTestCase::getInput).toList();
+        List<String> outputs = run(entity, inputs);
         if (checker == null || checker.isBlank()) {
             for (int i = 0; i < cases.size(); i++) {
                 String expected = cases.get(i).getOutput();

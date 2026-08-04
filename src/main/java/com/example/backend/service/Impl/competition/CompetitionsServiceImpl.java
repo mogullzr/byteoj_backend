@@ -825,17 +825,23 @@ public class CompetitionsServiceImpl extends ServiceImpl<CompetitionsMapper, Com
         // (4) 内存超限
         // (5) 输出超限
         // (6) 未知错误
-        if (result.equals("答案正确")) {
+        if ("等待队列".equals(result)) {
+            submissionsAlgorithmQueryWrapper.eq("results", "Pending");
+        } else if ("答案正确".equals(result)) {
             submissionsAlgorithmQueryWrapper.eq("results", "Accepted");
-        } else if (result.equals("答案错误")) {
+        } else if ("答案错误".equals(result)) {
             submissionsAlgorithmQueryWrapper.eq("results", "Wrong Answer");
-        } else if (result.equals("运行超时")) {
+        } else if ("编译错误".equals(result)) {
+            submissionsAlgorithmQueryWrapper.eq("results", "Compile Error");
+        } else if ("运行超时".equals(result)) {
             submissionsAlgorithmQueryWrapper.eq("results", "Time Limit Exceeded");
-        } else if (result.equals("内存超限")) {
+        } else if ("内存超限".equals(result)) {
             submissionsAlgorithmQueryWrapper.eq("results", "Memory Limit Exceeded");
-        } else if (result.equals("输出超限")) {
+        } else if ("输出超限".equals(result)) {
             submissionsAlgorithmQueryWrapper.eq("results", "Output Limit Exceeded");
-        } else if (result.equals("未知错误")) {
+        } else if ("运行错误".equals(result)) {
+            submissionsAlgorithmQueryWrapper.eq("results", "Runtime Error");
+        } else if ("未知错误".equals(result)) {
             submissionsAlgorithmQueryWrapper.eq("results", "Signalled");
         }
 

@@ -17,4 +17,7 @@ public class JudgeTaskMessage implements Serializable {
      * 用于标识该任务应该由哪个沙箱容器处理
      */
     private Integer sandboxIndex;
+    private String taskType;
+    /** SUBMIT 任务对应的持久化提交记录。DEBUG 任务为空。 */
+    private Long submissionId;
 }

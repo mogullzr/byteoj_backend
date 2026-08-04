@@ -50,6 +50,7 @@ import com.example.backend.models.vo.similarity.CodeSimilarityVo;
 import com.example.backend.models.vo.submission.SubmissionAlgorithmDetailRecordVo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import com.example.backend.service.algorithm.ProblemAlgorithmService;
+import com.example.backend.service.algorithm.JudgeTaskStateService;
 import com.example.backend.models.domain.algorithm.*;
 import com.example.backend.models.domain.user.User;
 import com.example.backend.service.competition.CodeSimilarityResultService;
@@ -63,6 +64,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
@@ -93,7 +95,11 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 
     // 🔥 ThreadLocal 存储当前请求的沙箱 URL（支持多沙箱负载均衡）
     private static final ThreadLocal<String> currentSandboxUrl = new ThreadLocal<>();
+    private static final ThreadLocal<Long> currentSubmissionId = new ThreadLocal<>();
     private static final String DEFAULT_SANDBOX_URL = "http://101.43.48.120:6048";
+
+    @Resource
+    private JudgeTaskStateService judgeTaskStateService;
 
     @Resource
     private VodUtils vodUtils;
@@ -353,6 +359,115 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
     }
 
     @Override
+    public List<SubmissionsAlgorithmRecordsVo> problemAlgorithmRecordsGlobalByPage(Integer pageNum, Integer pageSize, String result) {
+        if (pageNum == null || pageNum < 1 || pageSize == null || pageSize < 1 || pageSize > 50) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "分页参数错误");
+        }
+        Page<SubmissionsAlgorithm> page = new Page<>(pageNum, pageSize);
+        QueryWrapper<SubmissionsAlgorithm> query = new QueryWrapper<>();
+        if (result != null && !result.isBlank()) query.eq("results", result);
+        query.orderByDesc("submission_id");
+        List<SubmissionsAlgorithm> submissions = submissionsAlgorithmMapper.selectPage(page, query).getRecords();
+        if (submissions.isEmpty()) return new ArrayList<>();
+
+        Set<Long> submissionIds = submissions.stream().map(SubmissionsAlgorithm::getSubmission_id).collect(Collectors.toSet());
+        Set<Long> userIds = submissions.stream().map(SubmissionsAlgorithm::getUuid).collect(Collectors.toSet());
+        Set<Long> problemIds = submissions.stream().map(SubmissionsAlgorithm::getProblem_id).collect(Collectors.toSet());
+        Map<Long, SubmissionAlgorithmDetails> detailsBySubmission = submissionAlgorithmDetailsMapper.selectList(
+                        new QueryWrapper<SubmissionAlgorithmDetails>().in("submission_id", submissionIds)).stream()
+                .collect(Collectors.toMap(SubmissionAlgorithmDetails::getSubmission_id, item -> item, (left, right) -> left));
+        Map<Long, User> usersById = userMapper.selectList(new QueryWrapper<User>().in("uuid", userIds)).stream()
+                .collect(Collectors.toMap(User::getUuid, item -> item, (left, right) -> left));
+        Map<Long, ProblemAlgorithmBank> problemsById = problemAlgorithmBankMapper.selectList(
+                        new QueryWrapper<ProblemAlgorithmBank>().in("problem_id", problemIds)).stream()
+                .collect(Collectors.toMap(ProblemAlgorithmBank::getProblem_id, item -> item, (left, right) -> left));
+
+        List<SubmissionsAlgorithmRecordsVo> resultList = new ArrayList<>();
+        Set<Long> pendingSubmissionIds = submissions.stream()
+                .filter(item -> "Pending".equals(item.getResults()))
+                .map(SubmissionsAlgorithm::getSubmission_id)
+                .collect(Collectors.toSet());
+        Map<Long, Integer> sandboxBySubmission = judgeTaskStateService
+                .getSubmissionSandboxes(pendingSubmissionIds);
+        for (SubmissionsAlgorithm submission : submissions) {
+            SubmissionsAlgorithmRecordsVo vo = buildSubmissionRecordVO(submission,
+                    detailsBySubmission.get(submission.getSubmission_id()), usersById.get(submission.getUuid()),
+                    problemsById.get(submission.getProblem_id()));
+            if ("Pending".equals(submission.getResults())) {
+                vo.setSandbox_index(sandboxBySubmission.get(submission.getSubmission_id()));
+            }
+            vo.setPage_num(page.getPages());
+            resultList.add(vo);
+        }
+        return resultList;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long createPendingSubmission(JudgeRequest judgeRequest, Long uuid) {
+        if (judgeRequest == null || judgeRequest.getSource_code() == null || judgeRequest.getSource_code().isBlank()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "代码不能为空");
+        }
+        Long problemId = resolveSubmissionProblemId(judgeRequest);
+        SubmissionsAlgorithm submission = new SubmissionsAlgorithm();
+        submission.setUuid(uuid);
+        submission.setProblem_id(problemId);
+        submission.setSource_code(judgeRequest.getSource_code());
+        submission.setCode_length(judgeRequest.getSource_code().length());
+        submission.setLanguages(normalizeSubmissionLanguage(judgeRequest.getLanguage()));
+        submission.setSubmit_time(new Date());
+        submission.setResults("Pending");
+        submission.setScore(0);
+        submission.setCompetition_id(judgeRequest.getCompetition_id() == null ? 0L : judgeRequest.getCompetition_id());
+        submissionsAlgorithmMapper.insert(submission);
+
+        SubmissionAlgorithmDetails details = new SubmissionAlgorithmDetails();
+        details.setSubmission_id(submission.getSubmission_id());
+        details.setTime_used(0);
+        details.setMemory_used(0L);
+        submissionAlgorithmDetailsMapper.insert(details);
+        return submission.getSubmission_id();
+    }
+
+    @Override
+    public void updatePendingSubmission(Long submissionId, String result) {
+        if (submissionId == null || result == null || result.isBlank()) return;
+        SubmissionsAlgorithm submission = submissionsAlgorithmMapper.selectById(submissionId);
+        if (submission == null) return;
+        // submissions_algorithm.results 是受约束的状态字段；内部异常统一落为兼容值。
+        String persistedResult = result;
+        if ("Failed".equals(result) || "BYTEOJ_SYSTEM_ERROR".equals(result) || "NOT_FOUND_ERROR".equals(result)) {
+            persistedResult = "Internal Error";
+        }
+        submission.setResults(persistedResult);
+        submissionsAlgorithmMapper.updateById(submission);
+    }
+
+    private Long resolveSubmissionProblemId(JudgeRequest request) {
+        if (request.getProblem_id() != null) {
+            ProblemAlgorithmBank problem = getProblemAlgorithmBank(request.getProblem_id(), 0);
+            if (problem == null) throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "题目不存在");
+            return problem.getProblem_id();
+        }
+        if (request.getCompetition_id() == null || request.getIndex() == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "题目参数不能为空");
+        }
+        CompetitionsProblemsAlgorithm relation = competitionsProblemsAlgorithmMapper.selectOne(
+                new QueryWrapper<CompetitionsProblemsAlgorithm>().eq("idx", request.getIndex())
+                        .eq("competition_id", request.getCompetition_id()));
+        if (relation == null) throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "题目不存在");
+        return relation.getProblem_id();
+    }
+
+    private String normalizeSubmissionLanguage(String language) {
+        if (Objects.equals(language, "cpp")) return "C++";
+        if (Objects.equals(language, "c")) return "C";
+        if (Objects.equals(language, "java")) return "Java";
+        if (Objects.equals(language, "python")) return "Python";
+        return language;
+    }
+
+    @Override
     public SubmissionsAlgorithmRecordsVo problemAlgorithmRecordByRecordId(Long submission_id, boolean isAdmin, Long uuid, Long competition_id) {
         QueryWrapper<SubmissionsAlgorithm> queryWrapper1 = new QueryWrapper<>();
         if (competition_id == -1) {
@@ -504,33 +619,42 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
     }
 
     private SubmissionsAlgorithmRecordsVo getSubmissionsAlgorithmRecordsVO(SubmissionsAlgorithm submissionsAlgorithm, SubmissionAlgorithmDetails submissionAlgorithmDetails) {
+        User user = userMapper.selectOne(new QueryWrapper<User>().eq("uuid", submissionsAlgorithm.getUuid()));
+        ProblemAlgorithmBank problem = problemAlgorithmBankMapper.selectOne(
+                new QueryWrapper<ProblemAlgorithmBank>().eq("problem_id", submissionsAlgorithm.getProblem_id()));
+        return buildSubmissionRecordVO(submissionsAlgorithm, submissionAlgorithmDetails, user, problem);
+    }
+
+    private SubmissionsAlgorithmRecordsVo buildSubmissionRecordVO(SubmissionsAlgorithm submissionsAlgorithm,
+                                                                    SubmissionAlgorithmDetails submissionAlgorithmDetails,
+                                                                    User user,
+                                                                    ProblemAlgorithmBank problemAlgorithmBank) {
         SubmissionsAlgorithmRecordsVo submissionsAlgorithmRecordsVo = new SubmissionsAlgorithmRecordsVo();
         submissionsAlgorithmRecordsVo.setCode_length(submissionsAlgorithm.getCode_length());
         submissionsAlgorithmRecordsVo.setSubmission_id(submissionsAlgorithm.getSubmission_id());
+        submissionsAlgorithmRecordsVo.setProblem_id(submissionsAlgorithm.getProblem_id());
+        submissionsAlgorithmRecordsVo.setCompetition_id(submissionsAlgorithm.getCompetition_id());
         submissionsAlgorithmRecordsVo.setLanguage(submissionsAlgorithm.getLanguages());
         submissionsAlgorithmRecordsVo.setSubmit_time(submissionsAlgorithm.getSubmit_time());
         submissionsAlgorithmRecordsVo.setResult(submissionsAlgorithm.getResults());
         submissionsAlgorithmRecordsVo.setScore(submissionsAlgorithm.getScore());
-        submissionsAlgorithmRecordsVo.setTime_used(submissionAlgorithmDetails.getTime_used());
-        submissionsAlgorithmRecordsVo.setMemory_used(submissionAlgorithmDetails.getMemory_used());
+        submissionsAlgorithmRecordsVo.setTime_used(submissionAlgorithmDetails == null || submissionAlgorithmDetails.getTime_used() == null
+                ? 0 : submissionAlgorithmDetails.getTime_used());
+        submissionsAlgorithmRecordsVo.setMemory_used(submissionAlgorithmDetails == null || submissionAlgorithmDetails.getMemory_used() == null
+                ? 0L : submissionAlgorithmDetails.getMemory_used());
 
         // 根据用户uuid获取用户名字 + 头像
         submissionsAlgorithmRecordsVo.setUuid(submissionsAlgorithm.getUuid());
 
-        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
-        userQueryWrapper.eq("uuid", submissionsAlgorithm.getUuid());
-        User user = userMapper.selectOne(userQueryWrapper);
-
-        submissionsAlgorithmRecordsVo.setUser_name(user.getUsername());
-        submissionsAlgorithmRecordsVo.setAvatar(user.getAvatar());
+        if (user != null) {
+            submissionsAlgorithmRecordsVo.setUser_name(user.getUsername());
+            submissionsAlgorithmRecordsVo.setAvatar(user.getAvatar());
+        }
 
         // 根据problem_id来查找问题名字
         Long problem_id = submissionsAlgorithm.getProblem_id();
-        QueryWrapper<ProblemAlgorithmBank> problemAlgorithmBankQueryWrapper = new QueryWrapper<>();
-        problemAlgorithmBankQueryWrapper.eq("problem_id", problem_id);
-        ProblemAlgorithmBank problemAlgorithmBank = problemAlgorithmBankMapper.selectOne(problemAlgorithmBankQueryWrapper);
-
-        submissionsAlgorithmRecordsVo.setChinese_name(problem_id + "." + problemAlgorithmBank.getChinese_name());
+        submissionsAlgorithmRecordsVo.setChinese_name(problemAlgorithmBank == null
+                ? String.valueOf(problem_id) : problem_id + "." + problemAlgorithmBank.getChinese_name());
         return submissionsAlgorithmRecordsVo;
     }
 
@@ -1311,15 +1435,31 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
         // if (judgeRequest.getCompetition_id() != null && judgeRequest.getIndex() != null) {
         //     competitionsProblemsAlgorithmMapper.update(competitionsProblemsAlgorithm, competitionsProblemsAlgorithmQueryWrapper);
         // }
-        submissionsAlgorithmMapper.insert(submissionsAlgorithm);
-        Long submission_id = submissionsAlgorithm.getSubmission_id();
+        Long submission_id = currentSubmissionId.get();
+        if (submission_id == null) {
+            submissionsAlgorithmMapper.insert(submissionsAlgorithm);
+            submission_id = submissionsAlgorithm.getSubmission_id();
+        } else {
+            // 入队时已经创建 Pending 记录；最终状态只写回这一行，避免重复提交记录。
+            SubmissionsAlgorithm existing = submissionsAlgorithmMapper.selectById(submission_id);
+            if (existing != null) submissionsAlgorithm.setSubmit_time(existing.getSubmit_time());
+            submissionsAlgorithm.setSubmission_id(submission_id);
+            submissionsAlgorithmMapper.updateById(submissionsAlgorithm);
+        }
 
         // 插入细节信息
         submissionAlgorithmDetails.setSubmission_id(submission_id);
         submissionAlgorithmDetails.setMemory_used(total_memory_used / (1024 * 1024));
         submissionAlgorithmDetails.setTime_used((int) (total_time_used / 1000000));
 
-        submissionAlgorithmDetailsMapper.insert(submissionAlgorithmDetails);
+        SubmissionAlgorithmDetails existingDetails = submissionAlgorithmDetailsMapper.selectOne(
+                new QueryWrapper<SubmissionAlgorithmDetails>().eq("submission_id", submission_id));
+        if (existingDetails == null) {
+            submissionAlgorithmDetailsMapper.insert(submissionAlgorithmDetails);
+        } else {
+            submissionAlgorithmDetails.setDetail_id(existingDetails.getDetail_id());
+            submissionAlgorithmDetailsMapper.updateById(submissionAlgorithmDetails);
+        }
         // 将所有的小记录全部插入到 records 表中
         for (int item = 0; item < time_used_list.size(); item++) {
             SubmissionAlgorithmRecords submissionAlgorithmRecords = new SubmissionAlgorithmRecords();
@@ -2296,10 +2436,27 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
 
     @Override
     public Judge problemAlgorithmSubmitWithSandbox(JudgeRequest judgeRequest, Long uuid, String sandboxUrl) {
+        return problemAlgorithmSubmitWithSandbox(judgeRequest, uuid, sandboxUrl, null);
+    }
+
+    @Override
+    public Judge problemAlgorithmSubmitWithSandbox(JudgeRequest judgeRequest, Long uuid, String sandboxUrl, Long submissionId) {
         try {
             currentSandboxUrl.set(sandboxUrl);
+            currentSubmissionId.set(submissionId);
             // log.info("[多沙箱] 使用沙箱: {}", sandboxUrl);
             return problemAlgorithmSubmit(judgeRequest, uuid);
+        } finally {
+            currentSandboxUrl.remove();
+            currentSubmissionId.remove();
+        }
+    }
+
+    @Override
+    public List<Judge> problemAlgorithmJudgeWithSandbox(JudgeRequest judgeRequest, String sandboxUrl) {
+        try {
+            currentSandboxUrl.set(sandboxUrl);
+            return problemAlgorithmJudge(judgeRequest);
         } finally {
             currentSandboxUrl.remove();
         }

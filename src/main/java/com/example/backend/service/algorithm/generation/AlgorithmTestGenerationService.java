@@ -211,6 +211,7 @@ public class AlgorithmTestGenerationService {
     private void generateOutputs(AlgorithmTestGenerationJob job) {
         update(job, "REFERENCE_VALIDATING", "正在确认参考解", 76);
         ProblemAlgorithmReferenceSolution reference = referenceSolutionService.requireVerified(job.getReference_solution_id(), job.getProblem_id());
+        boolean checkerQuestion = hasChecker(job.getProblem_id());
         int batchSize = properties.getReference().getBatchSize();
         long outputBytes = 0;
         AlgorithmTestCaseStaging first = stagingMapper.selectOne(new QueryWrapper<AlgorithmTestCaseStaging>().eq("job_id", job.getId()).orderByAsc("id").last("LIMIT 1"));
@@ -224,8 +225,17 @@ public class AlgorithmTestGenerationService {
                 List<AlgorithmTestCaseStaging> batch = page.getRecords();
                 if (batch.isEmpty()) throw new BusinessException(ErrorCode.SYSTEM_ERROR, "分页读取暂存输入失败");
                 List<String> outputs = runner.run(batch.stream().map(AlgorithmTestCaseStaging::getInput).toList());
+                if (outputs.size() != batch.size()) {
+                    throw new BusinessException(ErrorCode.SYSTEM_ERROR,
+                            "参考解输出数量不一致，期望 " + batch.size() + " 条，实际 " + outputs.size() + " 条");
+                }
                 for (int i = 0; i < batch.size(); i++) {
-                    String output = outputs.get(i); long bytes = output.getBytes(StandardCharsets.UTF_8).length;
+                    String output = outputs.get(i) == null ? "" : outputs.get(i);
+                    if (!checkerQuestion && output.isBlank()) {
+                        throw new BusinessException(ErrorCode.PARAMS_ERROR,
+                                "普通输出题的参考解没有为第 " + (completed + i + 1) + " 条输入输出内容");
+                    }
+                    long bytes = output.getBytes(StandardCharsets.UTF_8).length;
                     if (bytes > properties.getLimits().getMaxOutputBytesPerCase()) throw new BusinessException(ErrorCode.PARAMS_ERROR, "单条输出超过限制");
                     outputBytes += bytes; AlgorithmTestCaseStaging item = batch.get(i); item.setOutput(output); item.setOutput_hash(GenerationSupport.sha256(output)); item.setOutput_bytes(bytes); item.setStatus("OUTPUT_READY"); item.setUpdated_at(new Date()); stagingMapper.updateById(item);
                 }
@@ -241,6 +251,7 @@ public class AlgorithmTestGenerationService {
 
     private void validateStaging(AlgorithmTestGenerationJob job) {
         Set<String> hashes = new HashSet<>();
+        boolean checkerQuestion = hasChecker(job.getProblem_id());
         int pageNo = 1;
         int seen = 0;
         int pageSize = Math.max(25, Math.min(200, properties.getGenerator().getBatchSize()));
@@ -251,7 +262,10 @@ public class AlgorithmTestGenerationService {
             for (AlgorithmTestCaseStaging item : list) {
                 if (item.getInput() == null || item.getInput().isBlank()) throw new BusinessException(ErrorCode.PARAMS_ERROR, "存在空测试输入");
                 if (!hashes.add(item.getInput_hash())) throw new BusinessException(ErrorCode.PARAMS_ERROR, "本次生成存在重复输入，请调整规模约束或随机种子");
-                if (Boolean.TRUE.equals(job.getGenerate_expected_output()) && item.getOutput() == null) throw new BusinessException(ErrorCode.SYSTEM_ERROR, "存在未生成输出的测试数据");
+                if (Boolean.TRUE.equals(job.getGenerate_expected_output())
+                        && (item.getOutput() == null || (!checkerQuestion && item.getOutput().isBlank()))) {
+                    throw new BusinessException(ErrorCode.SYSTEM_ERROR, "存在未生成输出的测试数据");
+                }
             }
             seen += list.size();
         }
@@ -338,6 +352,10 @@ public class AlgorithmTestGenerationService {
     }
     private void checkCancel(Long jobId) { if ("CANCEL_REQUESTED".equals(jobMapper.selectById(jobId).getStatus())) throw new CancellationException(); }
     private int countStaging(Long jobId) { return Math.toIntExact(stagingMapper.selectCount(new QueryWrapper<AlgorithmTestCaseStaging>().eq("job_id", jobId))); }
+    private boolean hasChecker(Long problemId) {
+        ProblemAlgorithmLimit limit = limitMapper.selectOne(new QueryWrapper<ProblemAlgorithmLimit>().eq("problem_id", problemId));
+        return limit != null && limit.getRun_code() != null && !limit.getRun_code().isBlank();
+    }
     private List<AlgorithmTestGenerationScale> scales(Long jobId) { return scaleMapper.selectList(new QueryWrapper<AlgorithmTestGenerationScale>().eq("job_id", jobId).orderByAsc("id")); }
     private void update(AlgorithmTestGenerationJob job, String status, String stage, int progress) { job.setStatus(status); job.setCurrent_stage(stage); job.setProgress_percent(progress); if (job.getStarted_at() == null) job.setStarted_at(new Date()); job.setUpdated_at(new Date()); jobMapper.updateById(job); push(job); }
     private void push(AlgorithmTestGenerationJob job) { messagingTemplate.convertAndSend("/topic/test-generation/" + job.getId(), toVO(job, false)); }

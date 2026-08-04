@@ -32,6 +32,8 @@ import com.example.backend.models.vo.similarity.ClusterVo;
 import com.example.backend.models.vo.submission.SubmissionsAlgorithmRecordsVo;
 import com.example.backend.models.vo.similarity.CodeSimilarityVo;
 import com.example.backend.service.algorithm.ProblemAlgorithmService;
+import com.example.backend.service.algorithm.JudgeTaskQueueService;
+import com.example.backend.service.algorithm.JudgeTaskStateService;
 import com.example.backend.service.embedding.SimilarityClusterService;
 import com.example.backend.service.user.UserService;
 import com.example.backend.mapper.UserMapper;
@@ -92,6 +94,12 @@ public class ProblemAlgorithmController {
 
     @Autowired
     private SimilarityClusterService similarityClusterService;
+
+    @Autowired
+    private JudgeTaskQueueService judgeTaskQueueService;
+
+    @Autowired
+    private JudgeTaskStateService judgeTaskStateService;
 
     @Autowired
     private RabbitTemplate rabbitTemplate;
@@ -311,34 +319,65 @@ public class ProblemAlgorithmController {
 
     @AccessLimit(seconds=5, maxCount=30, needLogin=true)
     @PostMapping("/judge/test")
-    public BaseResponse<List<Judge>> problemAlgorithmJudge(@RequestBody JudgeRequest judgeRequest, HttpServletRequest httpServletRequest) {
+    public BaseResponse<JudgeTask> problemAlgorithmJudge(@RequestBody JudgeRequest judgeRequest, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
         User loginUser = userService.getLoginUser(httpServletRequest);
-        Long uuid = -1L;
-        if (loginUser != null) {
-            uuid = loginUser.getUuid();
-        }
-
-        List<Judge> result = problemAlgorithmService.problemAlgorithmJudge(judgeRequest);
+        if (loginUser == null) throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        JudgeTask result = judgeTaskQueueService.enqueue(judgeRequest, loginUser.getUuid(), "DEBUG");
         return ResultUtils.success(result);
     }
 
     @AccessLimit(seconds=5, maxCount=20, needLogin=true)
     @PostMapping("/judge/submit")
-    private BaseResponse<Judge> problemAlgorithmJudgeSubmit(@RequestBody JudgeRequest judgeRequest, HttpServletRequest httpServletRequest) {
+    public BaseResponse<JudgeTask> problemAlgorithmJudgeSubmit(@RequestBody JudgeRequest judgeRequest, HttpServletRequest httpServletRequest) {
         if (httpServletRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
 
         User loginUser = userService.getLoginUser(httpServletRequest);
-        Long uuid = -1L;
-        if (loginUser != null) {
-            uuid = loginUser.getUuid();
-        }
-        Judge result = problemAlgorithmService.problemAlgorithmSubmit(judgeRequest, uuid);
+        if (loginUser == null) throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        JudgeTask result = judgeTaskQueueService.enqueue(judgeRequest, loginUser.getUuid(), "SUBMIT");
         return ResultUtils.success(result);
+    }
+
+    /** 全站提交监控列表。列表公开提交人的基础信息，但详情接口仍由现有权限校验保护。 */
+    @AccessLimit(seconds = 5, maxCount = 30, needLogin = true)
+    @PostMapping("/records/global")
+    public BaseResponse<List<SubmissionsAlgorithmRecordsVo>> problemAlgorithmRecordsGlobalByPage(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "20") Integer pageSize,
+            @RequestParam(required = false) String result,
+            HttpServletRequest httpServletRequest) {
+        if (userService.getLoginUser(httpServletRequest) == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
+        return ResultUtils.success(problemAlgorithmService.problemAlgorithmRecordsGlobalByPage(pageNum, pageSize, result));
+    }
+
+    @AccessLimit(seconds = 5, maxCount = 60, needLogin = true)
+    @GetMapping("/judge/task/{taskId}")
+    public BaseResponse<JudgeTask> problemAlgorithmJudgeTask(@PathVariable String taskId,
+                                                               HttpServletRequest httpServletRequest) {
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        if (loginUser == null) throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        JudgeTask task = judgeTaskStateService.get(taskId);
+        if (task == null) throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "判题任务不存在或已过期");
+        if (!loginUser.getUuid().equals(task.getUserUuid()) && !userService.isAdmin(httpServletRequest)) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR);
+        }
+        return ResultUtils.success(task);
+    }
+
+    /**
+     * 兼容旧前端的任务补查地址。
+     */
+    @AccessLimit(seconds = 5, maxCount = 60, needLogin = true)
+    @GetMapping("/judge/result")
+    public BaseResponse<JudgeTask> problemAlgorithmJudgeResult(@RequestParam String taskId,
+                                                                HttpServletRequest httpServletRequest) {
+        return problemAlgorithmJudgeTask(taskId, httpServletRequest);
     }
 
 
