@@ -55,8 +55,10 @@ public interface ProblemAlgorithmService extends IService<ProblemAlgorithmBank> 
 
     List<SubmissionsAlgorithmRecordsVo> problemAlgorithmRecordsAllByUuidByPage(Long uuid, Integer pageNum);
 
-    /** 全站提交监控列表，按提交时间倒序。 */
-    List<SubmissionsAlgorithmRecordsVo> problemAlgorithmRecordsGlobalByPage(Integer pageNum, Integer pageSize, String result);
+    /** 全站提交监控列表，支持组合筛选并按提交时间倒序。 */
+    List<SubmissionsAlgorithmRecordsVo> problemAlgorithmRecordsGlobalByPage(
+            Integer pageNum, Integer pageSize, String result, String username, String problem,
+            String language, String startTime, String endTime);
 
     /** 入队时创建 Pending 记录，返回提交记录 ID。 */
     Long createPendingSubmission(JudgeRequest judgeRequest, Long uuid);

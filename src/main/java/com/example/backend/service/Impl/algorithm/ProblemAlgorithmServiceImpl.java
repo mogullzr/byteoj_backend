@@ -4,6 +4,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 import cn.hutool.http.HttpRequest;
@@ -359,13 +364,57 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
     }
 
     @Override
-    public List<SubmissionsAlgorithmRecordsVo> problemAlgorithmRecordsGlobalByPage(Integer pageNum, Integer pageSize, String result) {
+    public List<SubmissionsAlgorithmRecordsVo> problemAlgorithmRecordsGlobalByPage(
+            Integer pageNum, Integer pageSize, String result, String username, String problem,
+            String language, String startTime, String endTime) {
         if (pageNum == null || pageNum < 1 || pageSize == null || pageSize < 1 || pageSize > 50) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "分页参数错误");
         }
         Page<SubmissionsAlgorithm> page = new Page<>(pageNum, pageSize);
         QueryWrapper<SubmissionsAlgorithm> query = new QueryWrapper<>();
         if (result != null && !result.isBlank()) query.eq("results", result);
+        if (language != null && !language.isBlank()) {
+            String normalizedLanguage = normalizeSubmissionLanguage(language.trim());
+            query.and(wrapper -> wrapper.eq("languages", normalizedLanguage)
+                    .or().eq("languages", language.trim()));
+        }
+        Date parsedStartTime = parseSubmissionQueryTime(startTime, "startTime");
+        Date parsedEndTime = parseSubmissionQueryTime(endTime, "endTime");
+        if (parsedStartTime != null && parsedEndTime != null && parsedStartTime.after(parsedEndTime)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "开始时间不能晚于结束时间");
+        }
+        if (parsedStartTime != null) query.ge("submit_time", parsedStartTime);
+        if (parsedEndTime != null) query.le("submit_time", parsedEndTime);
+
+        String usernameKeyword = trimQueryKeyword(username);
+        if (usernameKeyword != null) {
+            List<Long> userIds = userMapper.selectList(new QueryWrapper<User>()
+                            .select("uuid")
+                            .like("username", usernameKeyword)).stream()
+                    .map(User::getUuid)
+                    .collect(Collectors.toList());
+            if (userIds.isEmpty()) return new ArrayList<>();
+            query.in("uuid", userIds);
+        }
+
+        String problemKeyword = trimQueryKeyword(problem);
+        if (problemKeyword != null) {
+            QueryWrapper<ProblemAlgorithmBank> problemQuery = new QueryWrapper<ProblemAlgorithmBank>()
+                    .select("problem_id")
+                    .and(wrapper -> wrapper.like("chinese_name", problemKeyword)
+                            .or().like("english_name", problemKeyword)
+                            .or().like("short_name", problemKeyword));
+            try {
+                problemQuery.or().eq("problem_id", Long.valueOf(problemKeyword));
+            } catch (NumberFormatException ignored) {
+                // 题目关键词不是数字时只按题目名称搜索。
+            }
+            List<Long> problemIds = problemAlgorithmBankMapper.selectList(problemQuery).stream()
+                    .map(ProblemAlgorithmBank::getProblem_id)
+                    .collect(Collectors.toList());
+            if (problemIds.isEmpty()) return new ArrayList<>();
+            query.in("problem_id", problemIds);
+        }
         query.orderByDesc("submission_id");
         List<SubmissionsAlgorithm> submissions = submissionsAlgorithmMapper.selectPage(page, query).getRecords();
         if (submissions.isEmpty()) return new ArrayList<>();
@@ -400,6 +449,28 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
             resultList.add(vo);
         }
         return resultList;
+    }
+
+    private String trimQueryKeyword(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private Date parseSubmissionQueryTime(String value, String fieldName) {
+        String trimmed = trimQueryKeyword(value);
+        if (trimmed == null) return null;
+        try {
+            LocalDateTime dateTime;
+            try {
+                dateTime = LocalDateTime.parse(trimmed, DateTimeFormatter.ISO_DATE_TIME);
+            } catch (DateTimeParseException ignored) {
+                dateTime = LocalDate.parse(trimmed, DateTimeFormatter.ISO_DATE).atStartOfDay();
+            }
+            return Date.from(dateTime.atZone(ZoneId.systemDefault()).toInstant());
+        } catch (DateTimeParseException e) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, fieldName + " 时间格式错误");
+        }
     }
 
     @Override

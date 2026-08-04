@@ -349,11 +349,17 @@ public class ProblemAlgorithmController {
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "20") Integer pageSize,
             @RequestParam(required = false) String result,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String problem,
+            @RequestParam(required = false) String language,
+            @RequestParam(required = false) String startTime,
+            @RequestParam(required = false) String endTime,
             HttpServletRequest httpServletRequest) {
         if (userService.getLoginUser(httpServletRequest) == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
         }
-        return ResultUtils.success(problemAlgorithmService.problemAlgorithmRecordsGlobalByPage(pageNum, pageSize, result));
+        return ResultUtils.success(problemAlgorithmService.problemAlgorithmRecordsGlobalByPage(
+                pageNum, pageSize, result, username, problem, language, startTime, endTime));
     }
 
     @AccessLimit(seconds = 5, maxCount = 60, needLogin = true)
