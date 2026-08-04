@@ -3,7 +3,7 @@ package com.example.backend.controller;
 import com.example.backend.common.BaseResponse;
 import com.example.backend.common.ResultUtils;
 import com.example.backend.config.RabbitMQConfig;
-import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,7 +25,7 @@ import java.util.Properties;
 public class JudgeMonitorController {
 
     @Autowired(required = false)
-    private RabbitAdmin rabbitAdmin;
+    private AmqpAdmin rabbitAdmin;
 
     /**
      * 获取队列状态

@@ -554,17 +554,29 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void updatePendingSubmission(Long submissionId, String result) {
-        if (submissionId == null || result == null || result.isBlank()) return;
+        if (submissionId == null || result == null || result.isBlank()) {
+            throw new IllegalArgumentException("提交记录写回参数为空");
+        }
         SubmissionsAlgorithm submission = submissionsAlgorithmMapper.selectById(submissionId);
-        if (submission == null) return;
+        if (submission == null) {
+            throw new IllegalStateException("提交记录不存在：" + submissionId);
+        }
+        // 重复投递或超时对账后到达的旧消息不能覆盖已经落库的终态。
+        if (!"Pending".equals(String.valueOf(submission.getResults()))) {
+            return;
+        }
         // submissions_algorithm.results 是受约束的状态字段；内部异常统一落为兼容值。
         String persistedResult = result;
         if ("Failed".equals(result) || "BYTEOJ_SYSTEM_ERROR".equals(result) || "NOT_FOUND_ERROR".equals(result)) {
             persistedResult = "Internal Error";
         }
         submission.setResults(persistedResult);
-        submissionsAlgorithmMapper.updateById(submission);
+        int updated = submissionsAlgorithmMapper.updateById(submission);
+        if (updated != 1) {
+            throw new IllegalStateException("提交记录状态写回失败：" + submissionId);
+        }
     }
 
     private Long resolveSubmissionProblemId(JudgeRequest request) {

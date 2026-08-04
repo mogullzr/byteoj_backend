@@ -72,6 +72,11 @@ public class JudgeTaskProcessor {
                     problemAlgorithmService.updatePendingSubmission(message.getSubmissionId(), "Failed");
                 } catch (Exception updateError) {
                     log.error("提交记录 {} 最终状态写回失败", message.getSubmissionId(), updateError);
+                    // 数据库没有确认终态时绝不能 ack。否则 RabbitMQ 会删除消息，
+                    // 提交记录将永久停留在 Pending，且无法再次处理。
+                    retryDelivery(taskId, message, updateError);
+                    channel.basicNack(deliveryTag, false, true);
+                    return;
                 }
             }
             stateService.clearQueuePosition(taskId, message.getSandboxIndex(), message.getSubmissionId());
@@ -115,13 +120,23 @@ public class JudgeTaskProcessor {
     }
 
     private void saveAndPublish(JudgeTask task) {
-        stateService.save(task);
+        try {
+            stateService.save(task);
+        } catch (Exception e) {
+            // 数据库终态已经写回后，Redis/WebSocket 只是运行态通知，不能反向改变判题结果。
+            log.warn("判题任务 {} Redis 状态保存失败", task.getTaskId(), e);
+        }
         try {
             publish(task);
         } catch (Exception e) {
             // Redis 是任务状态的事实来源，WebSocket 短暂不可用不能把成功结果改写为失败。
             log.warn("判题任务 {} 状态已保存，但 WebSocket 推送失败", task.getTaskId(), e);
         }
+    }
+
+    private void retryDelivery(String taskId, JudgeTaskMessage message, Exception cause) {
+        JudgeTask retrying = state(taskId, message, "Retrying", "提交结果写回失败，等待重试：" + safeMessage(cause));
+        saveAndPublish(retrying);
     }
 
     private void publish(JudgeTask task) {

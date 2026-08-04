@@ -95,6 +95,28 @@ public class JudgeTaskStateService {
         }
     }
 
+    /** 清理提交记录对应的全部 Redis 运行态，供超时对账使用。 */
+    public void clearSubmissionRuntime(Long submissionId) {
+        if (submissionId == null) return;
+        try {
+            String sandboxValue = redis.opsForValue().get(SUBMISSION_SANDBOX_PREFIX + submissionId);
+            String taskId = redis.opsForValue().get(SUBMISSION_TASK_PREFIX + submissionId);
+            if (taskId != null && !taskId.isBlank() && sandboxValue != null) {
+                try {
+                    redis.opsForZSet().remove(sandboxQueueKey(Integer.parseInt(sandboxValue)), taskId);
+                } catch (NumberFormatException ignored) {
+                    // 运行态数据损坏时仍继续删除映射。
+                }
+            }
+            redis.delete(List.of(
+                    SUBMISSION_SANDBOX_PREFIX + submissionId,
+                    SUBMISSION_TASK_PREFIX + submissionId
+            ));
+        } catch (RuntimeException ignored) {
+            // Redis 暂时不可用时依赖 TTL，不能回滚已经落库的终态。
+        }
+    }
+
     /** 批量读取 Pending 提交的沙箱分配，避免全站列表出现 N+1 Redis 请求。 */
     public Map<Long, Integer> getSubmissionSandboxes(Collection<Long> submissionIds) {
         if (submissionIds == null || submissionIds.isEmpty()) return Collections.emptyMap();

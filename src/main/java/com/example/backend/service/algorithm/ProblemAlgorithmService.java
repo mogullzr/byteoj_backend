@@ -66,7 +66,7 @@ public interface ProblemAlgorithmService extends IService<ProblemAlgorithmBank> 
     /** 入队时创建 Pending 记录，返回提交记录 ID。 */
     Long createPendingSubmission(JudgeRequest judgeRequest, Long uuid);
 
-    /** 将异步任务最终结果写回已创建的提交记录。 */
+    /** 将异步任务最终结果写回已创建的提交记录。找不到记录或更新失败必须抛错。 */
     void updatePendingSubmission(Long submissionId, String result);
 
     /**
