@@ -39,6 +39,14 @@ public class AlgorithmTestCase implements Serializable {
      */
     private Date create_time;
 
+    private Long generation_job_id;
+
+    private String scale_type;
+
+    private String input_hash;
+
+    private String source_type;
+
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 

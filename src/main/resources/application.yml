@@ -146,6 +146,34 @@ server:
 #        domain: localhost
 sandbox:
   urls: ${sandbox.urls}
+algorithm-test-generation:
+  enabled: true
+  max-retries: 3
+  queued-recovery-timeout-seconds: 60
+  recovery-interval-seconds: 30
+  max-scales-per-job: 5
+  max-cases-per-scale: 1000
+  max-cases-per-job: 3000
+  generator:
+    batch-size: 25
+    debug-max-count: 10
+    cpu-limit-seconds: 30
+    memory-limit-mb: 1024
+    stdout-max-bytes-per-batch: 33554432
+  reference:
+    batch-size: 25
+    cpu-limit-seconds: 30
+    memory-limit-mb: 2048
+  limits:
+    max-input-bytes-per-case: 8388608
+    max-output-bytes-per-case: 8388608
+    max-input-bytes-per-job: 1073741824
+    max-output-bytes-per-job: 1073741824
+  ai:
+    response-timeout-seconds: 180
+    max-response-bytes: 1048576
+  sandbox:
+    response-timeout-seconds: 300
 mybatis-plus:
   configuration:
     #    会默认将下滑线转换成驼峰式
