@@ -40,9 +40,13 @@ public class ProblemWrongBookVo implements Serializable {
 
     private List<String> tagsList;
 
+    private List<ProblemWrongBookAnswerRecordVo> answerRecords;
+
     private Long exam_id;
 
     private Long exam_user_id;
+
+    private String answer;
 
     private String latest_answer;
 

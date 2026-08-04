@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.backend.common.ErrorCode;
 import com.example.backend.exception.BusinessException;
+import com.example.backend.mapper.ProblemExamRecordMapper;
 import com.example.backend.mapper.ProblemAlgorithmBankMapper;
 import com.example.backend.mapper.ProblemAlgorithmTagsMapper;
 import com.example.backend.mapper.ProblemAlgorithmTagsRelationMapper;
@@ -15,6 +16,7 @@ import com.example.backend.mapper.ProblemWrongBookMapper;
 import com.example.backend.models.domain.algorithm.probleminfo.ProblemAlgorithmBank;
 import com.example.backend.models.domain.algorithm.tag.ProblemAlgorithmTags;
 import com.example.backend.models.domain.algorithm.tag.ProblemAlgorithmTagsRelation;
+import com.example.backend.models.domain.math408.ProblemExamRecord;
 import com.example.backend.models.domain.math408.ProblemMath408Bank;
 import com.example.backend.models.domain.math408.ProblemMath408Tags;
 import com.example.backend.models.domain.math408.ProblemMath408TagsRelation;
@@ -22,6 +24,7 @@ import com.example.backend.models.domain.math408.ProblemWrongBook;
 import com.example.backend.models.request.problem.ProblemWrongBookAddRequest;
 import com.example.backend.models.request.problem.ProblemWrongBookQueryRequest;
 import com.example.backend.models.request.problem.ProblemWrongBookSyncItem;
+import com.example.backend.models.vo.problem.ProblemWrongBookAnswerRecordVo;
 import com.example.backend.models.vo.problem.ProblemWrongBookTagStatVo;
 import com.example.backend.models.vo.problem.ProblemWrongBookVo;
 import com.example.backend.service.math408.ProblemWrongBookService;
@@ -47,6 +50,9 @@ public class ProblemWrongBookServiceImpl extends ServiceImpl<ProblemWrongBookMap
 
     @Resource
     private ProblemWrongBookMapper problemWrongBookMapper;
+
+    @Resource
+    private ProblemExamRecordMapper problemExamRecordMapper;
 
     @Resource
     private ProblemMath408BankMapper problemMath408BankMapper;
@@ -508,10 +514,12 @@ public class ProblemWrongBookServiceImpl extends ServiceImpl<ProblemWrongBookMap
                 .collect(Collectors.toMap(ProblemAlgorithmBank::getProblem_id, item -> item, (left, right) -> left));
         Map<Long, List<String>> mathTagsMap = loadMathTagsMap(mathProblemIds);
         Map<Long, List<String>> algorithmTagsMap = loadAlgorithmTagsMap(algorithmProblemIds);
+        Map<Long, List<ProblemWrongBookAnswerRecordVo>> answerRecordsMap = loadAnswerRecordsMap(wrongBooks);
 
         List<ProblemWrongBookVo> result = new ArrayList<>(wrongBooks.size());
         for (ProblemWrongBook wrongBook : wrongBooks) {
-            result.add(buildWrongBookVo(wrongBook, mathProblemMap, algorithmProblemMap, mathTagsMap, algorithmTagsMap));
+            result.add(buildWrongBookVo(wrongBook, mathProblemMap, algorithmProblemMap, mathTagsMap,
+                    algorithmTagsMap, answerRecordsMap));
         }
         return result;
     }
@@ -520,7 +528,8 @@ public class ProblemWrongBookServiceImpl extends ServiceImpl<ProblemWrongBookMap
                                                 Map<Long, ProblemMath408Bank> mathProblemMap,
                                                 Map<Long, ProblemAlgorithmBank> algorithmProblemMap,
                                                 Map<Long, List<String>> mathTagsMap,
-                                                Map<Long, List<String>> algorithmTagsMap) {
+                                                Map<Long, List<String>> algorithmTagsMap,
+                                                Map<Long, List<ProblemWrongBookAnswerRecordVo>> answerRecordsMap) {
         ProblemWrongBookVo vo = new ProblemWrongBookVo();
         vo.setId(wrongBook.getId());
         vo.setProblem_id(wrongBook.getProblem_id());
@@ -529,13 +538,17 @@ public class ProblemWrongBookServiceImpl extends ServiceImpl<ProblemWrongBookMap
         vo.setOption_type(wrongBook.getOption_type());
         vo.setExam_id(wrongBook.getExam_id());
         vo.setExam_user_id(wrongBook.getExam_user_id());
-        vo.setLatest_answer(wrongBook.getLatest_answer());
+        List<ProblemWrongBookAnswerRecordVo> answerRecords = buildAnswerRecordVoList(wrongBook, answerRecordsMap);
+        String latestAnswer = resolveLatestAnswer(wrongBook, answerRecords);
+        vo.setAnswer(latestAnswer);
+        vo.setLatest_answer(latestAnswer);
         vo.setLatest_score(wrongBook.getLatest_score());
         vo.setTotal_score(wrongBook.getTotal_score());
         vo.setWrong_count(wrongBook.getWrong_count());
         vo.setMastery_status(wrongBook.getMastery_status());
         vo.setLatest_ai_advise(wrongBook.getLatest_ai_advise());
         vo.setUpdate_date(wrongBook.getUpdate_date());
+        vo.setAnswerRecords(answerRecords);
 
         if (isAlgorithmWrongBook(wrongBook)) {
             ProblemAlgorithmBank algorithmBank = algorithmProblemMap.get(wrongBook.getProblem_id());
@@ -561,6 +574,99 @@ public class ProblemWrongBookServiceImpl extends ServiceImpl<ProblemWrongBookMap
             vo.setTagsList(mathTagsMap.getOrDefault(mathBank.getProblem_id(), new ArrayList<>()));
         }
         return vo;
+    }
+
+    private String resolveLatestAnswer(ProblemWrongBook wrongBook, List<ProblemWrongBookAnswerRecordVo> answerRecords) {
+        if (answerRecords != null && !answerRecords.isEmpty()) {
+            for (ProblemWrongBookAnswerRecordVo record : answerRecords) {
+                if (record != null && StringUtils.isNotBlank(record.getAnswer())) {
+                    return record.getAnswer();
+                }
+            }
+        }
+        return wrongBook.getLatest_answer();
+    }
+
+    private List<ProblemWrongBookAnswerRecordVo> buildAnswerRecordVoList(ProblemWrongBook wrongBook,
+                                                                          Map<Long, List<ProblemWrongBookAnswerRecordVo>> answerRecordsMap) {
+        List<ProblemWrongBookAnswerRecordVo> records = answerRecordsMap.get(wrongBook.getProblem_id());
+        if (records != null && !records.isEmpty()) {
+            return records;
+        }
+        if (StringUtils.isBlank(wrongBook.getLatest_answer())
+                && StringUtils.isBlank(wrongBook.getLatest_ai_advise())
+                && wrongBook.getLatest_score() == null) {
+            return new ArrayList<>();
+        }
+
+        ProblemWrongBookAnswerRecordVo fallback = new ProblemWrongBookAnswerRecordVo();
+        fallback.setExam_user_id(wrongBook.getExam_user_id());
+        fallback.setProblem_id(wrongBook.getProblem_id());
+        fallback.setAnswer(wrongBook.getLatest_answer());
+        fallback.setScore(wrongBook.getLatest_score());
+        fallback.setTotal_score(wrongBook.getTotal_score());
+        fallback.setAi_advise(wrongBook.getLatest_ai_advise());
+        fallback.setUpdate_date(wrongBook.getUpdate_date());
+        fallback.setCreate_date(wrongBook.getUpdate_date());
+        fallback.setPerson(false);
+        return Collections.singletonList(fallback);
+    }
+
+    private Map<Long, List<ProblemWrongBookAnswerRecordVo>> loadAnswerRecordsMap(List<ProblemWrongBook> wrongBooks) {
+        if (wrongBooks == null || wrongBooks.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Set<Long> problemIds = wrongBooks.stream()
+                .map(ProblemWrongBook::getProblem_id)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Set<Long> uuids = wrongBooks.stream()
+                .map(ProblemWrongBook::getUuid)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (problemIds.isEmpty() || uuids.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Map<Long, Integer> totalScoreMap = wrongBooks.stream()
+                .filter(item -> item.getProblem_id() != null)
+                .collect(Collectors.toMap(
+                        ProblemWrongBook::getProblem_id,
+                        item -> defaultZero(item.getTotal_score()),
+                        Math::max));
+
+        List<ProblemExamRecord> records = problemExamRecordMapper.selectList(
+                new QueryWrapper<ProblemExamRecord>()
+                        .in("problem_id", problemIds)
+                        .in("uuid", uuids)
+                        .eq("is_delete", 0)
+                        .orderByDesc("create_date")
+        );
+        if (records == null || records.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Map<Long, List<ProblemWrongBookAnswerRecordVo>> result = new HashMap<>();
+        for (ProblemExamRecord record : records) {
+            if (record.getProblem_id() == null) {
+                continue;
+            }
+            ProblemWrongBookAnswerRecordVo vo = new ProblemWrongBookAnswerRecordVo();
+            vo.setId(record.getId());
+            vo.setExam_user_id(record.getExam_user_id());
+            vo.setProblem_id(record.getProblem_id());
+            vo.setAnswer(record.getAnswer());
+            vo.setScore(record.getScore());
+            vo.setTotal_score(totalScoreMap.get(record.getProblem_id()));
+            vo.setAi_advise(record.getAi_advise());
+            vo.setConfidence(record.getConfidence());
+            vo.setPerson(Boolean.TRUE.equals(record.getIs_person()));
+            vo.setCreate_date(record.getCreate_date());
+            vo.setUpdate_date(record.getUpdate_date());
+            result.computeIfAbsent(record.getProblem_id(), key -> new ArrayList<>()).add(vo);
+        }
+        return result;
     }
 
     private Map<Long, List<String>> loadMathTagsMap(Set<Long> problemIds) {

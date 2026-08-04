@@ -94,6 +94,7 @@ public class GradingAgentUtil {
         request.setTemperature(input.getTemperature() == null ? 0.1F : input.getTemperature());
         request.setTopP(input.getTopP() == null ? 0.2F : input.getTopP());
         request.setMessages(buildMessages(input));
+        request.setResponseFormat(ResponseFormat.jsonObject());
         String targetApiUrl = resolveApiUrl(input);
         boolean hasImage = !getStudentAnswerImageUrls(input).isEmpty();
         log.info("[grading-agent] ai request start, model={}, url={}, hasImage={}, questionType={}, totalScore={}",
@@ -377,7 +378,7 @@ public class GradingAgentUtil {
         contentItems.add(ContentItem.ofText(buildUserPrompt(input)
                 + "\n\n注意：学生作答不是文本，而是后续图片。请先准确识别图片中的学生作答内容，"
                 + "将识别出的作答写入 student_normalized_answer，再根据题目、参考答案和评分细则判分。"
-                + "如果图片模糊、无法识别或不是答题步骤图片，必须设置 needs_manual_review=true。"));
+                + "如果图片模糊、无法识别或不是与题目相关的有效作答图片，必须设置 needs_manual_review=true。"));
         for (String imageUrl : getStudentAnswerImageUrls(input)) {
             contentItems.add(ContentItem.ofImageUrl(imageUrl));
         }
@@ -586,13 +587,96 @@ public class GradingAgentUtil {
         return count;
     }
 
-    private GradingResult parseResultJson(String content) {
+    GradingResult parseResultJson(String content) {
         String json = extractJsonObject(content);
-        try {
-            return objectMapper.readValue(json, GradingResult.class);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("failed to parse grading result JSON: " + json, e);
+        String repairedJson = repairJsonLatexBackslashes(json);
+        if (!repairedJson.equals(json)) {
+            log.warn("[grading-agent] repaired unescaped LaTeX backslashes in AI grading JSON");
         }
+        try {
+            return objectMapper.readValue(repairedJson, GradingResult.class);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException(buildJsonParseErrorMessage(exception), exception);
+        }
+    }
+
+    private String repairJsonLatexBackslashes(String json) {
+        StringBuilder repaired = new StringBuilder(json.length() + 32);
+        boolean inString = false;
+        boolean inMath = false;
+
+        for (int index = 0; index < json.length(); index++) {
+            char current = json.charAt(index);
+            if (!inString) {
+                repaired.append(current);
+                if (current == '"') {
+                    inString = true;
+                    inMath = false;
+                }
+                continue;
+            }
+
+            if (current == '"' && !isEscaped(json, index)) {
+                inString = false;
+                inMath = false;
+                repaired.append(current);
+                continue;
+            }
+            if (current == '$' && !isEscaped(json, index)) {
+                inMath = !inMath;
+                repaired.append(current);
+                continue;
+            }
+            if (current != '\\') {
+                repaired.append(current);
+                continue;
+            }
+
+            char next = index + 1 < json.length() ? json.charAt(index + 1) : 0;
+            if (next == '\\') {
+                repaired.append(current).append(next);
+                index++;
+                continue;
+            }
+            if ((inMath && next != '"' && next != '/') || !isJsonEscapeCharacter(next)) {
+                repaired.append("\\\\");
+            } else {
+                repaired.append(current);
+            }
+        }
+        return repaired.toString();
+    }
+
+    private boolean isEscaped(String text, int index) {
+        int backslashCount = 0;
+        for (int current = index - 1; current >= 0 && text.charAt(current) == '\\'; current--) {
+            backslashCount++;
+        }
+        return backslashCount % 2 == 1;
+    }
+
+    private boolean isJsonEscapeCharacter(char character) {
+        return character == '"'
+                || character == '\\'
+                || character == '/'
+                || character == 'b'
+                || character == 'f'
+                || character == 'n'
+                || character == 'r'
+                || character == 't'
+                || character == 'u';
+    }
+
+    private String buildJsonParseErrorMessage(JsonProcessingException exception) {
+        StringBuilder message = new StringBuilder("failed to parse grading result JSON: ")
+                .append(exception.getOriginalMessage());
+        if (exception.getLocation() != null) {
+            message.append(" at line ")
+                    .append(exception.getLocation().getLineNr())
+                    .append(", column ")
+                    .append(exception.getLocation().getColumnNr());
+        }
+        return message.toString();
     }
 
     private String extractJsonObject(String content) {
@@ -711,10 +795,15 @@ public class GradingAgentUtil {
         return """
                 STRICT BACKEND GRADING POLICY:
                 - If question_type is fill_blank, a final answer alone may receive full credit when it is equivalent to reference_answer.
-                - If question_type is major_question, calculation, proof, or essay, visible process is required.
-                - For major_question, calculation, proof, or essay, if the student only provides a final answer without visible reasoning, method, key steps, calculation, or proof, awarded_score must be 0 even when the final answer matches reference_answer.
+                - Do not require process solely because question_type is major_question or calculation. First classify the task as answer_only_allowed, key_justification_required, or full_process_required from the wording, rubric, score, and actual reasoning complexity.
+                - answer_only_allowed: the task is a direct fact, direct reading, or genuinely one-step computation; it does not ask for proof, explanation, derivation, method, or working; and the rubric does not allocate process points. An equivalent final answer may receive full credit.
+                - key_justification_required/full_process_required: if the student only provides a final answer without the required visible formula, model, reasoning, key step, calculation, or proof, awarded_score must be 0 even when the final answer matches reference_answer.
+                - If extra_context.process_required is true, classify the task as full_process_required. If it is false, answer-only grading is allowed only when the question wording and rubric do not explicitly require reasoning or process.
+                - For a calculation or measurement task, first identify every decisive formula component. Omitting a factor, term, dimension, subtraction/addition component, boundary, or condition that changes the computed quantity is a structural method error, not a minor notation issue.
+                - A rubric item for a decisive formula or method must receive 0 when such a component is absent throughout the visible work. Downstream calculation points may be awarded only when the student's visible work independently supports them. A correct final value copied or reached by coincidence does not restore missing method points.
+                - For a process-required task with no explicit rubric, if a decisive formula/method component is absent throughout the visible work, the total award must not exceed the independently justified final-result portion and that portion must be at most 20%% of total_score. This cap does not apply to answer_only_allowed tasks.
+                - If a formula line omits a component but the following substitution or calculation unmistakably includes and uses that component correctly, treat it as a notation/transcription omission instead of a missing method; deduct only the rubric-supported presentation amount.
                 - Do not infer missing process from reference_answer or solution_explanation. Only grade what is visible in student_answer or student_answer_image_urls.
-                - If extra_context.process_required is true, this process-required rule overrides any answer-equivalence shortcut.
                 - Markdown math must use single dollar delimiters like $x-y+z=0$. Never use double dollar delimiters or bracket math delimiters.
 
                 请根据以下信息完成判题，并返回严格 JSON。
@@ -742,6 +831,8 @@ public class GradingAgentUtil {
                 - 不要脱离 reference_answer 自行发明标准答案。
                 - 如果 rubric 为空、null、未提供或信息不足，请你先根据题目、总分、reference_answer 和标准解析生成合理评分细则，然后再判分。
                 - 如果 reference_answer 与解析存在冲突，应优先使用 reference_answer，并降低 confidence。
+                - 判分前必须先判断本题属于“答案即可”“需要关键依据”还是“需要完整过程”，不得仅凭 question_type 或题目分值决定是否要求步骤。
+                - reference_answer 主要用于核对最终结论；当本题需要过程时，应以 rubric 和 solution_explanation 拆解方法、公式及关键步骤，不能因最终答案正确而补回缺失的过程分。
 
                 【学生作答 student_answer】
                 %s
@@ -756,11 +847,15 @@ public class GradingAgentUtil {
                 1. 根据 question_type 选择合适的判题策略。
                 2. 如果是选择题、判断题、填空题，优先判断答案等价性。
                 3. 如果是填空题，必须支持多个正确答案和数学等价表达。
-                4. 如果是大题、计算题、证明题，必须基于 reference_answer 和解析生成/使用评分细则，再逐项给过程分。
-                5. 如果学生答案与参考答案表达不同，但语义或数学上等价，应判为正确。
-                6. 如果无法可靠判断，应设置 needs_manual_review = true，并说明原因。
-                7. 最终只返回 JSON，不要返回 Markdown，不要返回额外说明。
-                8. 数学表达式必须使用单美元符号包裹，例如 $x-y+z=0$；严禁使用 $$...$$、\\(...\\)、\\[...\\]。
+                4. 大题和计算题不天然等于必须写完整过程：若题目确属直接读取、直接事实或一步即可验证的计算，且题干与评分细则均未要求过程，正确结论可得满分。
+                5. 对需要关键依据或完整过程的题，必须基于 reference_answer 和解析生成/使用评分细则，再逐项给过程分；只有最终答案、没有所需依据时得 0 分。
+                6. 面积、体积、概率、总量等计算中，先核对决定结果的完整公式。若缺少会改变结果的项、因子、维度、加减部分、边界或条件，对应公式/方法项得 0 分，不得因为最终数值接近或正确而给可观过程分；需要过程但没有明确 rubric 时，总分最多保留独立成立的结果分，且不得超过 total_score 的 20%%。“答案即可”类题目不受此上限影响。
+                7. 若公式书写看似漏项，但紧接着的代入与计算明确且正确地使用了该项，只按书写疏漏处理，不得误判为方法缺失。
+                8. 如果学生答案与参考答案表达不同，但语义或数学上等价，应判为正确。
+                9. 如果无法可靠判断，应设置 needs_manual_review = true，并说明原因。
+                10. 最终只返回 JSON，不要返回 Markdown，不要返回额外说明。
+                11. 数学表达式必须使用单美元符号包裹，例如 $x-y+z=0$；严禁使用 $$...$$、\\(...\\)、\\[...\\]。
+                12. 返回内容本身是 JSON。JSON 字符串中的每一个 LaTeX 反斜杠都必须转义为双反斜杠，例如必须写成 "$\\\\int_0^1 x\\\\,dx=\\\\frac{1}{2}$"，禁止写成包含单反斜杠的无效 JSON。
 
                 请严格使用以下 JSON 结构：
                 {
@@ -861,10 +956,14 @@ public class GradingAgentUtil {
     private static final String SYSTEM_PROMPT = """
             STRICT BACKEND GRADING POLICY:
             - fill_blank is answer-equivalence grading: a final answer alone can receive full credit if it matches reference_answer mathematically or semantically.
-            - major_question, calculation, proof, and essay are process grading: final answer alone is insufficient.
-            - For major_question, calculation, proof, or essay, if the student only gives a final answer and does not show visible reasoning, method, key steps, calculation process, or proof process, awarded_score must be 0.
+            - Do not infer process requirements from question_type alone. Before grading, classify the task as answer_only_allowed, key_justification_required, or full_process_required from the wording, rubric, score, and actual reasoning complexity.
+            - answer_only_allowed applies only to direct facts, direct readings, or genuinely one-step computations when neither the question nor rubric asks for explanation, proof, derivation, method, or working. In that case an equivalent final answer may receive full credit.
+            - For key_justification_required or full_process_required tasks, an answer with only the final conclusion and none of the required visible formula, model, reasoning, key step, calculation, or proof must receive 0, even if the conclusion matches reference_answer.
+            - extra_context.process_required=true always forces full_process_required. A false value permits answer-only grading only when the question wording and rubric do not explicitly require process.
+            - In calculation and measurement tasks, omission of a decisive factor, term, dimension, add/subtract component, boundary, or condition is a structural method error. Give 0 for that formula/method rubric item and award downstream points only when independently supported by visible valid work.
+            - For a process-required task without an explicit rubric, if a decisive formula/method component is absent throughout the visible work, cap the total award at the independently justified final-result portion and at no more than 20% of total_score. This cap does not apply to answer_only_allowed tasks.
+            - If the next substitution or calculation unmistakably includes a component omitted only from a written formula line, treat it as a notation/transcription omission rather than a missing method.
             - Do not reconstruct or assume missing student steps from reference_answer or solution_explanation.
-            - When extra_context.process_required is true, process grading is mandatory and answer-only full credit is forbidden.
             - Markdown math must use single dollar delimiters like $x-y+z=0$. Never use double dollar delimiters or bracket math delimiters.
 
             你是一个考试判题 Agent，负责根据题型、题目、总分、标准答案/参考答案、标准解析、评分细则和学生作答进行判分。
@@ -878,9 +977,13 @@ public class GradingAgentUtil {
             4. 标准答案/参考答案是主要判分依据。你必须优先使用 reference_answer，不得脱离 reference_answer 自行发明正确答案。
             5. 如果 reference_answer 与 solution_explanation 存在冲突，应优先相信 reference_answer，并在 summary 中说明存在冲突，同时降低 confidence。
             6. 如果 reference_answer 为空、缺失或明显不完整，才允许根据 question_content 和 solution_explanation 推断可接受答案，并必须降低 confidence。
-            7. 如果题型是选择题、判断题、填空题、简答题这类客观或半客观题，应优先判断学生答案是否与 reference_answer 等价，而不是要求文字完全一致。
+            7. 选择题、判断题、填空题应优先判断答案是否与 reference_answer 等价。short_answer 默认属于“需要关键依据”，学生只抄写最终答案而没有题目要求的说明、理由或核心要点时得 0 分；只有题干或评分细则明确表明答案即可时，才能按“答案即可”处理。
             8. 如果题型是填空题，允许多个正确答案、数学等价表达、语义等价表达、大小写和格式差异；单空填空题通常只有满分或 0 分，多空填空题可以按空或得分点部分给分。
-            9. 如果题型是大题、计算题、证明题、论述题，必须根据方法、关键步骤、计算过程、最终答案和结论表达判定过程分；已有评分细则时优先使用，否则围绕 reference_answer 和 solution_explanation 自动生成合理评分细则。
+            9. 大题、计算题、证明题、论述题必须先判断过程必要性，不得仅凭题型标签要求步骤：
+               - “答案即可”：直接事实、直接读取或真正的一步计算，题干未要求说明/证明/推导/过程，评分细则也没有过程分，正确且等价的最终答案可得满分。
+               - “需要关键依据”：必须至少写出决定结论的公式、模型、理由或关键步骤；只有答案而无关键依据时得 0 分。
+               - “需要完整过程”：按方法、关键步骤、计算或证明过程、最终答案和结论表达逐项判分；只有答案时得 0 分。
+               已有评分细则时优先使用，否则围绕 question_content、reference_answer 和 solution_explanation 生成合理评分细则。reference_answer 主要核对结论，solution_explanation 主要用于拆解过程得分点。
             10. 如果学生答案无法判断、信息不足、图片/文本不清晰，应降低 confidence，并设置 needs_manual_review 为 true。
             11. 不要脑补学生没有写出的关键步骤。只能根据学生答案中可见、可识别、可推断但合理的内容给分。
             12. 你必须输出严格 JSON。
@@ -888,6 +991,9 @@ public class GradingAgentUtil {
             14. 不要输出解释性闲聊。
             15. 不要输出隐藏推理过程，只输出判分结论、得分依据、错误原因和改进建议。
             16. 数学表达式必须使用单美元符号包裹，例如 $x-y+z=0$；严禁使用 $$...$$、\\(...\\)、\\[...\\]。
+            17. 计算类题目必须先识别决定结果的完整数学模型或公式。学生若漏掉会改变结果的因子、项、维度、加减部分、边界或条件，该公式/方法评分项必须得 0；后续分数只能来自学生可见且独立成立的正确工作，不能因最终数值正确、接近或与参考答案一致而补发过程分。需要过程但没有明确 rubric 时，总分最多保留独立成立的结果分，且不得超过 total_score 的 20%；“答案即可”类题目不受此上限影响。
+            18. 区分“方法缺失”和“书写漏项”：如果后续代入或运算清楚表明学生实际正确使用了漏写部分，则只按书写/转录疏漏扣除评分细则允许的少量分；如果该部分在全部可见作答中都没有被使用，则按结构性方法错误处理。
+            19. 返回内容本身是 JSON。JSON 字符串中的每一个 LaTeX 反斜杠都必须转义为双反斜杠，例如必须写成 "$\\\\int_0^1 x\\\\,dx=\\\\frac{1}{2}$"，禁止写成包含单反斜杠的无效 JSON。
 
             评分风格：
             - 默认使用 strict_normal 模式，即严格但不极端。
@@ -899,8 +1005,9 @@ public class GradingAgentUtil {
             - choice：判断学生选项是否与参考答案一致；多选题必须完整匹配，除非题目说明可部分得分。
             - true_false：支持“对/错”“正确/错误”“true/false”“T/F”等等价表达。
             - fill_blank：先解析所有可接受答案，再标准化学生答案并逐一做等价判断；支持 1/2 与 0.5、sqrt(2) 与 √2 等常见等价表达。
-            - short_answer：判断关键词、核心含义和必要条件是否满足。
-            - calculation/proof/major_question：按大题逻辑判分，输出评分细则和逐项得分。
+            - short_answer：默认要求关键依据，判断关键词、核心含义、理由和必要条件是否满足；只写最终答案且没有所需说明时得 0 分，除非题干或评分细则明确允许答案即可。
+            - calculation/major_question：先判定“答案即可 / 需要关键依据 / 需要完整过程”，再按相应标准输出评分细则和逐项得分；关键公式缺项时不得给该方法项分数。
+            - proof：通常属于需要完整过程；除非题干实际只要求填写已知结论，否则必须检查证明思路、关键论证、条件使用和逻辑闭环。
             - essay：根据参考答案、评分细则、关键词、逻辑完整性和表达质量判分。
 
             输出要求：
@@ -1084,6 +1191,20 @@ public class GradingAgentUtil {
         private Float topP;
 
         private List<ChatMessage> messages;
+
+        @JsonProperty("response_format")
+        private ResponseFormat responseFormat;
+    }
+
+    @Data
+    private static class ResponseFormat {
+        private String type;
+
+        private static ResponseFormat jsonObject() {
+            ResponseFormat responseFormat = new ResponseFormat();
+            responseFormat.setType("json_object");
+            return responseFormat;
+        }
     }
 
     @Data

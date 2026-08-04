@@ -37,11 +37,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -52,7 +55,12 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -71,6 +79,15 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
     private static final Pattern QUESTION_ORDER_PATTERN = Pattern.compile(
             "\\u7b2c\\s*([0-9\\uFF10-\\uFF19\\u4e00\\u4e8c\\u4e09\\u56db\\u4e94\\u516d\\u4e03\\u516b\\u4e5d\\u5341\\u767e\\u5343\\u4e24\\u96f6]+)\\s*\\u9898");
     private static final Pattern PROBLEM_REDIRECT_PATTERN = Pattern.compile("/problems/other/(\\d+)");
+    private static final AtomicInteger EXAM_AI_GRADING_THREAD_ID = new AtomicInteger(1);
+
+    @Value("${exam.grading.ai.max-concurrency:8}")
+    private int examAiGradingMaxConcurrency;
+
+    @Value("${exam.grading.ai.queue-capacity:200}")
+    private int examAiGradingQueueCapacity;
+
+    private ExecutorService examAiGradingExecutor;
 
     @Resource
     private ProblemMath408BankMapper problemMath408BankMapper;
@@ -136,6 +153,33 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
     private ProblemAlgorithmBankMapper problemAlgorithmBankMapper;
     @Autowired
     private ProblemExamUserMapper problemExamUserMapper;
+
+    @PostConstruct
+    public void initExamAiGradingExecutor() {
+        int poolSize = Math.max(1, examAiGradingMaxConcurrency);
+        int queueCapacity = Math.max(poolSize, examAiGradingQueueCapacity);
+        examAiGradingExecutor = new ThreadPoolExecutor(
+                poolSize,
+                poolSize,
+                60L,
+                TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(queueCapacity),
+                runnable -> {
+                    Thread thread = new Thread(runnable, "exam-ai-grading-" + EXAM_AI_GRADING_THREAD_ID.getAndIncrement());
+                    thread.setDaemon(true);
+                    return thread;
+                },
+                new ThreadPoolExecutor.CallerRunsPolicy()
+        );
+        log.info("[exam-submit-ai] init grading executor, poolSize={}, queueCapacity={}", poolSize, queueCapacity);
+    }
+
+    @PreDestroy
+    public void shutdownExamAiGradingExecutor() {
+        if (examAiGradingExecutor != null) {
+            examAiGradingExecutor.shutdown();
+        }
+    }
 
     @Override
     public List<ProblemMath408BankVo> problemSearch(Math408QueryRequest math408QueryRequest, boolean isAdmin) {
@@ -1210,9 +1254,12 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         }
 
         long batchStart = System.currentTimeMillis();
-        log.info("[exam-submit-ai] start subject grading, examUserId={}, uuid={}, count={}", id, uuid, problem_other.size());
+        log.info("[exam-submit-ai] start subject grading, examUserId={}, uuid={}, count={}, maxConcurrency={}",
+                id, uuid, problem_other.size(), Math.max(1, examAiGradingMaxConcurrency));
         List<CompletableFuture<ProblemExamRecord>> futures = problem_other.stream()
-                .map(problem -> CompletableFuture.supplyAsync(() -> buildSubjectRecord(problem, problemScoreMap, uuid, id)))
+                .map(problem -> CompletableFuture.supplyAsync(
+                        () -> buildSubjectRecord(problem, problemScoreMap, uuid, id),
+                        examAiGradingExecutor))
                 .collect(Collectors.toList());
 
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
@@ -2220,22 +2267,22 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         int totalScore = 0;
         for (ProblemExamProblemInfo info : problemExamProblemInfos) {
             Long problemId = info.getProblem_id();
-            Integer moduleStatus;
-            if (algorithmProblemMap.containsKey(problemId)) {
-                moduleStatus = 3;
-            } else {
-                ProblemMath408Bank mathProblem = mathProblemMap.get(problemId);
-                if (mathProblem == null) {
-                    throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "problem not found");
-                }
-                moduleStatus = mathProblem.getStatus();
-            }
+//            Integer moduleStatus;
+//            if (algorithmProblemMap.containsKey(problemId)) {
+//                moduleStatus = 3;
+//            } else {
+//                ProblemMath408Bank mathProblem = mathProblemMap.get(problemId);
+//                if (mathProblem == null) {
+//                    throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "problem not found");
+//                }
+//                moduleStatus = mathProblem.getStatus();
+//            }
 
             ProblemExamTissue tissue = new ProblemExamTissue();
             tissue.setProblem_id(problemId);
             tissue.setScore(info.getScore());
-            tissue.setType(info.getStatus());
-            tissue.setStatus(moduleStatus);
+            tissue.setType(info.getType());
+            tissue.setStatus(info.getStatus());
             tissue.setCreate_date(now);
             tissue.setUpdate_date(now);
             tissue.setIs_delete(0);

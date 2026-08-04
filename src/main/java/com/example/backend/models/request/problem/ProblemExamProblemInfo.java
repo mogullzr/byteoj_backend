@@ -14,6 +14,11 @@ public class ProblemExamProblemInfo implements Serializable {
     private Long problem_id;
 
     /**
+     * 问题名称
+     */
+    private String problem_name;
+
+    /**
      * 分数
      */
     private Integer score;
@@ -22,4 +27,8 @@ public class ProblemExamProblemInfo implements Serializable {
      * 试题类型,0,1,2,3
      */
     private Integer status;
+    /**
+     * 题目类型，
+     */
+    private Integer type;
 }
