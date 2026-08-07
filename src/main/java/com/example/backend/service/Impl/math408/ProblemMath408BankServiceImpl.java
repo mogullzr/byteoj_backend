@@ -78,7 +78,13 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
             "^(.+?)\\s*\\u7b2c\\s*([0-9\\uFF10-\\uFF19\\u4e00\\u4e8c\\u4e09\\u56db\\u4e94\\u516d\\u4e03\\u516b\\u4e5d\\u5341\\u767e\\u5343\\u4e24\\u96f6]+)\\s*\\u9898.*$");
     private static final Pattern QUESTION_ORDER_PATTERN = Pattern.compile(
             "\\u7b2c\\s*([0-9\\uFF10-\\uFF19\\u4e00\\u4e8c\\u4e09\\u56db\\u4e94\\u516d\\u4e03\\u516b\\u4e5d\\u5341\\u767e\\u5343\\u4e24\\u96f6]+)\\s*\\u9898");
-    private static final Pattern PROBLEM_REDIRECT_PATTERN = Pattern.compile("/problems/other/(\\d+)");
+    /**
+     * A duplicated question stores only this exact path in its description.
+     * Keep the match strict so an ordinary question containing a link is not
+     * accidentally replaced.
+     */
+    private static final Pattern PROBLEM_REDIRECT_PATTERN = Pattern.compile("^/problems/other/(\\d+)$");
+    private static final int MAX_PROBLEM_REDIRECT_DEPTH = 5;
     private static final AtomicInteger EXAM_AI_GRADING_THREAD_ID = new AtomicInteger(1);
 
     @Value("${exam.grading.ai.max-concurrency:8}")
@@ -275,15 +281,10 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         if (problemMath408Bank == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "题目不存在");
         }
-        ProblemMath408BankVo problemMath408BankVo = new ProblemMath408BankVo();
-        List<String> tagsList = getProblemMath408Tags(problemId);
-
-        // TODO 待定..........
-        problemMath408BankVo = getProbleMath408mVO(problemMath408Bank, tagsList);
-        problemMath408BankVo.setStatus(problemMath408Bank.getStatus());
-//        problemMath408BankVo.setCorrect_answer(null);
-
-        return problemMath408BankVo;
+        // Keep the tissue/record identity as the original ID, but expose the
+        // effective question data (description, options, answer, analysis,
+        // tags) used by the paper, answer sheet and grading paths alike.
+        return buildEffectiveMathProblemVo(problemMath408Bank, true);
     }
 
     @Override
@@ -561,47 +562,45 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
             return new HashMap<>();
         }
 
-        Map<Long, Long> redirectProblemIdMap = new HashMap<>();
-        Set<Long> redirectTargetIds = new LinkedHashSet<>();
+        Map<Long, ProblemMath408BankVo> result = new HashMap<>();
         for (ProblemMath408Bank problem : problemMath408BankList) {
             ProblemMath408Bank effectiveProblem = resolveEffectiveMathProblem(problem);
             if (effectiveProblem == null || Objects.equals(effectiveProblem.getProblem_id(), problem.getProblem_id())) {
                 continue;
             }
-            redirectProblemIdMap.put(problem.getProblem_id(), effectiveProblem.getProblem_id());
-            redirectTargetIds.add(effectiveProblem.getProblem_id());
-        }
-        if (redirectTargetIds.isEmpty()) {
-            return new HashMap<>();
-        }
-
-        List<ProblemMath408Bank> redirectedProblemList = problemMath408BankMapper.selectList(
-                new QueryWrapper<ProblemMath408Bank>()
-                        .in("problem_id", redirectTargetIds)
-                        .eq("is_delete", 0)
-        );
-        if (redirectedProblemList == null || redirectedProblemList.isEmpty()) {
-            return new HashMap<>();
-        }
-
-        Map<Long, List<String>> redirectedTagsMap = getProblemMath408TagsWithNames(new ArrayList<>(redirectTargetIds));
-        Map<Long, ProblemMath408BankVo> redirectedProblemVoById = new HashMap<>();
-        for (ProblemMath408Bank redirectedProblem : redirectedProblemList) {
-            List<String> tags = redirectedTagsMap.get(redirectedProblem.getProblem_id());
-            ProblemMath408BankVo redirectedVo = getProbleMath408mVO(redirectedProblem, tags);
-            redirectedVo.setAnalysis(null);
-            redirectedVo.setCorrect_answer(null);
-            redirectedProblemVoById.put(redirectedProblem.getProblem_id(), redirectedVo);
-        }
-
-        Map<Long, ProblemMath408BankVo> result = new HashMap<>();
-        for (Map.Entry<Long, Long> entry : redirectProblemIdMap.entrySet()) {
-            ProblemMath408BankVo redirectedVo = redirectedProblemVoById.get(entry.getValue());
-            if (redirectedVo != null) {
-                result.put(entry.getKey(), redirectedVo);
+            ProblemMath408BankVo effectiveVo = buildEffectiveMathProblemVo(problem, effectiveProblem, false);
+            if (effectiveVo != null) {
+                result.put(problem.getProblem_id(), effectiveVo);
             }
         }
         return result;
+    }
+
+    /** Build a view using the effective target while preserving the source ID/status. */
+    private ProblemMath408BankVo buildEffectiveMathProblemVo(ProblemMath408Bank source, boolean includeSensitiveFields) {
+        if (source == null) {
+            return null;
+        }
+        ProblemMath408Bank effective = resolveEffectiveMathProblem(source);
+        if (effective == null) {
+            effective = source;
+        }
+        return buildEffectiveMathProblemVo(source, effective, includeSensitiveFields);
+    }
+
+    private ProblemMath408BankVo buildEffectiveMathProblemVo(ProblemMath408Bank source,
+                                                              ProblemMath408Bank effective,
+                                                              boolean includeSensitiveFields) {
+        List<String> tags = getProblemMath408Tags(effective.getProblem_id());
+        ProblemMath408BankVo vo = getProbleMath408mVO(effective, tags);
+        // The exam tissue and submitted record always identify the source row.
+        vo.setProblem_id(source.getProblem_id());
+        vo.setStatus(source.getStatus());
+        if (!includeSensitiveFields) {
+            vo.setAnalysis(null);
+            vo.setCorrect_answer(null);
+        }
+        return vo;
     }
 
     private Long extractRedirectProblemId(ProblemMath408Bank problem) {
@@ -623,8 +622,8 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         if (text == null || text.trim().isEmpty()) {
             return null;
         }
-        Matcher matcher = PROBLEM_REDIRECT_PATTERN.matcher(text);
-        if (!matcher.find()) {
+        Matcher matcher = PROBLEM_REDIRECT_PATTERN.matcher(text.trim());
+        if (!matcher.matches()) {
             return null;
         }
         try {
@@ -634,21 +633,27 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         }
     }
 
-    // 提取的批量查询标签方法，包括标签名称
+    /** Resolve duplicate-question redirects with loop and depth protection. */
     private ProblemMath408Bank resolveEffectiveMathProblem(ProblemMath408Bank problem) {
         if (problem == null) {
             return null;
         }
+        ProblemMath408Bank origin = problem;
         ProblemMath408Bank current = problem;
         Set<Long> visited = new HashSet<>();
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < MAX_PROBLEM_REDIRECT_DEPTH; i++) {
             Long currentProblemId = current.getProblem_id();
             if (currentProblemId == null || !visited.add(currentProblemId)) {
-                return current;
+                return origin;
             }
             Long redirectProblemId = extractRedirectProblemId(current);
-            if (redirectProblemId == null || redirectProblemId <= 0 || visited.contains(redirectProblemId)) {
+            if (redirectProblemId == null || redirectProblemId <= 0) {
                 return current;
+            }
+            if (visited.contains(redirectProblemId)) {
+                log.warn("Circular math408 problem redirect detected, sourceProblemId={}, targetProblemId={}",
+                        origin.getProblem_id(), redirectProblemId);
+                return origin;
             }
             ProblemMath408Bank redirectProblem = problemMath408BankMapper.selectOne(
                     new QueryWrapper<ProblemMath408Bank>()
@@ -657,11 +662,15 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
                             .last("LIMIT 1")
             );
             if (redirectProblem == null) {
-                return current;
+                log.warn("Math408 problem redirect target not found, sourceProblemId={}, targetProblemId={}",
+                        origin.getProblem_id(), redirectProblemId);
+                return origin;
             }
             current = redirectProblem;
         }
-        return current;
+        log.warn("Math408 problem redirect depth exceeded, sourceProblemId={}, maxDepth={}",
+                origin.getProblem_id(), MAX_PROBLEM_REDIRECT_DEPTH);
+        return origin;
     }
 
     private Integer resolveEffectiveOptionType(ProblemMath408Bank problem) {
@@ -1502,9 +1511,15 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         int totalScore = 0;
         List<ProblemExamRecord> problemExamRecords = new ArrayList<>();
         Date now = new Date();
-        // 将查询结果转为 Map，方便快速查找: key=problem_id, value=correct_answer
-        Map<Long, String> correctAnswerMap = problemMath408BankList.stream()
-                .collect(Collectors.toMap(ProblemMath408Bank::getProblem_id, ProblemMath408Bank::getCorrect_answer, (k1, k2) -> k1));
+        // Resolve duplicated questions before comparing answers. The map key
+        // remains the source/tissue ID so records and scores stay aligned.
+        Map<Long, String> correctAnswerMap = new HashMap<>();
+        for (ProblemMath408Bank problem : problemMath408BankList) {
+            ProblemMath408Bank effectiveProblem = resolveEffectiveMathProblem(problem);
+            if (effectiveProblem != null) {
+                correctAnswerMap.put(problem.getProblem_id(), effectiveProblem.getCorrect_answer());
+            }
+        }
 
         // 遍历 problem_options 进行比对
         for (var option : problem_options) {
