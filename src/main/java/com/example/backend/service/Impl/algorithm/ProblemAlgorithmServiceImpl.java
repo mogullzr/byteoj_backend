@@ -2526,6 +2526,13 @@ public class ProblemAlgorithmServiceImpl extends ServiceImpl<ProblemAlgorithmBan
             vo.setCompetitionId(result.getCompetitionId());
             vo.setProblemIndex(result.getProblemIndex());
             vo.setSimilarityScore(result.getSimilarityScore());
+            vo.setAstScore(result.getAstScore());
+            vo.setTokenScore(result.getTokenScore());
+            vo.setAstContainmentScore(result.getAstContainmentScore());
+            vo.setTokenContainmentScore(result.getTokenContainmentScore());
+            vo.setEmbeddingScore(result.getEmbeddingScore());
+            vo.setRiskLevel(result.getRiskLevel());
+            vo.setAlgorithmVersion(result.getAlgorithmVersion());
             vo.setSourceCode1(result.getSourceCode1());
             vo.setSourceCode2(result.getSourceCode2());
             vo.setCreatedAt(result.getCreatedAt());

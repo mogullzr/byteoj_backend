@@ -60,6 +60,27 @@ public class CodeSimilarityResult implements Serializable {
      */
     @TableField("similarity_score")
     private Double similarityScore;
+
+    @TableField("ast_score")
+    private Double astScore;
+
+    @TableField("token_score")
+    private Double tokenScore;
+
+    @TableField("ast_containment_score")
+    private Double astContainmentScore;
+
+    @TableField("token_containment_score")
+    private Double tokenContainmentScore;
+
+    @TableField("embedding_score")
+    private Double embeddingScore;
+
+    @TableField("risk_level")
+    private String riskLevel;
+
+    @TableField("algorithm_version")
+    private String algorithmVersion;
     
     /**
      * 创建时间

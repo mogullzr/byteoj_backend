@@ -12,6 +12,13 @@ CREATE TABLE IF NOT EXISTS code_similarity_result (
     source_code_1 TEXT NOT NULL,
     source_code_2 TEXT NOT NULL,
     similarity_score DOUBLE PRECISION NOT NULL,
+    ast_score DOUBLE PRECISION,
+    token_score DOUBLE PRECISION,
+    ast_containment_score DOUBLE PRECISION,
+    token_containment_score DOUBLE PRECISION,
+    embedding_score DOUBLE PRECISION,
+    risk_level VARCHAR(16),
+    algorithm_version VARCHAR(64),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -31,6 +38,14 @@ COMMENT ON COLUMN code_similarity_result.created_at IS '创建时间';
 CREATE INDEX IF NOT EXISTS idx_similarity_competition_problem ON code_similarity_result(competition_id, problem_index);
 CREATE INDEX IF NOT EXISTS idx_similarity_score ON code_similarity_result(similarity_score DESC);
 CREATE INDEX IF NOT EXISTS idx_similarity_users ON code_similarity_result(user_uuid_1, user_uuid_2);
+
+ALTER TABLE code_similarity_result ADD COLUMN IF NOT EXISTS ast_score DOUBLE PRECISION;
+ALTER TABLE code_similarity_result ADD COLUMN IF NOT EXISTS token_score DOUBLE PRECISION;
+ALTER TABLE code_similarity_result ADD COLUMN IF NOT EXISTS ast_containment_score DOUBLE PRECISION;
+ALTER TABLE code_similarity_result ADD COLUMN IF NOT EXISTS token_containment_score DOUBLE PRECISION;
+ALTER TABLE code_similarity_result ADD COLUMN IF NOT EXISTS embedding_score DOUBLE PRECISION;
+ALTER TABLE code_similarity_result ADD COLUMN IF NOT EXISTS risk_level VARCHAR(16);
+ALTER TABLE code_similarity_result ADD COLUMN IF NOT EXISTS algorithm_version VARCHAR(64);
 
 -- ========================================
 -- 说明:

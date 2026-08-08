@@ -2,6 +2,7 @@ package com.example.backend.utils;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.dynamic.datasource.toolkit.DynamicDataSourceContextHolder;
 import com.example.backend.common.ErrorCode;
 import com.example.backend.config.RabbitMQConfig;
 import com.example.backend.exception.BusinessException;
@@ -10,12 +11,17 @@ import com.example.backend.models.domain.algorithm.submission.SubmissionsAlgorit
 import com.example.backend.models.domain.competiton.Competitions;
 import com.example.backend.models.domain.competiton.CompetitionsProblemsAlgorithm;
 import com.example.backend.models.domain.competiton.CompetitionsUser;
+import com.example.backend.models.domain.competiton.ProblemCompetitionCodeEmbeddings;
 import com.example.backend.models.domain.embedding.EmbeddingTaskMessage;
 import com.example.backend.models.domain.embedding.EmbeddingTaskQueue;
+import com.example.backend.models.domain.embedding.CodeSimilarityResult;
+import com.example.backend.models.domain.embedding.SimilarityCluster;
 import com.example.backend.models.domain.user.User;
 import com.example.backend.models.domain.user.UserRating;
 import com.example.backend.service.algorithm.ProblemCompetitionCodeEmbeddingsService;
 import com.example.backend.service.embedding.EmbeddingTaskQueueService;
+import com.example.backend.service.embedding.SimilarityClusterService;
+import com.example.backend.service.competition.CodeSimilarityResultService;
 import com.example.backend.service.user.UserRatingService;
 import com.alibaba.fastjson.JSON;
 import org.slf4j.Logger;
@@ -62,6 +68,12 @@ public class CompetitionsRatedUtil {
 
     @Resource
     private EmbeddingTaskQueueService embeddingTaskQueueService;
+
+    @Resource
+    private CodeSimilarityResultService codeSimilarityResultService;
+
+    @Resource
+    private SimilarityClusterService similarityClusterService;
 
     @Value("${hm.aliyun.embedding.model}")
     private String model;
@@ -258,6 +270,59 @@ public class CompetitionsRatedUtil {
         }
 
         // log.info("[Embedding任务创建] 共创建 {} 个任务记录", totalTasksCreated);
+    }
+
+    /**
+     * 管理员重新计算指定竞赛的代码查重数据。任务异步执行，方法返回表示已成功入队。
+     */
+    public synchronized boolean recalculateCodeSimilarity(Long competitionId) {
+        if (competitionId == null || competitionId <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "竞赛ID无效");
+        }
+        Competitions competition = competitionsMapper.selectById(competitionId);
+        if (competition == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "竞赛不存在");
+        }
+        if (competition.getEnd_time() != null && competition.getEnd_time().after(new Date())) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "竞赛尚未结束，不能重新计算查重");
+        }
+        if (Objects.equals(competition.getEmbedding_status(), 1)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "该竞赛的查重任务正在执行，请稍后再试");
+        }
+
+        DynamicDataSourceContextHolder.push("pg");
+        try {
+            long processingTasks = embeddingTaskQueueService.count(new QueryWrapper<EmbeddingTaskQueue>()
+                    .eq("competition_id", competitionId)
+                    .in("status", "PENDING", "PROCESSING"));
+            if (processingTasks > 0) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "该竞赛的查重任务正在执行，请稍后再试");
+            }
+
+            embeddingTaskQueueService.remove(new QueryWrapper<EmbeddingTaskQueue>()
+                    .eq("competition_id", competitionId));
+            problemCompetitionCodeEmbeddingsService.remove(new QueryWrapper<ProblemCompetitionCodeEmbeddings>()
+                    .eq("competition_id", competitionId));
+            codeSimilarityResultService.remove(new QueryWrapper<CodeSimilarityResult>()
+                    .eq("competition_id", competitionId));
+            similarityClusterService.remove(new QueryWrapper<SimilarityCluster>()
+                    .eq("competition_id", competitionId));
+        } finally {
+            DynamicDataSourceContextHolder.poll();
+        }
+
+        competition.setEmbedding_status(1);
+        competitionsMapper.updateById(competition);
+        int taskCount = createEmbeddingTasks(competition);
+        if (taskCount <= 0) {
+            competition.setEmbedding_status(0);
+            competitionsMapper.updateById(competition);
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "该竞赛没有可处理的参赛用户");
+        }
+
+        // 不等待一分钟定时器，立即发送首批 Pending 任务。
+        dispatchPendingTasks();
+        return true;
     }
 
     /**

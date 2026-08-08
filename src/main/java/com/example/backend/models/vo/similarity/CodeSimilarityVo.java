@@ -45,6 +45,14 @@ public class CodeSimilarityVo {
      * 相似度分数(0-1)
      */
     private Double similarityScore;
+
+    private Double astScore;
+    private Double tokenScore;
+    private Double astContainmentScore;
+    private Double tokenContainmentScore;
+    private Double embeddingScore;
+    private String riskLevel;
+    private String algorithmVersion;
     
     /**
      * 查重时间

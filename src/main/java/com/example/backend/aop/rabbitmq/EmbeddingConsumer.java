@@ -13,6 +13,7 @@ import com.example.backend.service.algorithm.ProblemCompetitionCodeEmbeddingsSer
 import com.example.backend.service.competition.CompetitionsService;
 import com.example.backend.service.embedding.EmbeddingTaskQueueService;
 import com.example.backend.utils.CompetitionsRatedUtil;
+import com.example.backend.utils.CodeSimilarityFeatureUtil;
 import com.example.backend.utils.SimilarityClusterUtil;
 import com.example.backend.utils.EmbeddingConvertUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -249,6 +250,10 @@ public class EmbeddingConsumer {
 
         for (Long uuid : userUuids) {
             try {
+                // 同一竞赛重复触发时先清理该用户旧向量，避免同一用户同一题目出现多份代码。
+                problemCompetitionCodeEmbeddingsService.remove(new QueryWrapper<ProblemCompetitionCodeEmbeddings>()
+                        .eq("competition_id", competitionId)
+                        .eq("uuid", uuid));
                 // 复用 CompetitionsRatedUtil.getOnlySourceCode() 获取该用户所有题目的代码
                 Map<String, String> sourceCodeMap = competitionsRatedUtil.getOnlySourceCode(competitionId, uuid);
                 
@@ -257,7 +262,7 @@ public class EmbeddingConsumer {
                     String problemIndex = entry.getKey();
                     String sourceCode = entry.getValue();
 
-                    if (sourceCode.equals("No Accepted Code")) continue;
+                    if (sourceCode == null || sourceCode.equals("No Accepted Code")) continue;
 
                     // 生成 embedding
                     ProblemCompetitionCodeEmbeddings embedding = new ProblemCompetitionCodeEmbeddings();
@@ -287,30 +292,15 @@ public class EmbeddingConsumer {
      */
     private void processSimilarity(EmbeddingTaskMessage message) {
         Long competitionId = message.getCompetitionId();
-        List<Long> userUuids = message.getUserUuids();
-
-        // log.info("[Similarity] 开始相似度比对, competitionId: {}, 批次: {}/{}, 用户数: {}",
-//                competitionId, message.getBatchIndex(), message.getTotalBatches(), userUuids.size());
-
-        // 调用相似度计算逻辑,只计算当前批次的用户
-        calculateSimilarityForBatch(competitionId, userUuids);
-        
-        // log.info("[Similarity] 批次相似度比对完成, competitionId: {}, batchIndex: {}",
-//                competitionId, message.getBatchIndex());
+        calculateSimilarityForCompetition(competitionId);
     }
 
     /**
-     * 计算当前批次用户的代码相似度
-     * @param competitionId 竞赛ID
-     * @param userUuids 当前批次的用户UUID列表
+     * 对同一竞赛、同一题目的全部代码进行比较，避免按用户分批造成跨批次漏比。
      */
-    private void calculateSimilarityForBatch(Long competitionId, List<Long> userUuids) {
-        // log.info("[Similarity计算] 开始, competitionId: {}, 用户数: {}", competitionId, userUuids.size());
-
-        // 1. 查询这些用户的 embedding 数据
+    private void calculateSimilarityForCompetition(Long competitionId) {
         QueryWrapper<ProblemCompetitionCodeEmbeddings> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("competition_id", competitionId);
-        queryWrapper.in("uuid", userUuids);  // 只查询当前批次的用户
         queryWrapper.orderByAsc("problem_index", "uuid");
         
         List<ProblemCompetitionCodeEmbeddings> embeddingsList = 
@@ -323,16 +313,16 @@ public class EmbeddingConsumer {
 
         // log.info("[Similarity计算] 找到 {} 条 embedding 数据", embeddingsList.size());
 
-        // 2. 按题目分组
+        codeSimilarityResultService.remove(new QueryWrapper<CodeSimilarityResult>()
+                .eq("competition_id", competitionId));
+
         Map<String, List<ProblemCompetitionCodeEmbeddings>> groupedByProblem = new HashMap<>();
         for (ProblemCompetitionCodeEmbeddings emb : embeddingsList) {
             groupedByProblem.computeIfAbsent(emb.getProblem_index(), k -> new ArrayList<>()).add(emb);
         }
 
-        // 3. 对每个题目进行两两比对
         List<CodeSimilarityResult> similarityResults = new ArrayList<>();
-        double baseThreshold = 0.90;  // 基础阈值
-        int minCodeLength = 50;  // 最小代码长度(过滤太短的代码)
+        int minCodeLength = 50;
 
         for (Map.Entry<String, List<ProblemCompetitionCodeEmbeddings>> entry : groupedByProblem.entrySet()) {
             String probIdx = entry.getKey();
@@ -340,11 +330,10 @@ public class EmbeddingConsumer {
 
             // log.info("[Similarity计算] 题目 {} 有 {} 个用户代码", probIdx, problemEmbeddings.size());
 
-            // 过滤掉代码太短的用户
             List<ProblemCompetitionCodeEmbeddings> validEmbeddings = new ArrayList<>();
             for (ProblemCompetitionCodeEmbeddings emb : problemEmbeddings) {
                 String code = emb.getSource_code();
-                String filteredCode = filterCommonCode(code);  // 过滤通用代码
+                String filteredCode = CodeSimilarityFeatureUtil.normalize(code);
                 if (filteredCode != null && filteredCode.length() >= minCodeLength) {
                     validEmbeddings.add(emb);
                 } else {
@@ -366,16 +355,22 @@ public class EmbeddingConsumer {
                     ProblemCompetitionCodeEmbeddings emb1 = validEmbeddings.get(i);
                     ProblemCompetitionCodeEmbeddings emb2 = validEmbeddings.get(j);
 
-                    // 计算余弦相似度
-                    double similarity = calculateCosineSimilarity(emb1.getEmbedding(), emb2.getEmbedding());
+                    CodeSimilarityFeatureUtil.Features features = CodeSimilarityFeatureUtil.compare(
+                            emb1.getSource_code(), emb2.getSource_code());
+                    double embeddingScore = calculateCosineSimilarity(emb1.getEmbedding(), emb2.getEmbedding());
+                    double finalScore = features.finalScore(embeddingScore);
+                    int avgLength = (features.getNormalizedCode1().length()
+                            + features.getNormalizedCode2().length()) / 2;
+                    double threshold = avgLength < 150 ? 0.68D : avgLength < 400 ? 0.60D : 0.55D;
 
-                    // 动态阈值:使用过滤后的代码长度计算
-                    String filteredCode1 = filterCommonCode(emb1.getSource_code());
-                    String filteredCode2 = filterCommonCode(emb2.getSource_code());
-                    double threshold = calculateDynamicThreshold(filteredCode1, filteredCode2, baseThreshold);
+                    boolean hasStructuralEvidence =
+                            (features.getAstScore() >= 0.52D && features.getTokenScore() >= 0.42D)
+                                    || features.getAstScore() >= 0.72D
+                                    || features.getTokenScore() >= 0.68D
+                                    || (features.getAstContainmentScore() >= 0.72D
+                                        && features.getTokenContainmentScore() >= 0.62D);
 
-                    // 只保存超过阈值的
-                    if (similarity >= threshold) {
+                    if (hasStructuralEvidence && finalScore >= threshold) {
                         CodeSimilarityResult result = new CodeSimilarityResult();
                         result.setCompetitionId(competitionId);
                         result.setProblemIndex(probIdx);
@@ -383,7 +378,15 @@ public class EmbeddingConsumer {
                         result.setUserUuid2(Math.max(emb1.getUuid(), emb2.getUuid()));
                         result.setSourceCode1(emb1.getSource_code());  // 直接从 embedding 表获取
                         result.setSourceCode2(emb2.getSource_code());  // 直接从 embedding 表获取
-                        result.setSimilarityScore(similarity);
+                        result.setAstScore(features.getAstScore());
+                        result.setTokenScore(features.getTokenScore());
+                        result.setAstContainmentScore(features.getAstContainmentScore());
+                        result.setTokenContainmentScore(features.getTokenContainmentScore());
+                        result.setEmbeddingScore(embeddingScore);
+                        result.setSimilarityScore(finalScore);
+                        result.setRiskLevel(finalScore >= 0.75D ? "HIGH"
+                                : finalScore >= 0.62D ? "MEDIUM" : "REVIEW");
+                        result.setAlgorithmVersion("AST_TOKEN_CONTAINMENT_V3");
                         result.setCreatedAt(new Date());
 
                         similarityResults.add(result);
@@ -392,17 +395,13 @@ public class EmbeddingConsumer {
             }
         }
 
-        // 4. 批量保存结果
         if (!similarityResults.isEmpty()) {
-            // log.info("[Similarity计算] 找到 {} 对高相似度代码", similarityResults.size());
-             codeSimilarityResultService.saveBatch(similarityResults);
-        } else {
-            // log.info("[Similarity计算] 没有找到高相似度代码");
+            codeSimilarityResultService.saveBatch(similarityResults);
         }
     }
 
     /**
-     * 计算动态阈值:代码越短,阈值越高
+     * 旧版动态阈值逻辑保留为兼容代码，新的综合评分不再使用它。
      * @param code1 代码1
      * @param code2 代码2
      * @param baseThreshold 基础阈值
@@ -480,33 +479,31 @@ public class EmbeddingConsumer {
      */
     private double calculateCosineSimilarity(Object embedding1, Object embedding2) {
         try {
-            // 1. 将 embedding 转换为 pgvector 需要的字符串格式: "[0.1, 0.2, ...]"
-            String vector1Str = convertToString(embedding1);
-            String vector2Str = convertToString(embedding2);
-
-            // 2. 使用 pgvector 的 <=> 运算符计算余弦距离
-            // <=> 返回的是距离(0-2),距离越小越相似
-            // 相似度 = 1 - (距离 / 2),转换为 0-1 范围
-            String sql = "SELECT (1 - (?::vector <=> ?::vector) / 2.0) AS similarity";
-
-            try (Connection conn = DriverManager.getConnection(pgDbUrl, pgDbUsername, pgDbPassword);
-                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-                pstmt.setString(1, vector1Str);
-                pstmt.setString(2, vector2Str);
-
-                try (ResultSet rs = pstmt.executeQuery()) {
-                    if (rs.next()) {
-                        return rs.getDouble("similarity");
-                    }
-                }
+            double[] first = parseVector(convertToString(embedding1));
+            double[] second = parseVector(convertToString(embedding2));
+            if (first.length == 0 || first.length != second.length) return 0D;
+            double dot = 0D, normFirst = 0D, normSecond = 0D;
+            for (int i = 0; i < first.length; i++) {
+                dot += first[i] * second[i];
+                normFirst += first[i] * first[i];
+                normSecond += second[i] * second[i];
             }
-        } catch (SQLException e) {
-            log.error("计算余弦相似度失败: {}", e.getMessage(), e);
+            if (normFirst == 0D || normSecond == 0D) return 0D;
+            return Math.max(0D, Math.min(1D, dot / (Math.sqrt(normFirst) * Math.sqrt(normSecond))));
+        } catch (RuntimeException e) {
+            log.error("计算余弦相似度失败: {}", e.getMessage());
             return 0.0;
         }
-        
-        return 0.0;
+    }
+
+    private double[] parseVector(String vector) {
+        if (vector == null || vector.length() < 2) return new double[0];
+        String body = vector.substring(1, vector.length() - 1).trim();
+        if (body.isEmpty()) return new double[0];
+        String[] values = body.split(",");
+        double[] result = new double[values.length];
+        for (int i = 0; i < values.length; i++) result[i] = Double.parseDouble(values[i].trim());
+        return result;
     }
 
     /**
@@ -593,37 +590,20 @@ public class EmbeddingConsumer {
             return;
         }
 
-        // 按 50 人一批发送相似度比对任务
-        int totalUsers = allUsers.size();
-        int totalBatches = (int) Math.ceil((double) totalUsers / 50);
-        
-        for (int i = 0; i < totalUsers; i += 50) {
-            int endIndex = Math.min(i + 50, totalUsers);
-            List<CompetitionsUser> batchUsers = allUsers.subList(i, endIndex);
-            
-            List<Long> uuids = new ArrayList<>();
-            for (CompetitionsUser cu : batchUsers) {
-                uuids.add(cu.getUuid());
-            }
+        List<Long> uuids = new ArrayList<>();
+        for (CompetitionsUser user : allUsers) uuids.add(user.getUuid());
 
-            EmbeddingTaskMessage message = new EmbeddingTaskMessage();
-            message.setCompetitionId(competitionId);
-            message.setUserUuids(uuids);
-            message.setTaskType("SIMILARITY");  // 相似度比对任务
-            message.setBatchIndex(i / 50 + 1);
-            message.setTotalBatches(totalBatches);
-            message.setCreateTime(System.currentTimeMillis());
-
-            rabbitTemplate.convertAndSend(
-                    RabbitMQConfig.EMBEDDING_EXCHANGE,
-                    RabbitMQConfig.EMBEDDING_ROUTING_KEY,
-                    message
-            );
-            
-            // log.info("[Similarity触发] 已发送批次 {}/{}, 用户数: {}",
-//                    message.getBatchIndex(), totalBatches, uuids.size());
-        }
-        
-        // log.info("[Similarity触发] 竞赛 {} 相似度比对任务已全部发送,共 {} 批", competitionId, totalBatches);
+        EmbeddingTaskMessage message = new EmbeddingTaskMessage();
+        message.setCompetitionId(competitionId);
+        message.setUserUuids(uuids);
+        message.setTaskType("SIMILARITY");
+        message.setBatchIndex(1);
+        message.setTotalBatches(1);
+        message.setCreateTime(System.currentTimeMillis());
+        rabbitTemplate.convertAndSend(
+                RabbitMQConfig.EMBEDDING_EXCHANGE,
+                RabbitMQConfig.EMBEDDING_ROUTING_KEY,
+                message
+        );
     }
 }

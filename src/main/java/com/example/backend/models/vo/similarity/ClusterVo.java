@@ -44,6 +44,9 @@ public class ClusterVo implements Serializable {
      */
     private List<ClusterMemberVo> members;
 
+    /** 团伙内真实存在的高风险关系，不再由前端强行全连接。 */
+    private List<ClusterEdgeVo> edges;
+
     /**
      * 创建时间
      */
@@ -71,5 +74,16 @@ public class ClusterVo implements Serializable {
          * 代码
          */
         private String sourceCode;
+    }
+
+    @Data
+    public static class ClusterEdgeVo implements Serializable {
+        private static final long serialVersionUID = 1L;
+        private Long source;
+        private Long target;
+        private Double score;
+        private Double astScore;
+        private Double tokenScore;
+        private String riskLevel;
     }
 }

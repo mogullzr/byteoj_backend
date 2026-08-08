@@ -7,11 +7,13 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.backend.mapper.*;
 import com.example.backend.models.domain.competiton.ProblemCompetitionCodeEmbeddings;
 import com.example.backend.models.domain.embedding.SimilarityCluster;
+import com.example.backend.models.domain.embedding.CodeSimilarityResult;
 import com.example.backend.models.domain.algorithm.submission.SubmissionsAlgorithm;
 import com.example.backend.models.domain.competiton.CompetitionsProblemsAlgorithm;
 import com.example.backend.models.domain.user.User;
 import com.example.backend.models.vo.similarity.ClusterVo;
 import com.example.backend.service.embedding.SimilarityClusterService;
+import com.example.backend.service.competition.CodeSimilarityResultService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,6 +40,9 @@ public class SimilarityClusterServiceImpl extends ServiceImpl<SimilarityClusterM
 
     @Autowired
     private SimilarityClusterMapper similarityClusterMapper;
+
+    @Autowired
+    private CodeSimilarityResultService codeSimilarityResultService;
 
     @Override
     public Page<ClusterVo> getClustersByProblem(Long competitionId, String problemIndex, 
@@ -118,6 +123,26 @@ public class SimilarityClusterServiceImpl extends ServiceImpl<SimilarityClusterM
             }
             
             vo.setMembers(members);
+
+            QueryWrapper<CodeSimilarityResult> edgeQuery = new QueryWrapper<>();
+            edgeQuery.eq("competition_id", competitionId)
+                    .eq("problem_index", cluster.getProblemIndex())
+                    .ge("similarity_score", 0.70D);
+            List<CodeSimilarityResult> results = codeSimilarityResultService.list(edgeQuery);
+            List<ClusterVo.ClusterEdgeVo> edges = new ArrayList<>();
+            for (CodeSimilarityResult result : results) {
+                if (userUuids.contains(result.getUserUuid1()) && userUuids.contains(result.getUserUuid2())) {
+                    ClusterVo.ClusterEdgeVo edge = new ClusterVo.ClusterEdgeVo();
+                    edge.setSource(result.getUserUuid1());
+                    edge.setTarget(result.getUserUuid2());
+                    edge.setScore(result.getSimilarityScore());
+                    edge.setAstScore(result.getAstScore());
+                    edge.setTokenScore(result.getTokenScore());
+                    edge.setRiskLevel(result.getRiskLevel());
+                    edges.add(edge);
+                }
+            }
+            vo.setEdges(edges);
             voList.add(vo);
         }
         

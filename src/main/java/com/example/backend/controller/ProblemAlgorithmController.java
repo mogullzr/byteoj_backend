@@ -36,6 +36,7 @@ import com.example.backend.service.algorithm.JudgeTaskQueueService;
 import com.example.backend.service.algorithm.JudgeTaskStateService;
 import com.example.backend.service.embedding.SimilarityClusterService;
 import com.example.backend.service.user.UserService;
+import com.example.backend.utils.CompetitionsRatedUtil;
 import com.example.backend.mapper.UserMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
@@ -94,6 +95,9 @@ public class ProblemAlgorithmController {
 
     @Autowired
     private SimilarityClusterService similarityClusterService;
+
+    @Autowired
+    private CompetitionsRatedUtil competitionsRatedUtil;
 
     @Autowired
     private JudgeTaskQueueService judgeTaskQueueService;
@@ -607,6 +611,18 @@ public class ProblemAlgorithmController {
         Page<CodeSimilarityVo> result = problemAlgorithmService.getSimilarityList(competitionId, uuid, problemIndex, currentPage, pageSize);
 
         return ResultUtils.success(result);
+    }
+
+    /** 管理员清理旧查重结果并重新提交异步计算任务。 */
+    @AccessLimit(seconds = 10, maxCount = 3, needLogin = true)
+    @PostMapping("/similarity/recalculate")
+    public BaseResponse<Boolean> recalculateSimilarity(
+            @RequestParam Long competitionId,
+            HttpServletRequest httpServletRequest) {
+        if (!userService.isAdmin(httpServletRequest)) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "非管理员无权限重新计算查重数据");
+        }
+        return ResultUtils.success(competitionsRatedUtil.recalculateCodeSimilarity(competitionId));
     }
 
     /**

@@ -88,19 +88,12 @@ public class SimilarityClusterUtil {
      * @return 团伙数量
      */
     private int calculateClustersForProblem(Long competitionId, String problemIndex) {
-        // 1. 检查是否已计算过
+        // 每次按当前算法重建，避免旧结果残留。
         DynamicDataSourceContextHolder.push("pg");
         try {
-            Long existCount = similarityClusterService.count(
-                    new QueryWrapper<SimilarityCluster>()
-                            .eq("competition_id", competitionId)
-                            .eq("problem_index", problemIndex)
-            );
-
-            if (existCount > 0) {
-                log.debug("[团伙计算] 竞赛 {} 题目 {} 已计算,跳过", competitionId, problemIndex);
-                return 0;
-            }
+            similarityClusterService.remove(new QueryWrapper<SimilarityCluster>()
+                    .eq("competition_id", competitionId)
+                    .eq("problem_index", problemIndex));
         } finally {
             DynamicDataSourceContextHolder.poll();
         }
@@ -111,7 +104,7 @@ public class SimilarityClusterUtil {
             QueryWrapper<CodeSimilarityResult> query = new QueryWrapper<>();
             query.eq("competition_id", competitionId)
                     .eq("problem_index", problemIndex)
-                    .ge("similarity_score", 0.95);  // 只处理高相似度
+                    .ge("similarity_score", 0.70);  // 综合高风险边才进入团伙图
             List<CodeSimilarityResult> results = codeSimilarityResultService.list(query);
 
             if (results.isEmpty()) {
@@ -119,8 +112,8 @@ public class SimilarityClusterUtil {
                 return 0;
             }
 
-            // 3. 使用图算法找出连通分量(团伙)
-            List<Set<Long>> clusters = findConnectedComponents(results);
+            // 3. 使用高风险边和密度约束，避免一条弱边串起整张图。
+            List<Set<Long>> clusters = findDenseClusters(results);
 
             // 4. 保存到数据库
             List<SimilarityCluster> clusterList = new ArrayList<>();
@@ -154,30 +147,22 @@ public class SimilarityClusterUtil {
         }
     }
 
-    /**
-     * 使用 DFS 找出所有连通分量(团伙)
-     */
-    private List<Set<Long>> findConnectedComponents(List<CodeSimilarityResult> results) {
-        // 1. 构建邻接表
-        Map<Long, Set<Long>> graph = new HashMap<>();
+    private List<Set<Long>> findDenseClusters(List<CodeSimilarityResult> results) {
+        Map<Long, Map<Long, Double>> graph = new HashMap<>();
         for (CodeSimilarityResult result : results) {
-            graph.computeIfAbsent(result.getUserUuid1(), k -> new HashSet<>())
-                    .add(result.getUserUuid2());
-            graph.computeIfAbsent(result.getUserUuid2(), k -> new HashSet<>())
-                    .add(result.getUserUuid1());
+            if (result.getSimilarityScore() == null || result.getSimilarityScore() < 0.72D) continue;
+            graph.computeIfAbsent(result.getUserUuid1(), k -> new HashMap<>())
+                    .put(result.getUserUuid2(), result.getSimilarityScore());
+            graph.computeIfAbsent(result.getUserUuid2(), k -> new HashMap<>())
+                    .put(result.getUserUuid1(), result.getSimilarityScore());
         }
-
-        // 2. DFS 找连通分量
         Set<Long> visited = new HashSet<>();
         List<Set<Long>> clusters = new ArrayList<>();
-
         for (Long userId : graph.keySet()) {
             if (!visited.contains(userId)) {
                 Set<Long> cluster = new HashSet<>();
                 dfs(userId, graph, visited, cluster);
-
-                // 只保留3人以上的团伙
-                if (cluster.size() >= 3) {
+                if (cluster.size() >= 3 && isDenseCluster(cluster, graph)) {
                     clusters.add(cluster);
                 }
             }
@@ -189,16 +174,30 @@ public class SimilarityClusterUtil {
     /**
      * DFS 遍历
      */
-    private void dfs(Long userId, Map<Long, Set<Long>> graph,
+    private void dfs(Long userId, Map<Long, Map<Long, Double>> graph,
                      Set<Long> visited, Set<Long> cluster) {
         visited.add(userId);
         cluster.add(userId);
 
-        for (Long neighbor : graph.getOrDefault(userId, new HashSet<>())) {
+        for (Long neighbor : graph.getOrDefault(userId, Collections.emptyMap()).keySet()) {
             if (!visited.contains(neighbor)) {
                 dfs(neighbor, graph, visited, cluster);
             }
         }
+    }
+
+    private boolean isDenseCluster(Set<Long> cluster, Map<Long, Map<Long, Double>> graph) {
+        int possible = cluster.size() * (cluster.size() - 1) / 2;
+        int actual = 0;
+        for (Long left : cluster) {
+            for (Long right : cluster) {
+                if (left < right && graph.getOrDefault(left, Collections.emptyMap()).containsKey(right)) actual++;
+            }
+        }
+        double density = possible == 0 ? 0D : (double) actual / possible;
+        if (density < 0.45D) return false;
+        return cluster.stream().allMatch(user -> graph.getOrDefault(user, Collections.emptyMap()).keySet().stream()
+                .filter(cluster::contains).count() >= 2);
     }
 
     /**
