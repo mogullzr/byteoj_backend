@@ -7,9 +7,11 @@ import com.example.backend.models.request.math408.ProblemExamSubmitRequest;
 import com.example.backend.models.request.math408.ProblemRequest;
 import com.example.backend.models.request.problem.Math408QueryRequest;
 import com.example.backend.models.request.problem.ProblemExamEditRequest;
+import com.example.backend.models.request.problem.ProblemExamCandidateSearchRequest;
 import com.example.backend.models.request.problem.ProblemExamGeneratePaperSqlRequest;
 import com.example.backend.models.request.problem.ProblemExamRequest;
 import com.example.backend.models.vo.problem.ProblemExamSubmitVo;
+import com.example.backend.models.vo.problem.ProblemExamCandidatePageVo;
 import com.example.backend.models.vo.problem.ProblemExamSheetPaperVo;
 import com.example.backend.models.vo.problem.ProblemExamSheetVo;
 import com.example.backend.models.vo.problem.ProblemExamVo;
@@ -85,6 +87,11 @@ public interface ProblemMath408BankService extends IService<ProblemMath408Bank> 
      * @return 是否编辑成功
      */
     Boolean problemExamEdit(ProblemExamEditRequest problemExamEditRequest, User user);
+
+    /**
+     * Search active questions that can be added to an exam.
+     */
+    ProblemExamCandidatePageVo searchExamCandidates(ProblemExamCandidateSearchRequest request);
 
     /**
      * 查询相似试题

@@ -21,6 +21,7 @@ import com.example.backend.models.request.math408.ProblemRequest;
 import com.example.backend.models.request.math408.ProblemSimpleInfo;
 import com.example.backend.models.request.problem.Math408QueryRequest;
 import com.example.backend.models.request.problem.ProblemExamEditRequest;
+import com.example.backend.models.request.problem.ProblemExamCandidateSearchRequest;
 import com.example.backend.models.request.problem.ProblemExamGeneratePaperSqlRequest;
 import com.example.backend.models.request.problem.ProblemExamProblemInfo;
 import com.example.backend.models.request.problem.ProblemExamRequest;
@@ -273,6 +274,94 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
     }
 
     @Override
+    public ProblemExamCandidatePageVo searchExamCandidates(ProblemExamCandidateSearchRequest request) {
+        if (request == null || !StringUtils.hasText(request.getCategory())) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "请选择题库类型");
+        }
+
+        boolean algorithm = "algorithm".equals(request.getCategory());
+        if (!algorithm && !"other".equals(request.getCategory())) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "题库类型错误");
+        }
+        if (algorithm && !Objects.equals(request.getStatus(), 3)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "算法题类型错误");
+        }
+        if (!algorithm && (request.getStatus() == null || request.getStatus() < 0 || request.getStatus() > 2)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "公共题库类型错误");
+        }
+
+        boolean fetchAll = Boolean.TRUE.equals(request.getAll());
+        int pageNum = request.getPageNum() == null ? 1 : request.getPageNum();
+        int pageSize = request.getPageSize() == null ? 10 : request.getPageSize();
+        if (pageNum <= 0 || pageSize <= 0 || pageSize > 50) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "分页参数错误");
+        }
+
+        String keyword = StringUtils.hasText(request.getKeyword()) ? request.getKeyword().trim() : null;
+        ProblemExamCandidatePageVo result = new ProblemExamCandidatePageVo();
+        List<ProblemExamCandidateVo> records;
+
+        if (algorithm) {
+            QueryWrapper<ProblemAlgorithmBank> wrapper = new QueryWrapper<>();
+            wrapper.eq("is_delete", 0)
+                    .like(StringUtils.hasText(keyword), "chinese_name", keyword)
+                    .orderByAsc("problem_id");
+
+            List<ProblemAlgorithmBank> banks;
+            if (fetchAll) {
+                banks = problemAlgorithmBankMapper.selectList(wrapper);
+                result.setTotal((long) banks.size());
+            } else {
+                Page<ProblemAlgorithmBank> page = problemAlgorithmBankMapper.selectPage(
+                        new Page<>(pageNum, pageSize), wrapper);
+                banks = page.getRecords();
+                result.setTotal(page.getTotal());
+            }
+            records = banks.stream().map(bank -> {
+                ProblemExamCandidateVo vo = new ProblemExamCandidateVo();
+                vo.setProblem_id(bank.getProblem_id());
+                vo.setProblem_name(bank.getChinese_name());
+                vo.setScore(5);
+                vo.setStatus(3);
+                vo.setType(4);
+                vo.setDescription(bank.getDescription());
+                return vo;
+            }).collect(Collectors.toList());
+        } else {
+            QueryWrapper<ProblemMath408Bank> wrapper = new QueryWrapper<>();
+            wrapper.eq("is_delete", 0)
+                    .eq("status", request.getStatus())
+                    .like(StringUtils.hasText(keyword), "problem_name", keyword)
+                    .orderByAsc("problem_id");
+
+            List<ProblemMath408Bank> banks;
+            if (fetchAll) {
+                banks = problemMath408BankMapper.selectList(wrapper);
+                result.setTotal((long) banks.size());
+            } else {
+                Page<ProblemMath408Bank> page = problemMath408BankMapper.selectPage(
+                        new Page<>(pageNum, pageSize), wrapper);
+                banks = page.getRecords();
+                result.setTotal(page.getTotal());
+            }
+            records = banks.stream().map(bank -> {
+                ProblemExamCandidateVo vo = new ProblemExamCandidateVo();
+                vo.setProblem_id(bank.getProblem_id());
+                vo.setProblem_name(bank.getProblem_name());
+                vo.setScore(5);
+                vo.setStatus(bank.getStatus());
+                vo.setType(bank.getOption_type());
+                vo.setDescription(bank.getDescription());
+                vo.setOptions(bank.getOptions());
+                return vo;
+            }).collect(Collectors.toList());
+        }
+
+        result.setRecords(records);
+        return result;
+    }
+
+    @Override
     public ProblemMath408BankVo problemSearchByProblemId(Long problemId) {
         QueryWrapper<ProblemMath408Bank> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("problem_id", problemId);
@@ -365,7 +454,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
     @Override
     public List<ProblemExamVo> problemExamSearch(ProblemExamRequest problemExamRequest, Long uuid) {
         String source = problemExamRequest.getSource();
-        Page<ProblemExam> page = new Page<>(problemExamRequest.getPageNum(), 9);
+        Page<ProblemExam> page = new Page<>(problemExamRequest.getPageNum(), problemExamRequest.getPageSize());
         QueryWrapper<ProblemExam> queryWrapper = new QueryWrapper<>();
 
         if (source == null) {
@@ -2211,6 +2300,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         if (problemExamProblemInfos == null || problemExamProblemInfos.isEmpty()) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "empty paper");
         }
+        Set<String> problemKeys = new HashSet<>();
         for (ProblemExamProblemInfo info : problemExamProblemInfos) {
             if (info.getProblem_id() == null || info.getProblem_id() <= 0) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid problem id");
@@ -2218,8 +2308,11 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
             if (info.getStatus() == null) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid problem type");
             }
-            if (info.getScore() == null) {
+            if (info.getScore() == null || info.getScore() <= 0) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid score");
+            }
+            if (!problemKeys.add(info.getStatus() + ":" + info.getProblem_id())) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "duplicate problem");
             }
         }
 

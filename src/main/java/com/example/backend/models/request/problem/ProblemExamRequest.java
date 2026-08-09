@@ -16,4 +16,9 @@ public class ProblemExamRequest implements Serializable {
      * 面数
      */
     private Integer pageNum;
+
+    /**
+     * 每面数据条数
+     */
+    private Integer pageSize;
 }
