@@ -4,6 +4,7 @@ import com.example.backend.mapper.ProblemMath408BankMapper;
 import com.example.backend.mapper.ProblemMath408TagsMapper;
 import com.example.backend.models.domain.math408.ProblemMath408Bank;
 import com.example.backend.models.vo.problem.ProblemMath408BankVo;
+import com.example.backend.utils.examAgent.GradingAgentUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -12,9 +13,12 @@ import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class ProblemMath408BankServiceImplTest {
@@ -22,15 +26,60 @@ class ProblemMath408BankServiceImplTest {
     private ProblemMath408BankServiceImpl service;
     private ProblemMath408BankMapper mapper;
     private ProblemMath408TagsMapper tagsMapper;
+    private GradingAgentUtil gradingAgentUtil;
 
     @BeforeEach
     void setUp() {
         service = new ProblemMath408BankServiceImpl();
         mapper = mock(ProblemMath408BankMapper.class);
         tagsMapper = mock(ProblemMath408TagsMapper.class);
+        gradingAgentUtil = mock(GradingAgentUtil.class);
         ReflectionTestUtils.setField(service, "problemMath408BankMapper", mapper);
         ReflectionTestUtils.setField(service, "problemMath408TagsMapper", tagsMapper);
+        ReflectionTestUtils.setField(service, "gradingAgentUtil", gradingAgentUtil);
+        ReflectionTestUtils.setField(service, "examAiGradingRetryBackoffMs", 0L);
         when(tagsMapper.selectList(any())).thenReturn(Collections.emptyList());
+    }
+
+    @Test
+    void retriesTransientAiFailureAndReturnsRecoveredResult() {
+        ReflectionTestUtils.setField(service, "examAiGradingMaxRetries", 5);
+        GradingAgentUtil.GradingInput input = new GradingAgentUtil.GradingInput();
+        GradingAgentUtil.GradingResult expected = new GradingAgentUtil.GradingResult();
+        expected.setAwardedScore(10D);
+        when(gradingAgentUtil.gradeAnswerByAiBlocking(any(GradingAgentUtil.GradingInput.class)))
+                .thenThrow(new IllegalStateException("temporary upstream failure"))
+                .thenThrow(new IllegalStateException("temporary upstream failure"))
+                .thenReturn(expected);
+
+        GradingAgentUtil.GradingResult actual = ReflectionTestUtils.invokeMethod(
+                service, "gradeSubjectAnswerWithRetry", input, 15L);
+
+        assertSame(expected, actual);
+        verify(gradingAgentUtil, times(3)).gradeAnswerByAiBlocking(any(GradingAgentUtil.GradingInput.class));
+    }
+
+    @Test
+    void fallsBackToManualReviewAfterFiveRetriesWithoutAnotherRequest() {
+        ReflectionTestUtils.setField(service, "examAiGradingMaxRetries", 5);
+        GradingAgentUtil.GradingInput input = new GradingAgentUtil.GradingInput();
+        input.setQuestionType("short_answer");
+        input.setTotalScore(10D);
+        when(gradingAgentUtil.gradeAnswerByAiBlocking(any(GradingAgentUtil.GradingInput.class)))
+                .thenThrow(new IllegalStateException("upstream unavailable"));
+        GradingAgentUtil.GradingResult fallback = new GradingAgentUtil.GradingResult();
+        fallback.setNeedsManualReview(true);
+        when(gradingAgentUtil.buildManualReviewResultForFailure(
+                any(GradingAgentUtil.GradingInput.class), any(Throwable.class))).thenReturn(fallback);
+
+        GradingAgentUtil.GradingResult actual = ReflectionTestUtils.invokeMethod(
+                service, "gradeSubjectAnswerWithRetry", input, 15L);
+
+        assertSame(fallback, actual);
+        verify(gradingAgentUtil, times(6)).gradeAnswerByAiBlocking(any(GradingAgentUtil.GradingInput.class));
+        verify(gradingAgentUtil).buildManualReviewResultForFailure(
+                any(GradingAgentUtil.GradingInput.class), any(Throwable.class));
+        assertTrue(actual.isNeedsManualReview());
     }
 
     @Test

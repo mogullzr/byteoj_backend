@@ -94,6 +94,17 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
     @Value("${exam.grading.ai.queue-capacity:200}")
     private int examAiGradingQueueCapacity;
 
+    /** Number of retries after the first failed AI request. Hard-capped at 5. */
+    @Value("${exam.grading.ai.max-retries:5}")
+    private int examAiGradingMaxRetries;
+
+    /** Initial delay between retries; exponential backoff is applied and capped. */
+    @Value("${exam.grading.ai.retry-backoff-ms:500}")
+    private long examAiGradingRetryBackoffMs;
+
+    private static final int MAX_EXAM_AI_RETRIES = 5;
+    private static final long MAX_EXAM_AI_RETRY_BACKOFF_MS = 5000L;
+
     private ExecutorService examAiGradingExecutor;
 
     @Resource
@@ -1426,7 +1437,8 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         gradingInput.setTemperature(0F);
         gradingInput.setTopP(0.9F);
 
-        GradingAgentUtil.GradingResult gradingResult = gradingAgentUtil.gradeAnswerBlocking(gradingInput);
+        GradingAgentUtil.GradingResult gradingResult = gradeSubjectAnswerWithRetry(
+                gradingInput, problem.getProblem_id());
         int awardedScore = gradingResult.getAwardedScore() == null
                 ? 0
                 : (int) Math.round(gradingResult.getAwardedScore());
@@ -1441,6 +1453,71 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
                 gradingResult.getGradingMode(), awardedScore, gradingResult.isNeedsManualReview(),
                 System.currentTimeMillis() - start);
         return problemExamRecord;
+    }
+
+    /**
+     * Calls the AI grading source with bounded retries for transient upstream
+     * failures. The normal grading entry point deliberately converts failures
+     * into a manual-review result, so this path uses the exception-propagating
+     * AI-only entry point and only falls back after all attempts fail.
+     */
+    private GradingAgentUtil.GradingResult gradeSubjectAnswerWithRetry(
+            GradingAgentUtil.GradingInput gradingInput, Long problemId) {
+        int maxRetries = Math.min(MAX_EXAM_AI_RETRIES, Math.max(0, examAiGradingMaxRetries));
+        int maxAttempts = maxRetries + 1;
+        RuntimeException lastFailure = null;
+
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                GradingAgentUtil.GradingResult result = gradingAgentUtil.gradeAnswerByAiBlocking(gradingInput);
+                if (result == null) {
+                    throw new IllegalStateException("AI grading returned an empty result");
+                }
+                if (attempt > 1) {
+                    log.info("[exam-submit-ai] subject grading recovered, problemId={}, attempt={}/{}",
+                            problemId, attempt, maxAttempts);
+                }
+                return result;
+            } catch (RuntimeException failure) {
+                lastFailure = failure;
+                if (failure instanceof IllegalArgumentException || failure instanceof BusinessException) {
+                    throw failure;
+                }
+                if (attempt >= maxAttempts) {
+                    break;
+                }
+
+                long backoffMs = calculateExamAiRetryBackoffMs(attempt);
+                log.warn("[exam-submit-ai] subject grading AI request failed, problemId={}, attempt={}/{}, "
+                                + "retryInMs={}, error={}",
+                        problemId, attempt, maxAttempts, backoffMs,
+                        failure.getMessage(), failure);
+                if (backoffMs > 0) {
+                    try {
+                        Thread.sleep(backoffMs);
+                    } catch (InterruptedException interrupted) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException("AI grading retry interrupted", interrupted);
+                    }
+                }
+            }
+        }
+
+        if (lastFailure == null) {
+            return gradingAgentUtil.buildManualReviewResultForFailure(
+                    gradingInput, new IllegalStateException("AI grading failed without an exception"));
+        }
+        log.error("[exam-submit-ai] subject grading failed after retries, problemId={}, attempts={}, "
+                        + "falling back to manual review", problemId, maxAttempts, lastFailure);
+        return gradingAgentUtil.buildManualReviewResultForFailure(gradingInput, lastFailure);
+    }
+
+    private long calculateExamAiRetryBackoffMs(int failedAttempt) {
+        long baseDelay = Math.min(MAX_EXAM_AI_RETRY_BACKOFF_MS,
+                Math.max(0L, examAiGradingRetryBackoffMs));
+        int exponent = Math.min(Math.max(0, failedAttempt - 1), 3);
+        long delay = baseDelay * (1L << exponent);
+        return Math.min(MAX_EXAM_AI_RETRY_BACKOFF_MS, delay);
     }
 
     private Integer getSubjectScoreLegacy(List<ProblemSimpleInfo> problem_other, Map<String, Integer> problemScoreMap, Long uuid, Long id) {

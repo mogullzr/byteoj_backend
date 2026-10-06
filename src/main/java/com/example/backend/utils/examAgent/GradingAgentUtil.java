@@ -131,6 +131,31 @@ public class GradingAgentUtil {
         return gradeAnswer(input).block(timeout == null ? DEFAULT_BLOCK_TIMEOUT : timeout);
     }
 
+    /**
+     * Blocking AI-only entry point that preserves upstream exceptions for the
+     * caller's retry policy. Unlike gradeAnswerBlocking, it does not convert
+     * request/response failures into a manual-review result.
+     */
+    public GradingResult gradeAnswerByAiBlocking(GradingInput input) {
+        return gradeAnswerByAi(input).block(DEFAULT_BLOCK_TIMEOUT);
+    }
+
+    public GradingResult gradeAnswerByAiBlocking(GradingInput input, Duration timeout) {
+        return gradeAnswerByAi(input).block(timeout == null ? DEFAULT_BLOCK_TIMEOUT : timeout);
+    }
+
+    /**
+     * Creates the same safe manual-review result used by the regular grading
+     * entry point, without issuing another upstream request. This is used by
+     * callers that have exhausted their own retry budget.
+     */
+    public GradingResult buildManualReviewResultForFailure(GradingInput input, Throwable failure) {
+        String detail = failure == null ? "unknown error" : failure.getMessage();
+        return buildManualReviewResult(input,
+                "AI 判题调用或结果解析失败，已转为人工复核：" +
+                        (StringUtils.hasText(detail) ? detail : failure == null ? "unknown error" : failure.getClass().getSimpleName()));
+    }
+
     private void validateInput(GradingInput input) {
         if (input == null) {
             throw new IllegalArgumentException("grading input must not be null");
