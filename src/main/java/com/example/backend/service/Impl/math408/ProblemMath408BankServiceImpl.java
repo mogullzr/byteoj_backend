@@ -29,6 +29,7 @@ import com.example.backend.models.request.problem.ProblemWrongBookSyncItem;
 import com.example.backend.models.vo.problem.*;
 import com.example.backend.service.ai.DeepSeekService;
 import com.example.backend.service.algorithm.ProblemAlgorithmService;
+import com.example.backend.service.exam.ExamGradingProgressService;
 import com.example.backend.service.math408.*;
 import com.example.backend.service.user.UserService;
 import com.example.backend.utils.EmbeddingConvertUtil;
@@ -166,6 +167,9 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
 
     @Resource
     private ObjectMapper objectMapper;
+
+    @Resource
+    private ExamGradingProgressService examGradingProgressService;
 
     @Autowired
     private ProblemAlgorithmBankMapper problemAlgorithmBankMapper;
@@ -1088,7 +1092,9 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         }
 
 
-        List<ProblemSimpleInfo> answers = problemExamSubmitRequest.getAnswers();
+        List<ProblemSimpleInfo> answers = problemExamSubmitRequest.getAnswers() == null
+                ? Collections.emptyList()
+                : problemExamSubmitRequest.getAnswers();
         QueryWrapper<ProblemExamUser> problemExamUserQueryWrapper = new QueryWrapper<>();
         problemExamUserQueryWrapper.eq("exam_id", exam_id);
         problemExamUserQueryWrapper.eq("uuid", uuid);
@@ -1105,36 +1111,29 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "没有查找到有效报名信息");
         }
 
-        // 选择题列表
-        List<ProblemSimpleInfo> problem_options = new ArrayList<>();
+        ExamGradingProgressService.Tracker progressTracker = examGradingProgressService.start(
+                uuid, exam_id, problemExamSubmitRequest.getProgress_token(), answers);
 
-        // 填空/简答题列表
-        List<ProblemSimpleInfo> problem_other = new ArrayList<>();
+        try {
 
-        // 算法题
-        List<ProblemSimpleInfo> problem_algorithm = new ArrayList<>();
-
-        // 所有题目
+        // 所有题目统一进入同一个并发任务池，不再按“选择题 -> 主观题 -> 算法题”分阶段等待。
         List<Long> problemIds = new ArrayList<>();
-
-        answers.forEach((answer)->{
-            Integer status = answer.getStatus();
-
-            problemIds.add(answer.getProblem_id());
-
-            // 1.处理选择题
-            if (status.equals(1) || status.equals(2)) {
-                problem_options.add(answer);
-            } else if (status.equals(0) || status.equals(3)) {
-                problem_other.add(answer);
-            } else {
-                problem_algorithm.add(answer);
+        List<Long> objectiveProblemIds = new ArrayList<>();
+        for (ProblemSimpleInfo answer : answers) {
+            if (answer == null || answer.getProblem_id() == null) {
+                continue;
             }
-        });
+            problemIds.add(answer.getProblem_id());
+            if (answer.getStatus() != null && (answer.getStatus() == 1 || answer.getStatus() == 2)) {
+                objectiveProblemIds.add(answer.getProblem_id());
+            }
+        }
 
         // 查询试题相关信息
         QueryWrapper<ProblemExamTissue> problemExamTissueQueryWrapper = new QueryWrapper<>();
-        problemExamTissueQueryWrapper.in("problem_id", problemIds);
+        if (!problemIds.isEmpty()) {
+            problemExamTissueQueryWrapper.in("problem_id", problemIds);
+        }
         problemExamTissueQueryWrapper.eq("exam_id", exam_id);
 
         List<ProblemExamTissue> problemExamTissues = problemExamTissueMapper.selectList(problemExamTissueQueryWrapper);
@@ -1144,14 +1143,58 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
                         ProblemExamTissue::getScore,
                         (existingValue, newValue) -> existingValue
                 ));
-        // 1.选择题
-        option_score = getOptionScore(problem_options, problemScoreMap, uuid, problemExamUser.getId());
+        Map<Long, String> correctAnswerMap = loadObjectiveCorrectAnswers(objectiveProblemIds);
+        List<CompletableFuture<ExamQuestionGradingResult>> gradingFutures = new ArrayList<>();
+        for (ProblemSimpleInfo answer : answers) {
+            if (answer == null || answer.getProblem_id() == null) {
+                continue;
+            }
+            gradingFutures.add(CompletableFuture.supplyAsync(() -> {
+                Long problemId = answer.getProblem_id();
+                if (progressTracker != null) {
+                    progressTracker.markGrading(problemId);
+                }
+                try {
+                    ExamQuestionGradingResult result = gradeOneExamQuestion(
+                            answer, problemScoreMap, correctAnswerMap, uuid, problemExamUser.getId());
+                    if (progressTracker != null) {
+                        progressTracker.markCompleted(problemId, "本题判卷完成", result.awardedScore);
+                    }
+                    return result;
+                } catch (RuntimeException gradingError) {
+                    if (progressTracker != null) {
+                        progressTracker.markFailed(problemId, "本题判卷失败，请人工复核");
+                    }
+                    throw gradingError;
+                }
+            }, examAiGradingExecutor));
+        }
 
-        // 2.填空/简答题
-        subjective_score = getSubjectScore(problem_other, problemScoreMap, uuid, problemExamUser.getId());
-
-        // 3.算法题
-        subjective_score += getAlgorithmScore(problem_algorithm, problemScoreMap, uuid, problemExamUser.getId());
+        CompletableFuture.allOf(gradingFutures.toArray(new CompletableFuture[0])).join();
+        List<ProblemExamRecord> problemExamRecords = new ArrayList<>();
+        for (CompletableFuture<ExamQuestionGradingResult> gradingFuture : gradingFutures) {
+            try {
+                ExamQuestionGradingResult result = gradingFuture.join();
+                if (result.record != null) {
+                    problemExamRecords.add(result.record);
+                }
+                if (result.optionQuestion) {
+                    option_score += result.awardedScore;
+                } else {
+                    subjective_score += result.awardedScore;
+                }
+            } catch (CompletionException gradingFailure) {
+                Throwable cause = gradingFailure.getCause() == null ? gradingFailure : gradingFailure.getCause();
+                if (cause instanceof BusinessException businessException) {
+                    throw businessException;
+                }
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR,
+                        "exam question grading failed: " + cause.getMessage());
+            }
+        }
+        if (!problemExamRecords.isEmpty()) {
+            problemExamRecordService.saveBatch(problemExamRecords);
+        }
 
         // 4.报名信息作废 + 考试成绩保存
         // TODO
@@ -1174,7 +1217,16 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         problemExamSubmitVo.setExam_name(problemExam.getExam_name());
         problemExamSubmitVo.setTotal_score(problemExam.getTotal_score());
 
+        if (progressTracker != null) {
+            progressTracker.finish();
+        }
         return problemExamSubmitVo;
+        } catch (RuntimeException gradingError) {
+            if (progressTracker != null) {
+                progressTracker.fail(gradingError.getMessage());
+            }
+            throw gradingError;
+        }
     }
 
     private void syncExamWrongBook(Long uuid, Long examId, Long examUserId, List<ProblemExamTissue> problemExamTissues) {
@@ -1307,12 +1359,135 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
     }
 
     private Integer getAlgorithmScore(List<ProblemSimpleInfo> problem_algorithm, Map<String, Integer> problemScoreMap, Long uuid, Long examUserId) {
+        return getAlgorithmScore(problem_algorithm, problemScoreMap, uuid, examUserId, null);
+    }
+
+    /**
+     * 预加载客观题答案，避免每个并发任务重复查询题库。
+     */
+    private Map<Long, String> loadObjectiveCorrectAnswers(List<Long> objectiveProblemIds) {
+        Map<Long, String> correctAnswerMap = new HashMap<>();
+        if (objectiveProblemIds == null || objectiveProblemIds.isEmpty()) {
+            return correctAnswerMap;
+        }
+        List<ProblemMath408Bank> problems = problemMath408BankMapper.selectList(
+                new QueryWrapper<ProblemMath408Bank>().in("problem_id", objectiveProblemIds));
+        for (ProblemMath408Bank problem : problems) {
+            ProblemMath408Bank effectiveProblem = resolveEffectiveMathProblem(problem);
+            if (effectiveProblem != null) {
+                correctAnswerMap.put(problem.getProblem_id(), effectiveProblem.getCorrect_answer());
+            }
+        }
+        return correctAnswerMap;
+    }
+
+    /**
+     * 单道题判卷任务。选择题、主观题、算法题都从这里进入同一个线程池，
+     * 题型之间不再互相等待。
+     */
+    private ExamQuestionGradingResult gradeOneExamQuestion(
+            ProblemSimpleInfo answer,
+            Map<String, Integer> problemScoreMap,
+            Map<Long, String> correctAnswerMap,
+            Long uuid,
+            Long examUserId) {
+        Integer status = answer.getStatus();
+        if (status != null && (status == 1 || status == 2)) {
+            ProblemExamRecord record = buildObjectiveRecord(answer, problemScoreMap, correctAnswerMap, uuid, examUserId);
+            return new ExamQuestionGradingResult(true, record,
+                    record == null || record.getScore() == null ? 0 : record.getScore());
+        }
+        if (status != null && (status == 0 || status == 3)) {
+            ProblemExamRecord record = buildSubjectRecord(answer, problemScoreMap, uuid, examUserId);
+            return new ExamQuestionGradingResult(false, record,
+                    record == null || record.getScore() == null ? 0 : record.getScore());
+        }
+
+        ProblemExamRecord record = buildAlgorithmRecord(answer, problemScoreMap, uuid, examUserId);
+        return new ExamQuestionGradingResult(false, record,
+                record == null || record.getScore() == null ? 0 : record.getScore());
+    }
+
+    private ProblemExamRecord buildObjectiveRecord(
+            ProblemSimpleInfo option,
+            Map<String, Integer> problemScoreMap,
+            Map<Long, String> correctAnswerMap,
+            Long uuid,
+            Long examUserId) {
+        Long problemId = option.getProblem_id();
+        String correctAnswer = correctAnswerMap.get(problemId);
+        // 保持原有行为：题库答案缺失时不写入一条错误的客观题记录，但任务仍算完成。
+        if (correctAnswer == null) {
+            return null;
+        }
+        Integer scoreValue = problemScoreMap.get(problemId + "-" + option.getStatus());
+        if (scoreValue == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "problem score not found");
+        }
+        int awardedScore = Objects.equals(correctAnswer, option.getAnswer()) ? scoreValue : 0;
+        Date now = new Date();
+        ProblemExamRecord record = new ProblemExamRecord();
+        record.setProblem_id(problemId);
+        record.setUuid(uuid);
+        record.setExam_user_id(examUserId);
+        record.setAnswer(option.getAnswer());
+        record.setScore(awardedScore);
+        record.setAi_advise(awardedScore > 0 ? "objective exact match" : "objective answer mismatch");
+        record.setConfidence("1.0");
+        record.setIs_person(false);
+        record.setCreate_date(now);
+        record.setUpdate_date(now);
+        record.setIs_delete(0);
+        return record;
+    }
+
+    private ProblemExamRecord buildAlgorithmRecord(
+            ProblemSimpleInfo problem,
+            Map<String, Integer> problemScoreMap,
+            Long uuid,
+            Long examUserId) {
+        Long problemId = problem.getProblem_id();
+        Integer scoreValue = problemScoreMap.get(problemId + "-4");
+        if (scoreValue == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "problem score not found");
+        }
+
+        JudgeRequest judgeRequest = new JudgeRequest();
+        judgeRequest.setLanguage(problem.getLanguage());
+        judgeRequest.setSource_code(problem.getAnswer());
+        judgeRequest.setProblem_id(problemId);
+        Judge judge = problemAlgorithmService.problemAlgorithmSubmit(judgeRequest, uuid);
+        int awardedScore = judge != null && "Accepted".equals(judge.getStatus()) ? scoreValue : 0;
+
+        Date now = new Date();
+        ProblemExamRecord record = new ProblemExamRecord();
+        record.setProblem_id(problemId);
+        record.setUuid(uuid);
+        record.setExam_user_id(examUserId);
+        record.setAnswer(problem.getAnswer());
+        record.setScore(awardedScore);
+        record.setAi_advise(judge == null ? "algorithm judge result is null"
+                : "judge_status=" + judge.getStatus());
+        record.setConfidence("1.0");
+        record.setIs_person(false);
+        record.setCreate_date(now);
+        record.setUpdate_date(now);
+        record.setIs_delete(0);
+        return record;
+    }
+
+    private Integer getAlgorithmScore(List<ProblemSimpleInfo> problem_algorithm, Map<String, Integer> problemScoreMap,
+                                      Long uuid, Long examUserId,
+                                      ExamGradingProgressService.Tracker progressTracker) {
         final int[] totalScore = {0};
         List<ProblemExamRecord> problemExamRecords = new ArrayList<>();
         Date now = new Date();
         problem_algorithm.forEach((problem)->{
 
             Long problemId = problem.getProblem_id();
+            if (progressTracker != null) {
+                progressTracker.markGrading(problemId);
+            }
             String answer = problem.getAnswer();
             String language = problem.getLanguage();
 
@@ -1349,6 +1524,9 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
             problemExamRecord.setUpdate_date(now);
             problemExamRecord.setIs_delete(0);
             problemExamRecords.add(problemExamRecord);
+            if (progressTracker != null) {
+                progressTracker.markCompleted(problemId, "算法题判卷完成", awardedScore);
+            }
         });
 
         if (!problemExamRecords.isEmpty()) {
@@ -1358,6 +1536,12 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
     }
 
     private Integer getSubjectScore(List<ProblemSimpleInfo> problem_other, Map<String, Integer> problemScoreMap, Long uuid, Long id) {
+        return getSubjectScore(problem_other, problemScoreMap, uuid, id, null);
+    }
+
+    private Integer getSubjectScore(List<ProblemSimpleInfo> problem_other, Map<String, Integer> problemScoreMap,
+                                    Long uuid, Long id,
+                                    ExamGradingProgressService.Tracker progressTracker) {
         if (problem_other == null || problem_other.isEmpty()) {
             return 0;
         }
@@ -1367,7 +1551,23 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
                 id, uuid, problem_other.size(), Math.max(1, examAiGradingMaxConcurrency));
         List<CompletableFuture<ProblemExamRecord>> futures = problem_other.stream()
                 .map(problem -> CompletableFuture.supplyAsync(
-                        () -> buildSubjectRecord(problem, problemScoreMap, uuid, id),
+                        () -> {
+                            if (progressTracker != null) {
+                                progressTracker.markGrading(problem.getProblem_id());
+                            }
+                            try {
+                                ProblemExamRecord record = buildSubjectRecord(problem, problemScoreMap, uuid, id);
+                                if (progressTracker != null) {
+                                    progressTracker.markCompleted(problem.getProblem_id(), "主观题判卷完成", record.getScore());
+                                }
+                                return record;
+                            } catch (RuntimeException gradingError) {
+                                if (progressTracker != null) {
+                                    progressTracker.markFailed(problem.getProblem_id(), "主观题判卷失败，请人工复核");
+                                }
+                                throw gradingError;
+                            }
+                        },
                         examAiGradingExecutor))
                 .collect(Collectors.toList());
 
@@ -1653,7 +1853,14 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         problemExamRecordService.saveBatch(problemExamRecords);
         return totalScore.get();
     }
-    private Integer getOptionScore(List<ProblemSimpleInfo> problem_options, Map<String, Integer> problemScoreMap, Long uuid, Long examUserId) {
+    private Integer getOptionScore(List<ProblemSimpleInfo> problem_options, Map<String, Integer> problemScoreMap,
+                                   Long uuid, Long examUserId) {
+        return getOptionScore(problem_options, problemScoreMap, uuid, examUserId, null);
+    }
+
+    private Integer getOptionScore(List<ProblemSimpleInfo> problem_options, Map<String, Integer> problemScoreMap,
+                                   Long uuid, Long examUserId,
+                                   ExamGradingProgressService.Tracker progressTracker) {
         if (problem_options.isEmpty()) {
             return 0;
         }
@@ -1690,7 +1897,11 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         // 遍历 problem_options 进行比对
         for (var option : problem_options) {
             Long pid = option.getProblem_id();
+            if (progressTracker != null) {
+                progressTracker.markGrading(pid);
+            }
             String userAnswer = option.getAnswer(); // 假设用户答案字段为 answer
+            int optionAwardedScore = 0;
 
             if (correctAnswerMap.containsKey(pid)) {
                 String correctAnswer = correctAnswerMap.get(pid);
@@ -1703,6 +1914,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
                 if (Objects.equals(correctAnswer, userAnswer)) {
                     awardedScore = scoreValue;
                 }
+                optionAwardedScore = awardedScore;
                 totalScore += awardedScore;
                 ProblemExamRecord problemExamRecord = new ProblemExamRecord();
                 problemExamRecord.setProblem_id(pid);
@@ -1717,6 +1929,9 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
                 problemExamRecord.setUpdate_date(now);
                 problemExamRecord.setIs_delete(0);
                 problemExamRecords.add(problemExamRecord);
+            }
+            if (progressTracker != null) {
+                progressTracker.markCompleted(pid, "客观题判卷完成", optionAwardedScore);
             }
         }
 
@@ -2645,6 +2860,26 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         private boolean isNew;
         private ProblemExam problemExam;
         private List<ProblemExamTissue> problemExamTissues;
+    }
+
+    /**
+     * Result returned by one unified per-question grading task.  Keeping the
+     * objective-question flag here lets the caller aggregate objective and
+     * subjective/algorithm scores after all tasks have completed, while every
+     * question type still runs through the same executor concurrently.
+     */
+    private static final class ExamQuestionGradingResult {
+        private final boolean optionQuestion;
+        private final ProblemExamRecord record;
+        private final int awardedScore;
+
+        private ExamQuestionGradingResult(boolean optionQuestion,
+                                          ProblemExamRecord record,
+                                          int awardedScore) {
+            this.optionQuestion = optionQuestion;
+            this.record = record;
+            this.awardedScore = awardedScore;
+        }
     }
 
     private String formatDate(Date date) {

@@ -17,9 +17,11 @@ import com.example.backend.models.vo.problem.ProblemExamCandidatePageVo;
 import com.example.backend.models.vo.problem.ProblemExamSheetPaperVo;
 import com.example.backend.models.vo.problem.ProblemExamSheetVo;
 import com.example.backend.models.vo.problem.ProblemExamVo;
+import com.example.backend.models.vo.problem.ExamGradingProgressVo;
 import com.example.backend.models.vo.problem.ProblemMath408BankVo;
 import com.example.backend.models.vo.problem.ProblemSimilarityVo;
 import com.example.backend.service.math408.ProblemMath408BankService;
+import com.example.backend.service.exam.ExamGradingProgressService;
 import com.example.backend.service.user.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.annotations.Param;
@@ -38,6 +40,9 @@ public class ProblemsController {
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private ExamGradingProgressService examGradingProgressService;
 
     @AccessLimit(seconds = 1, maxCount = 5, needLogin = true)
     @PostMapping("/similar")
@@ -93,6 +98,20 @@ public class ProblemsController {
         User loginUser = userService.getLoginUser(request);
         ProblemExamSubmitVo result = problemsService.problemExamSubmit(problemExamRequest, loginUser.getUuid(), loginUser.getUsername());
         return ResultUtils.success(result);
+    }
+
+    /**
+     * 查询当前登录用户本次交卷的逐题判卷进度。
+     * 进度只放在 Redis 中，token 又绑定了登录用户 uuid，不会暴露给其他用户。
+     */
+    @AccessLimit(seconds = 1, maxCount = 30, needLogin = true)
+    @GetMapping("/exam/submit/progress")
+    private BaseResponse<ExamGradingProgressVo> ProblemExamSubmitProgress(
+            @RequestParam("progress_token") String progressToken,
+            HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        ExamGradingProgressVo progress = examGradingProgressService.get(loginUser.getUuid(), progressToken);
+        return ResultUtils.success(progress);
     }
 
     @AccessLimit(seconds = 1, maxCount = 1, needLogin = true)
