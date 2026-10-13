@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -401,8 +402,8 @@ public class GradingAgentUtil {
 
         List<ContentItem> contentItems = new ArrayList<>();
         contentItems.add(ContentItem.ofText(buildUserPrompt(input)
-                + "\n\n注意：学生作答不是文本，而是后续图片。请先准确识别图片中的学生作答内容，"
-                + "将识别出的作答写入 student_normalized_answer，再根据题目、参考答案和评分细则判分。"
+                + "\n\n注意：学生作答可能只存在于后续图片中。请直接结合图片内容判分，不要执行独立 OCR 流程，"
+                + "不要返回 OCR 字段，也不要把无法可靠辨认的内容自行补全。"
                 + "如果图片模糊、无法识别或不是与题目相关的有效作答图片，必须设置 needs_manual_review=true。"));
         for (String imageUrl : getStudentAnswerImageUrls(input)) {
             contentItems.add(ContentItem.ofImageUrl(imageUrl));
@@ -868,6 +869,10 @@ public class GradingAgentUtil {
                 【补充上下文 extra_context】
                 %s
 
+                【专项评分扩展要求 prompt_extension】
+                如果 extra_context.profile = english_exam，必须优先执行其中的 prompt_extension。
+                %s
+
                 判分要求：
                 1. 根据 question_type 选择合适的判题策略。
                 2. 如果是选择题、判断题、填空题，优先判断答案等价性。
@@ -915,7 +920,15 @@ public class GradingAgentUtil {
                     }
                   ],
                   "summary": string,
-                  "advice": string
+                  "advice": string,
+                  "input_quality": string,
+                  "score_breakdown": object[],
+                  "deductions": object[],
+                  "corrected_answer": string,
+                  "vocabulary_memory": object[],
+                  "difficult_sentence_analysis": object[],
+                  "word_count": number,
+                  "band": string
                 }
                 """.formatted(
                 input.getQuestionType(),
@@ -926,8 +939,17 @@ public class GradingAgentUtil {
                 toJsonOrNull(input.getRubric()),
                 blankToEmpty(input.getStudentAnswer()),
                 toJsonOrNull(getStudentAnswerImageUrls(input)),
-                toJsonOrNull(input.getExtraContext())
+                toJsonOrNull(input.getExtraContext()),
+                extractPromptExtension(input.getExtraContext())
         );
+    }
+
+    private String extractPromptExtension(Object extraContext) {
+        if (extraContext instanceof java.util.Map<?, ?> map) {
+            Object extension = map.get("prompt_extension");
+            return extension == null ? "" : String.valueOf(extension);
+        }
+        return "";
     }
 
     private String toJsonOrNull(Object value) {
@@ -1171,6 +1193,29 @@ public class GradingAgentUtil {
         private String summary;
 
         private String advice;
+
+        /** 英语专项评分扩展字段，旧题型为空时不影响原有结果。 */
+        @JsonProperty("input_quality")
+        private String inputQuality;
+
+        @JsonProperty("score_breakdown")
+        private List<Map<String, Object>> scoreBreakdown;
+
+        private List<Map<String, Object>> deductions;
+
+        @JsonProperty("corrected_answer")
+        private String correctedAnswer;
+
+        @JsonProperty("vocabulary_memory")
+        private List<Map<String, Object>> vocabularyMemory;
+
+        @JsonProperty("difficult_sentence_analysis")
+        private List<Map<String, Object>> difficultSentenceAnalysis;
+
+        @JsonProperty("word_count")
+        private Integer wordCount;
+
+        private String band;
     }
 
     @Data

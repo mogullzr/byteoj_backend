@@ -237,6 +237,8 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         course.setStart_time(start_time);
         course.setEnd_time(end_time);
         course.setCreate_time(new Date());
+        course.setPay(courseRequest.getPay());
+
         courseMapper.insert(course);
 
         for (User user : userList) {

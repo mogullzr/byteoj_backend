@@ -58,7 +58,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -88,12 +88,6 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
     private static final Pattern PROBLEM_REDIRECT_PATTERN = Pattern.compile("^/problems/other/(\\d+)$");
     private static final int MAX_PROBLEM_REDIRECT_DEPTH = 5;
     private static final AtomicInteger EXAM_AI_GRADING_THREAD_ID = new AtomicInteger(1);
-
-    @Value("${exam.grading.ai.max-concurrency:8}")
-    private int examAiGradingMaxConcurrency;
-
-    @Value("${exam.grading.ai.queue-capacity:200}")
-    private int examAiGradingQueueCapacity;
 
     /** Number of retries after the first failed AI request. Hard-capped at 5. */
     @Value("${exam.grading.ai.max-retries:5}")
@@ -178,22 +172,29 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
 
     @PostConstruct
     public void initExamAiGradingExecutor() {
-        int poolSize = Math.max(1, examAiGradingMaxConcurrency);
-        int queueCapacity = Math.max(poolSize, examAiGradingQueueCapacity);
+        /*
+         * Every question must be able to start immediately.  A fixed pool
+         * (the former default was 8) made question 9 and later wait in a
+         * queue, which meant the UI could only ever show eight questions as
+         * GRADING.  A SynchronousQueue has no waiting capacity: each submitted
+         * question is handed directly to a newly-created/reused worker.  The
+         * maximum is intentionally unbounded at the application layer; any
+         * upstream AI/sandbox rate limit remains the final external limit.
+         */
         examAiGradingExecutor = new ThreadPoolExecutor(
-                poolSize,
-                poolSize,
+                0,
+                Integer.MAX_VALUE,
                 60L,
                 TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(queueCapacity),
+                new SynchronousQueue<>(),
                 runnable -> {
                     Thread thread = new Thread(runnable, "exam-ai-grading-" + EXAM_AI_GRADING_THREAD_ID.getAndIncrement());
                     thread.setDaemon(true);
                     return thread;
                 },
-                new ThreadPoolExecutor.CallerRunsPolicy()
+                new ThreadPoolExecutor.AbortPolicy()
         );
-        log.info("[exam-submit-ai] init grading executor, poolSize={}, queueCapacity={}", poolSize, queueCapacity);
+        log.info("[exam-submit-ai] init grading executor, mode=unlimited-per-question, queueCapacity=0");
     }
 
     @PreDestroy
@@ -1547,8 +1548,8 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         }
 
         long batchStart = System.currentTimeMillis();
-        log.info("[exam-submit-ai] start subject grading, examUserId={}, uuid={}, count={}, maxConcurrency={}",
-                id, uuid, problem_other.size(), Math.max(1, examAiGradingMaxConcurrency));
+        log.info("[exam-submit-ai] start subject grading, examUserId={}, uuid={}, count={}, concurrency=unlimited-per-question",
+                id, uuid, problem_other.size());
         List<CompletableFuture<ProblemExamRecord>> futures = problem_other.stream()
                 .map(problem -> CompletableFuture.supplyAsync(
                         () -> {
