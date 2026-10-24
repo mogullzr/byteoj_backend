@@ -52,6 +52,15 @@ public class GradingAgentUtil {
     @Value("${ai.api.openai-gpt-5.4.key}")
     private String apiKey;
 
+    @Value("${ai.api.deepseek-grading.model:deepseek-flash}")
+    private String deepSeekModel;
+
+    @Value("${ai.api.deepseek-grading.url:https://api.deepseek.com/chat/completions}")
+    private String deepSeekApiUrl;
+
+    @Value("${ai.api.deepseek-grading.key:}")
+    private String deepSeekApiKey;
+
     public GradingAgentUtil(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
@@ -97,7 +106,7 @@ public class GradingAgentUtil {
         request.setMessages(buildMessages(input));
         request.setResponseFormat(ResponseFormat.jsonObject());
         String targetApiUrl = resolveApiUrl(input);
-        boolean hasImage = !getStudentAnswerImageUrls(input).isEmpty();
+        boolean hasImage = !getAllImageUrls(input).isEmpty();
         log.info("[grading-agent] ai request start, model={}, url={}, hasImage={}, questionType={}, totalScore={}",
                 request.getModel(), targetApiUrl, hasImage, input.getQuestionType(), input.getTotalScore());
 
@@ -381,19 +390,35 @@ public class GradingAgentUtil {
         if (StringUtils.hasText(input.getModel())) {
             return input.getModel();
         }
+        if (isDeepSeek(input.getAiModel())) {
+            return deepSeekModel;
+        }
         return defaultModel;
     }
 
     private String resolveApiUrl(GradingInput input) {
+        if (isDeepSeek(input.getAiModel())) {
+            return deepSeekApiUrl;
+        }
         return apiUrl;
     }
 
     private String resolveApiKey(GradingInput input) {
+        if (isDeepSeek(input.getAiModel())) {
+            if (!StringUtils.hasText(deepSeekApiKey)) {
+                throw new IllegalStateException("DeepSeek 判卷 API key 未配置，请填写 ai.api.deepseek-grading.key");
+            }
+            return deepSeekApiKey;
+        }
         return apiKey;
     }
 
+    private boolean isDeepSeek(String aiModel) {
+        return "DEEPSEEK".equalsIgnoreCase(aiModel) || "deepseek".equalsIgnoreCase(aiModel);
+    }
+
     private List<ChatMessage> buildMessages(GradingInput input) {
-        if (getStudentAnswerImageUrls(input).isEmpty()) {
+        if (getAllImageUrls(input).isEmpty()) {
             return List.of(
                     ChatMessage.ofText("system", SYSTEM_PROMPT),
                     ChatMessage.ofText("user", buildUserPrompt(input))
@@ -402,17 +427,38 @@ public class GradingAgentUtil {
 
         List<ContentItem> contentItems = new ArrayList<>();
         contentItems.add(ContentItem.ofText(buildUserPrompt(input)
-                + "\n\n注意：学生作答可能只存在于后续图片中。请直接结合图片内容判分，不要执行独立 OCR 流程，"
+                + "\n\n注意：题目或学生作答可能只存在于后续图片中。请直接结合图片内容判分，不要执行独立 OCR 流程，"
                 + "不要返回 OCR 字段，也不要把无法可靠辨认的内容自行补全。"
-                + "如果图片模糊、无法识别或不是与题目相关的有效作答图片，必须设置 needs_manual_review=true。"));
-        for (String imageUrl : getStudentAnswerImageUrls(input)) {
-            contentItems.add(ContentItem.ofImageUrl(imageUrl));
+                + "后续图片先按题目图片、再按学生答案图片的顺序提供；请区分两类图片。"
+                + "如果题目或答案图片模糊、无法识别或无关，必须设置 needs_manual_review=true。"));
+        List<String> questionImageUrls = getQuestionImageUrls(input);
+        for (int index = 0; index < questionImageUrls.size(); index++) {
+            contentItems.add(ContentItem.ofText("题目图片 " + (index + 1)));
+            contentItems.add(ContentItem.ofImageUrl(questionImageUrls.get(index)));
+        }
+        List<String> answerImageUrls = getStudentAnswerImageUrls(input);
+        for (int index = 0; index < answerImageUrls.size(); index++) {
+            contentItems.add(ContentItem.ofText("学生答案图片 " + (index + 1)));
+            contentItems.add(ContentItem.ofImageUrl(answerImageUrls.get(index)));
         }
 
         return List.of(
                 ChatMessage.ofText("system", SYSTEM_PROMPT),
                 ChatMessage.ofContentItems("user", contentItems)
         );
+    }
+
+    private List<String> getAllImageUrls(GradingInput input) {
+        List<String> urls = new ArrayList<>(getQuestionImageUrls(input));
+        urls.addAll(getStudentAnswerImageUrls(input));
+        return urls.stream().distinct().collect(java.util.stream.Collectors.toList());
+    }
+
+    private List<String> getQuestionImageUrls(GradingInput input) {
+        if (input == null || input.getQuestionImageUrls() == null) return new ArrayList<>();
+        return input.getQuestionImageUrls().stream()
+                .filter(StringUtils::hasText).map(String::trim).distinct()
+                .collect(java.util.stream.Collectors.toList());
     }
 
     private List<String> getStudentAnswerImageUrls(GradingInput input) {
@@ -843,6 +889,9 @@ public class GradingAgentUtil {
                 【题目内容 question_content】
                 %s
 
+                【题目图片 question_image_urls】
+                %s
+
                 【标准答案/参考答案 reference_answer】
                 %s
 
@@ -922,11 +971,64 @@ public class GradingAgentUtil {
                   "summary": string,
                   "advice": string,
                   "input_quality": string,
+                  "task_completion_analysis": string,
+                  "structure_analysis": string,
+                  "language_error_analysis": [
+                    {
+                      "sentence_number": number,
+                      "sentence_text": string,
+                      "error_location": string,
+                      "error_type": string,
+                      "error_explanation_zh": string,
+                      "impact_zh": string,
+                      "deduction": number,
+                      "corrected_sentence": string
+                    }
+                  ],
+                  "sentence_corrections": [
+                    {
+                      "sentence_number": number,
+                      "original": string,
+                      "issue_found": boolean,
+                      "error_location": string,
+                      "error_type": string,
+                      "impact_zh": string,
+                      "deduction": number,
+                      "revised": string,
+                      "explanation_zh": string,
+                      "change_type": string
+                    }
+                  ],
+                  "chinese_overall_advice": string,
                   "score_breakdown": object[],
                   "deductions": object[],
                   "corrected_answer": string,
                   "vocabulary_memory": object[],
                   "difficult_sentence_analysis": object[],
+                  "translation_sentence_analysis": [
+                    {
+                      "sentence_index": number,
+                      "source_sentence": string,
+                      "student_translation": string,
+                      "reference_translation": string,
+                      "max_score": number,
+                      "awarded_score": number,
+                      "deductions": [
+                        {
+                          "category": string,
+                          "student_text": string,
+                          "reason": string,
+                          "deduction": number,
+                          "correction": string
+                        }
+                      ],
+                      "accuracy_analysis": string,
+                      "fluency_analysis": string,
+                      "grammar_analysis": string,
+                      "suggestion": string,
+                      "improved_translation": string
+                    }
+                  ],
                   "word_count": number,
                   "band": string
                 }
@@ -934,6 +1036,7 @@ public class GradingAgentUtil {
                 input.getQuestionType(),
                 input.getTotalScore(),
                 blankToEmpty(input.getQuestionContent()),
+                toJsonOrNull(getQuestionImageUrls(input)),
                 blankToEmpty(input.getReferenceAnswer()),
                 blankToEmpty(input.getSolutionExplanation()),
                 toJsonOrNull(input.getRubric()),
@@ -1074,6 +1177,9 @@ public class GradingAgentUtil {
         @JsonProperty("question_content")
         private String questionContent;
 
+        @JsonProperty("question_image_urls")
+        private List<String> questionImageUrls;
+
         @JsonProperty("reference_answer")
         private String referenceAnswer;
 
@@ -1100,6 +1206,12 @@ public class GradingAgentUtil {
          * 可选：覆盖默认模型。为空时使用 ai.api.openai-gpt-5.4.model。
          */
         private String model;
+
+        /**
+         * 判卷模型提供方：GPT_5_4 或 DEEPSEEK。为空时默认 GPT_5_4。
+         */
+        @JsonProperty("ai_model")
+        private String aiModel;
 
         private Float temperature;
 
@@ -1198,6 +1310,21 @@ public class GradingAgentUtil {
         @JsonProperty("input_quality")
         private String inputQuality;
 
+        @JsonProperty("task_completion_analysis")
+        private String taskCompletionAnalysis;
+
+        @JsonProperty("structure_analysis")
+        private String structureAnalysis;
+
+        @JsonProperty("language_error_analysis")
+        private List<Map<String, Object>> languageErrorAnalysis;
+
+        @JsonProperty("sentence_corrections")
+        private List<Map<String, Object>> sentenceCorrections;
+
+        @JsonProperty("chinese_overall_advice")
+        private String chineseOverallAdvice;
+
         @JsonProperty("score_breakdown")
         private List<Map<String, Object>> scoreBreakdown;
 
@@ -1211,6 +1338,9 @@ public class GradingAgentUtil {
 
         @JsonProperty("difficult_sentence_analysis")
         private List<Map<String, Object>> difficultSentenceAnalysis;
+
+        @JsonProperty("translation_sentence_analysis")
+        private List<Map<String, Object>> translationSentenceAnalysis;
 
         @JsonProperty("word_count")
         private Integer wordCount;

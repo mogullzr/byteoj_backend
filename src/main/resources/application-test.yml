@@ -53,6 +53,10 @@ hm:
         model: Qwen/Qwen2.5-VL-72B-Instruct
         url: https://api.siliconflow.cn/v1/chat/completions
         key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # 轨迹流动密钥, token计费
+      deepseek-grading:
+        model: deepseek-flash
+        url: https://api.deepseek.com/chat/completions
+        key: "" # DeepSeek 判卷密钥，请填写你自己的 API key
   aliyun:
     # 按量计费
     oss:

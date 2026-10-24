@@ -237,6 +237,10 @@ ai:
       model: ${hm.ai.api.openai-gpt-5.4.model}
       url: ${hm.ai.api.openai-gpt-5.4.url}
       key: ${hm.ai.api.openai-gpt-5.4.key}
+    deepseek-grading:
+      model: ${hm.ai.api.deepseek-grading.model:deepseek-flash}
+      url: ${hm.ai.api.deepseek-grading.url:https://api.deepseek.com/chat/completions}
+      key: ${hm.ai.api.deepseek-grading.key:}
 domain:
   url_1: ${domain.url_1} # 自己的域名地址，替换一下
 avatar:

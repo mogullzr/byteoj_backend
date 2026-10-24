@@ -27,6 +27,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import springfox.documentation.spi.service.contexts.Defaults;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -399,7 +400,7 @@ public class UserController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "不存在这样的图片");
         } else if (isAdmin) {
             delete = websiteBackgroundPicturesMapper.delete(queryWrapper);
-        } else if (uuid == websiteBackgroundPictures.getUuid()) {
+        } else if (Objects.equals(uuid, websiteBackgroundPictures.getUuid())) {
             delete = websiteBackgroundPicturesMapper.delete(queryWrapper);
         }
         boolean success = ossUtils.deleteAvatar(websiteBackgroundPictures.getPicture_address());

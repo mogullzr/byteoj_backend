@@ -28,6 +28,11 @@ public class EnglishGradingRequest implements Serializable {
     @JsonAlias("questionType")
     private String questionType;
 
+    /** GPT_5_4 or DEEPSEEK. Defaults to GPT_5_4 for backward compatibility. */
+    @JsonProperty("ai_model")
+    @JsonAlias({"aiModel", "modelProvider"})
+    private String aiModel;
+
     /** Translation source/marked sentences, or the essay prompt. */
     @JsonProperty("question_content")
     @JsonAlias({"questionContent", "sourceText"})

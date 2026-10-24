@@ -20,6 +20,9 @@ public class ProblemExamSubmitRequest implements Serializable {
      */
     private String progress_token;
 
+    /** GPT_5_4 or DEEPSEEK. Defaults to GPT_5_4 for backward compatibility. */
+    private String ai_model;
+
     /**
      * 选择题答案列表
      */

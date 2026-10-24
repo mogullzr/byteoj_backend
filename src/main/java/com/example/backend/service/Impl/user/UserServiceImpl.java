@@ -610,7 +610,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         // 1.当status为0的时候表示给用户传送头像
         if (status == 0) {
             String avatar = user.getAvatar();
-            if (avatar != null && !avatar.isEmpty()) {
+            if (avatar != null && !avatar.isEmpty() && !avatar.equals(defaultAvatar)) {
                 ossUtils.deleteAvatar(user.getAvatar());
             }
             user.setAvatar(uploadOneFile);

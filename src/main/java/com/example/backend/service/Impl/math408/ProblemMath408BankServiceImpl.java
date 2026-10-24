@@ -1146,6 +1146,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
                 ));
         Map<Long, String> correctAnswerMap = loadObjectiveCorrectAnswers(objectiveProblemIds);
         List<CompletableFuture<ExamQuestionGradingResult>> gradingFutures = new ArrayList<>();
+        String aiModel = normalizeExamAiModel(problemExamSubmitRequest.getAi_model());
         for (ProblemSimpleInfo answer : answers) {
             if (answer == null || answer.getProblem_id() == null) {
                 continue;
@@ -1157,7 +1158,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
                 }
                 try {
                     ExamQuestionGradingResult result = gradeOneExamQuestion(
-                            answer, problemScoreMap, correctAnswerMap, uuid, problemExamUser.getId());
+                            answer, problemScoreMap, correctAnswerMap, uuid, problemExamUser.getId(), aiModel);
                     if (progressTracker != null) {
                         progressTracker.markCompleted(problemId, "本题判卷完成", result.awardedScore);
                     }
@@ -1391,7 +1392,8 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
             Map<String, Integer> problemScoreMap,
             Map<Long, String> correctAnswerMap,
             Long uuid,
-            Long examUserId) {
+            Long examUserId,
+            String aiModel) {
         Integer status = answer.getStatus();
         if (status != null && (status == 1 || status == 2)) {
             ProblemExamRecord record = buildObjectiveRecord(answer, problemScoreMap, correctAnswerMap, uuid, examUserId);
@@ -1399,7 +1401,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
                     record == null || record.getScore() == null ? 0 : record.getScore());
         }
         if (status != null && (status == 0 || status == 3)) {
-            ProblemExamRecord record = buildSubjectRecord(answer, problemScoreMap, uuid, examUserId);
+            ProblemExamRecord record = buildSubjectRecord(answer, problemScoreMap, uuid, examUserId, aiModel);
             return new ExamQuestionGradingResult(false, record,
                     record == null || record.getScore() == null ? 0 : record.getScore());
         }
@@ -1599,6 +1601,11 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
     }
 
     private ProblemExamRecord buildSubjectRecord(ProblemSimpleInfo problem, Map<String, Integer> problemScoreMap, Long uuid, Long examUserId) {
+        return buildSubjectRecord(problem, problemScoreMap, uuid, examUserId, null);
+    }
+
+    private ProblemExamRecord buildSubjectRecord(ProblemSimpleInfo problem, Map<String, Integer> problemScoreMap,
+                                                 Long uuid, Long examUserId, String aiModel) {
         long start = System.currentTimeMillis();
         Date now = new Date();
         ProblemExamRecord problemExamRecord = new ProblemExamRecord();
@@ -1637,6 +1644,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         gradingInput.setForceAi(Boolean.TRUE);
         gradingInput.setTemperature(0F);
         gradingInput.setTopP(0.9F);
+        gradingInput.setAiModel(aiModel);
 
         GradingAgentUtil.GradingResult gradingResult = gradeSubjectAnswerWithRetry(
                 gradingInput, problem.getProblem_id());
@@ -2716,6 +2724,17 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         }
         String escaped = String.valueOf(value).replace("'", "''");
         return "'" + escaped + "'";
+    }
+
+    private String normalizeExamAiModel(String aiModel) {
+        if (aiModel == null || aiModel.trim().isEmpty()) {
+            return "GPT_5_4";
+        }
+        String normalized = aiModel.trim().toUpperCase(Locale.ROOT);
+        if ("DEEPSEEK".equals(normalized)) {
+            return "DEEPSEEK";
+        }
+        return "GPT_5_4";
     }
 
     private String resolveQuestionType(Integer status) {
