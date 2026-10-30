@@ -42,7 +42,7 @@ public class ProblemExamUser {
     private Integer score_subjective;
 
     /**
-     * 0表示报名信息生效，1表示报名信息失效(主要是为了区分多次报名信息)
+     * 0表示当前报名待提交，1表示已提交并失效(用于区分多次答卷)
      */
     private Integer status;
 

@@ -16,6 +16,7 @@ import com.example.backend.models.vo.problem.ProblemExamSubmitVo;
 import com.example.backend.models.vo.problem.ProblemExamCandidatePageVo;
 import com.example.backend.models.vo.problem.ProblemExamSheetPaperVo;
 import com.example.backend.models.vo.problem.ProblemExamSheetVo;
+import com.example.backend.models.vo.problem.ProblemExamTopScoreVo;
 import com.example.backend.models.vo.problem.ProblemExamVo;
 import com.example.backend.models.vo.problem.ExamGradingProgressVo;
 import com.example.backend.models.vo.problem.ProblemMath408BankVo;
@@ -65,12 +66,15 @@ public class ProblemsController {
         return ResultUtils.success(result);
     }
 
-    @AccessLimit(seconds = 1, maxCount = 10, needLogin = true)
+    @AccessLimit(seconds = 1, maxCount = 10, needLogin = false)
     @GetMapping("/exam/records")
-    private BaseResponse<List<ProblemExamSheetPaperVo>> ProblemExamRecords(@Param("exam_id") Long exam_id,
-                                                                           @Param("pageNum") Integer pageNum,
+    private BaseResponse<List<ProblemExamSheetPaperVo>> ProblemExamRecords(@RequestParam("exam_id") Long exam_id,
+                                                                           @RequestParam(value = "pageNum", required = false) Integer pageNum,
                                                                            HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "you must log in to view your exam records");
+        }
         List<ProblemExamSheetPaperVo> result = problemsService.problemExamRecords(exam_id, loginUser.getUuid(), pageNum);
         return ResultUtils.success(result);
     }
@@ -82,6 +86,22 @@ public class ProblemsController {
         User loginUser = userService.getLoginUser(request);
         List<ProblemExamSheetVo> result = problemsService.problemExamSheet(recordId, loginUser.getUuid());
         return ResultUtils.success(result);
+    }
+
+    /** Public summaries are limited to the three highest-scoring distinct users. */
+    @AccessLimit(seconds = 1, maxCount = 10, needLogin = false)
+    @GetMapping("/exam/top-scores")
+    private BaseResponse<List<ProblemExamTopScoreVo>> ProblemExamTopScores(@RequestParam("exam_id") Long examId) {
+        return ResultUtils.success(problemsService.problemExamTopScores(examId));
+    }
+
+    /** Only currently-ranked top-three answer sheets are publicly readable. */
+    @AccessLimit(seconds = 1, maxCount = 10, needLogin = false)
+    @GetMapping("/exam/top-scores/sheet")
+    private BaseResponse<List<ProblemExamSheetVo>> ProblemExamTopScoreSheet(
+            @RequestParam("exam_id") Long examId,
+            @RequestParam("recordId") Long recordId) {
+        return ResultUtils.success(problemsService.problemExamTopScoreSheet(examId, recordId));
     }
 
     @AccessLimit(seconds = 1, maxCount = 5, needLogin = true)

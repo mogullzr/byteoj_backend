@@ -1360,6 +1360,76 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         return result;
     }
 
+    @Override
+    public List<ProblemExamTopScoreVo> problemExamTopScores(Long examId) {
+        if (examId == null || examId <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid exam id");
+        }
+        ProblemExam exam = problemExamMapper.selectOne(new QueryWrapper<ProblemExam>()
+                .eq("id", examId)
+                .eq("is_delete", 0));
+        if (exam == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "exam not found");
+        }
+
+        List<ProblemExamUser> topUsers = problemExamUserMapper.selectTopScoringUsersByExam(examId);
+        List<ProblemExamTopScoreVo> result = new ArrayList<>(topUsers.size());
+        for (int index = 0; index < topUsers.size(); index++) {
+            ProblemExamUser user = topUsers.get(index);
+            ProblemExamTopScoreVo vo = new ProblemExamTopScoreVo();
+            vo.setRank(index + 1);
+            vo.setRecord_id(user.getId());
+            vo.setUsername(user.getUsername());
+            vo.setScore((user.getScore_option() == null ? 0 : user.getScore_option())
+                    + (user.getScore_subjective() == null ? 0 : user.getScore_subjective()));
+            vo.setTotal_score(exam.getTotal_score());
+            vo.setSubmitted_at(formatDate(user.getUpdate_date() == null ? user.getCreate_date() : user.getUpdate_date()));
+            result.add(vo);
+        }
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProblemExamSheetVo> problemExamTopScoreSheet(Long examId, Long recordId) {
+        if (examId == null || examId <= 0 || recordId == null || recordId <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid params");
+        }
+        ProblemExam exam = problemExamMapper.selectOne(new QueryWrapper<ProblemExam>()
+                .eq("id", examId)
+                .eq("is_delete", 0));
+        if (exam == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "record not found");
+        }
+
+        // Recompute the top three on every request. The read-only transaction keeps
+        // the rank check and answer lookup on the same database snapshot.
+        List<ProblemExamUser> topUsers = problemExamUserMapper.selectTopScoringUsersByExam(examId);
+        ProblemExamUser examUser = topUsers.stream()
+                .filter(candidate -> recordId.equals(candidate.getId()))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_ERROR, "record not found"));
+
+        List<ProblemExamRecord> records = problemExamRecordService.list(new QueryWrapper<ProblemExamRecord>()
+                .eq("exam_user_id", recordId)
+                .eq("uuid", examUser.getUuid())
+                .eq("is_delete", 0)
+                .orderByAsc("problem_id"));
+        List<ProblemExamSheetVo> result = new ArrayList<>(records.size());
+        for (ProblemExamRecord record : records) {
+            ProblemExamSheetVo vo = new ProblemExamSheetVo();
+            vo.setProblem_id(record.getProblem_id());
+            vo.setAnswer(record.getAnswer());
+            vo.setScore(record.getScore());
+            vo.setAi_advise(record.getAi_advise());
+            vo.setConfidence(record.getConfidence());
+            vo.setPerson(Boolean.TRUE.equals(record.getIs_person()));
+            // Deliberately omit uuid from the public top-three response.
+            result.add(vo);
+        }
+        return result;
+    }
+
     private Integer getAlgorithmScore(List<ProblemSimpleInfo> problem_algorithm, Map<String, Integer> problemScoreMap, Long uuid, Long examUserId) {
         return getAlgorithmScore(problem_algorithm, problemScoreMap, uuid, examUserId, null);
     }

@@ -14,6 +14,7 @@ import com.example.backend.models.vo.problem.ProblemExamSubmitVo;
 import com.example.backend.models.vo.problem.ProblemExamCandidatePageVo;
 import com.example.backend.models.vo.problem.ProblemExamSheetPaperVo;
 import com.example.backend.models.vo.problem.ProblemExamSheetVo;
+import com.example.backend.models.vo.problem.ProblemExamTopScoreVo;
 import com.example.backend.models.vo.problem.ProblemExamVo;
 import com.example.backend.models.vo.problem.ProblemMath408BankVo;
 import com.example.backend.models.vo.problem.ProblemSimilarityVo;
@@ -117,6 +118,10 @@ public interface ProblemMath408BankService extends IService<ProblemMath408Bank> 
     List<ProblemExamSheetPaperVo> problemExamRecords(Long examId, Long uuid, Integer pageNum);
 
     List<ProblemExamSheetVo> problemExamSheet(Long recordId, Long uuid);
+
+    List<ProblemExamTopScoreVo> problemExamTopScores(Long examId);
+
+    List<ProblemExamSheetVo> problemExamTopScoreSheet(Long examId, Long recordId);
 
     String problemExamGeneratePaperSql(ProblemExamGeneratePaperSqlRequest request, User user);
 }
