@@ -1310,6 +1310,9 @@ public class GradingAgentUtil {
         @JsonProperty("input_quality")
         private String inputQuality;
 
+        @JsonProperty("presentation_assessment")
+        private Map<String, Object> presentationAssessment;
+
         @JsonProperty("task_completion_analysis")
         private String taskCompletionAnalysis;
 

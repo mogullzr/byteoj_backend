@@ -1,0 +1,768 @@
+{
+  "questions": 63044,
+  "option_type_3": 23901,
+  "missing_answer_marker": 27392,
+  "without_answer_or_analysis": 27319,
+  "review_rows": 56568,
+  "private_use_rows": 48179,
+  "option_type_0": 33876,
+  "option_type_1": 5257,
+  "with_answer_marker": 35652,
+  "option_type_2": 10,
+  "with_analysis": 11556,
+  "analysis_only": 73,
+  "candidate_rows": 63044,
+  "sql_rows": 6476,
+  "review_rows_excluded_from_sql": 56568,
+  "include_review_rows": false,
+  "source_stats": {
+    "冯建轩《考研数学 题型篇》“最后一舞” 冯建轩": {
+      "questions": 6517,
+      "with_answer_marker": 0,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 6517,
+      "review_rows": 6517,
+      "private_use_rows": 4603
+    },
+    "《极限》2650题 冯建轩": {
+      "questions": 2600,
+      "with_answer_marker": 2600,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 1441,
+      "private_use_rows": 1441
+    },
+    "《n项和求极限》200题 冯建轩": {
+      "questions": 200,
+      "with_answer_marker": 198,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 2,
+      "review_rows": 200,
+      "private_use_rows": 200
+    },
+    "《无穷小》200题 冯建轩": {
+      "questions": 200,
+      "with_answer_marker": 199,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 1,
+      "review_rows": 80,
+      "private_use_rows": 79
+    },
+    "《连续性与间断点》250题 冯建轩": {
+      "questions": 250,
+      "with_answer_marker": 250,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 127,
+      "private_use_rows": 127
+    },
+    "《导数定义》200题 冯建轩": {
+      "questions": 200,
+      "with_answer_marker": 200,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 177,
+      "private_use_rows": 160
+    },
+    "《隐函数求导》100题 冯建轩": {
+      "questions": 100,
+      "with_answer_marker": 100,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 8,
+      "private_use_rows": 8
+    },
+    "《分段函数求导》150题 冯建轩": {
+      "questions": 150,
+      "with_answer_marker": 150,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 150,
+      "private_use_rows": 150
+    },
+    "《参数方程求导》150题 冯建轩": {
+      "questions": 150,
+      "with_answer_marker": 150,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 16,
+      "private_use_rows": 16
+    },
+    "《高阶导数》100题 冯建轩": {
+      "questions": 100,
+      "with_answer_marker": 100,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 56,
+      "private_use_rows": 56
+    },
+    "《渐近线》150题 冯建轩": {
+      "questions": 150,
+      "with_answer_marker": 150,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 45,
+      "private_use_rows": 45
+    },
+    "《单调性与极值》500题 冯建轩": {
+      "questions": 498,
+      "with_answer_marker": 498,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 416,
+      "private_use_rows": 403
+    },
+    "《凹凸性与拐点》150题 冯建轩": {
+      "questions": 150,
+      "with_answer_marker": 150,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 92,
+      "private_use_rows": 92
+    },
+    "《曲率》100题 冯建轩": {
+      "questions": 100,
+      "with_answer_marker": 100,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 42,
+      "private_use_rows": 42
+    },
+    "《不等式》400题 冯建轩": {
+      "questions": 400,
+      "with_answer_marker": 400,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 400,
+      "private_use_rows": 400
+    },
+    "《零点》200题 冯建轩": {
+      "questions": 200,
+      "with_answer_marker": 200,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 172,
+      "private_use_rows": 162
+    },
+    "《原函数》250题 冯建轩": {
+      "questions": 250,
+      "with_answer_marker": 250,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 228,
+      "private_use_rows": 228
+    },
+    "《一元积分》3000题 冯建轩": {
+      "questions": 2949,
+      "with_answer_marker": 2944,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 5,
+      "review_rows": 2815,
+      "private_use_rows": 2812
+    },
+    "《定积分性质》100题 冯建轩": {
+      "questions": 100,
+      "with_answer_marker": 100,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 100,
+      "private_use_rows": 100
+    },
+    "《变限积分》650题 冯建轩": {
+      "questions": 600,
+      "with_answer_marker": 600,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 592,
+      "private_use_rows": 591
+    },
+    "《定积分求面积》200题 冯建轩": {
+      "questions": 200,
+      "with_answer_marker": 200,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 113,
+      "private_use_rows": 113
+    },
+    "《定积分求体积》250题 冯建轩": {
+      "questions": 250,
+      "with_answer_marker": 250,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 249,
+      "private_use_rows": 249
+    },
+    "《弧长与侧面积》100题 冯建轩": {
+      "questions": 100,
+      "with_answer_marker": 100,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 95,
+      "private_use_rows": 95
+    },
+    "《反常积分敛散性判断》200题 冯建轩": {
+      "questions": 200,
+      "with_answer_marker": 200,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 200,
+      "private_use_rows": 200
+    },
+    "《多元函数极限、连续、偏导、全微分的概念》 400题 冯建轩": {
+      "questions": 400,
+      "with_answer_marker": 400,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 303,
+      "private_use_rows": 298
+    },
+    "《复合函数偏导数》 400题 冯建轩": {
+      "questions": 400,
+      "with_answer_marker": 400,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 395,
+      "private_use_rows": 395
+    },
+    "《隐函数的偏导数》 150题》 冯建轩": {
+      "questions": 150,
+      "with_answer_marker": 150,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 148,
+      "private_use_rows": 148
+    },
+    "《全微分计算》100题 冯建轩": {
+      "questions": 100,
+      "with_answer_marker": 100,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 25,
+      "private_use_rows": 25
+    },
+    "《多元函数极值》300题 冯建轩": {
+      "questions": 300,
+      "with_answer_marker": 300,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 163,
+      "private_use_rows": 105
+    },
+    "《二重积分概念及性质》200题 冯建轩": {
+      "questions": 200,
+      "with_answer_marker": 200,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 200,
+      "private_use_rows": 200
+    },
+    "《交换积分次序及坐标变换》300题 冯建轩": {
+      "questions": 300,
+      "with_answer_marker": 300,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 300,
+      "private_use_rows": 300
+    },
+    "《二重积分的计算》 800题 冯建轩": {
+      "questions": 800,
+      "with_answer_marker": 800,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 800,
+      "private_use_rows": 800
+    },
+    "《一阶微分方程》 300题 冯建轩": {
+      "questions": 300,
+      "with_answer_marker": 300,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 242,
+      "private_use_rows": 242
+    },
+    "《解的结构》 300题 冯建轩": {
+      "questions": 300,
+      "with_answer_marker": 299,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 1,
+      "review_rows": 290,
+      "private_use_rows": 289
+    },
+    "《二阶微分方程》 200题 冯建轩": {
+      "questions": 200,
+      "with_answer_marker": 200,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 189,
+      "private_use_rows": 189
+    },
+    "《变限积分方程》 150题 冯建轩": {
+      "questions": 150,
+      "with_answer_marker": 150,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 146,
+      "private_use_rows": 146
+    },
+    "《微分方程应用》 250题 冯建轩": {
+      "questions": 250,
+      "with_answer_marker": 250,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 202,
+      "private_use_rows": 202
+    },
+    "《数项级数敛散性》 850题 冯建轩": {
+      "questions": 800,
+      "with_answer_marker": 800,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 799,
+      "private_use_rows": 799
+    },
+    "《收敛半径、、收敛区间、收敛域》 250题 冯建轩": {
+      "questions": 250,
+      "with_answer_marker": 250,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 250,
+      "private_use_rows": 250
+    },
+    "《和函数》 300题 冯建轩": {
+      "questions": 300,
+      "with_answer_marker": 300,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 300,
+      "private_use_rows": 300
+    },
+    "《展开为幂级数》 100题 冯建轩": {
+      "questions": 100,
+      "with_answer_marker": 100,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 100,
+      "private_use_rows": 100
+    },
+    "《向量代数》50题 冯建轩": {
+      "questions": 50,
+      "with_answer_marker": 50,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 43,
+      "private_use_rows": 43
+    },
+    "《空间解析几何》500题 冯建轩": {
+      "questions": 450,
+      "with_answer_marker": 450,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 231,
+      "private_use_rows": 231
+    },
+    "《方向导数》100题 冯建轩": {
+      "questions": 100,
+      "with_answer_marker": 100,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 52,
+      "private_use_rows": 52
+    },
+    "《伯努利方程》50题 冯建轩": {
+      "questions": 50,
+      "with_answer_marker": 50,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 41,
+      "private_use_rows": 41
+    },
+    "《欧拉方程》50题 冯建轩": {
+      "questions": 50,
+      "with_answer_marker": 50,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 44,
+      "private_use_rows": 44
+    },
+    "《全微分方程》100题 冯建轩": {
+      "questions": 100,
+      "with_answer_marker": 100,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 72,
+      "private_use_rows": 72
+    },
+    "《三重积分》350题 冯建轩": {
+      "questions": 300,
+      "with_answer_marker": 296,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 4,
+      "review_rows": 300,
+      "private_use_rows": 300
+    },
+    "《曲线积分》550题 冯建轩": {
+      "questions": 499,
+      "with_answer_marker": 499,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 480,
+      "private_use_rows": 480
+    },
+    "《曲面积分》450题 冯建轩": {
+      "questions": 350,
+      "with_answer_marker": 349,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 1,
+      "review_rows": 350,
+      "private_use_rows": 350
+    },
+    "《傅里叶级数》250题 冯建轩": {
+      "questions": 250,
+      "with_answer_marker": 246,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 4,
+      "review_rows": 248,
+      "private_use_rows": 248
+    },
+    "《场论初步》50题 冯建轩": {
+      "questions": 50,
+      "with_answer_marker": 50,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 28,
+      "private_use_rows": 28
+    },
+    "冯建轩《具体行列式450题》": {
+      "questions": 450,
+      "with_answer_marker": 450,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 274,
+      "private_use_rows": 267
+    },
+    "冯建轩《抽象行列式150题》": {
+      "questions": 150,
+      "with_answer_marker": 148,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 2,
+      "review_rows": 57,
+      "private_use_rows": 52
+    },
+    "冯建轩《代数余子式150题》": {
+      "questions": 150,
+      "with_answer_marker": 150,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 78,
+      "private_use_rows": 76
+    },
+    "冯建轩《矩阵的运算750题》": {
+      "questions": 750,
+      "with_answer_marker": 749,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 1,
+      "review_rows": 475,
+      "private_use_rows": 472
+    },
+    "冯建轩《初等矩阵与初等变换250》": {
+      "questions": 250,
+      "with_answer_marker": 248,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 2,
+      "review_rows": 188,
+      "private_use_rows": 187
+    },
+    "冯建轩《矩阵的秩300题》": {
+      "questions": 300,
+      "with_answer_marker": 298,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 2,
+      "review_rows": 178,
+      "private_use_rows": 175
+    },
+    "冯建轩《具体向量线性相关、线性无关及线性表示600题》": {
+      "questions": 600,
+      "with_answer_marker": 598,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 2,
+      "review_rows": 475,
+      "private_use_rows": 474
+    },
+    "冯建轩《矩阵与向量300题》": {
+      "questions": 300,
+      "with_answer_marker": 299,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 1,
+      "review_rows": 200,
+      "private_use_rows": 200
+    },
+    "冯建轩《方程组解的判定800题》": {
+      "questions": 800,
+      "with_answer_marker": 800,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 663,
+      "private_use_rows": 657
+    },
+    "冯建轩《线性方程组解的结构300题》": {
+      "questions": 300,
+      "with_answer_marker": 300,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 231,
+      "private_use_rows": 231
+    },
+    "冯建轩《同解及公共解150题》": {
+      "questions": 150,
+      "with_answer_marker": 150,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 131,
+      "private_use_rows": 131
+    },
+    "冯建轩《特征值与特征向量的定义及性质300题》": {
+      "questions": 300,
+      "with_answer_marker": 300,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 179,
+      "private_use_rows": 154
+    },
+    "冯建轩《特征值与特征向量的求法150题》": {
+      "questions": 150,
+      "with_answer_marker": 150,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 116,
+      "private_use_rows": 116
+    },
+    "冯建轩《相似的定义及性质450题》": {
+      "questions": 450,
+      "with_answer_marker": 449,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 1,
+      "review_rows": 277,
+      "private_use_rows": 262
+    },
+    "冯建轩 《相似对角化400题》": {
+      "questions": 400,
+      "with_answer_marker": 400,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 339,
+      "private_use_rows": 339
+    },
+    "冯建轩《实对称矩阵350题》": {
+      "questions": 350,
+      "with_answer_marker": 350,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 0,
+      "review_rows": 284,
+      "private_use_rows": 252
+    },
+    "冯建轩《二次型的概念及性质150题》": {
+      "questions": 550,
+      "with_answer_marker": 547,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 3,
+      "review_rows": 329,
+      "private_use_rows": 302
+    },
+    "冯建轩《正定二次型与正定矩阵150题》": {
+      "questions": 150,
+      "with_answer_marker": 149,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 1,
+      "review_rows": 95,
+      "private_use_rows": 89
+    },
+    "冯建轩《考研数学 题型篇》“黎明开启” 冯建轩": {
+      "questions": 2035,
+      "with_answer_marker": 0,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 2035,
+      "review_rows": 2035,
+      "private_use_rows": 1455
+    },
+    "冯建轩《考研数学 高等数学2600》典型题 冯建轩": {
+      "questions": 2384,
+      "with_answer_marker": 0,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 2384,
+      "review_rows": 2384,
+      "private_use_rows": 1987
+    },
+    "冯建轩《考研数学 线性代数1200》典型题 冯建轩": {
+      "questions": 1080,
+      "with_answer_marker": 0,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 1080,
+      "review_rows": 1080,
+      "private_use_rows": 840
+    },
+    "冯建轩《考研数学 概率论与数理统计950》典型题 冯建轩": {
+      "questions": 902,
+      "with_answer_marker": 0,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 902,
+      "review_rows": 902,
+      "private_use_rows": 638
+    },
+    "冯建轩《高等数学9000题》 根据考研大纲编写，每个考点有若干题目 若题目超纲、有误，可自行跳过": {
+      "questions": 8997,
+      "with_answer_marker": 0,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 8997,
+      "review_rows": 8997,
+      "private_use_rows": 6588
+    },
+    "冯建轩《线性代数2500》修正版 根据考研大纲编写，每个考点有若干题目 若题目超纲、有误，可自行跳过": {
+      "questions": 2447,
+      "with_answer_marker": 0,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 2447,
+      "review_rows": 2447,
+      "private_use_rows": 1189
+    },
+    "冯建轩《概率论与数理统计2900题》 根据考研大纲编写，每个考点有若干题目 若题目超纲、有误，请自行跳过": {
+      "questions": 2740,
+      "with_answer_marker": 0,
+      "with_analysis": 0,
+      "analysis_only": 0,
+      "without_answer_or_analysis": 2740,
+      "review_rows": 2740,
+      "private_use_rows": 1978
+    },
+    "冯建轩《考研数学3030》”千磨万砺“ 冯建轩": {
+      "questions": 2921,
+      "with_answer_marker": 2825,
+      "with_analysis": 2829,
+      "analysis_only": 6,
+      "without_answer_or_analysis": 90,
+      "review_rows": 2576,
+      "private_use_rows": 2483
+    },
+    "冯建轩《考研数学2310》“六合之内” 冯建轩": {
+      "questions": 2284,
+      "with_answer_marker": 2205,
+      "with_analysis": 2222,
+      "analysis_only": 17,
+      "without_answer_or_analysis": 62,
+      "review_rows": 2047,
+      "private_use_rows": 1957
+    },
+    "冯建轩《考研数学2450》“四海八荒” 冯建轩": {
+      "questions": 2406,
+      "with_answer_marker": 2382,
+      "with_analysis": 2404,
+      "analysis_only": 23,
+      "without_answer_or_analysis": 1,
+      "review_rows": 2134,
+      "private_use_rows": 2039
+    },
+    "冯建轩《考研数学2500》“八仙基础”（带解析） 冯建轩": {
+      "questions": 2460,
+      "with_answer_marker": 2429,
+      "with_analysis": 2449,
+      "analysis_only": 22,
+      "without_answer_or_analysis": 9,
+      "review_rows": 2131,
+      "private_use_rows": 2109
+    },
+    "冯建轩《考研数学1650》“八仙强化”（带解析） 冯建轩": {
+      "questions": 1675,
+      "with_answer_marker": 1648,
+      "with_analysis": 1652,
+      "analysis_only": 5,
+      "without_answer_or_analysis": 22,
+      "review_rows": 1454,
+      "private_use_rows": 1431
+    }
+  },
+  "sql_file": "tools/output/66000-import-conservative.sql",
+  "review_file": "tools/output/66000-import-review.csv",
+  "source_format": "problem_math408_bank",
+  "warnings": [
+    "PDFKit text extraction is not OCR and preserves embedded text only.",
+    "Private-use math glyphs are retained as extracted and require font-aware review.",
+    "PDF text order may not match the visual order of superscripts, fractions, matrices, and other formulas; text extraction cannot certify mathematical fidelity.",
+    "Some questions have a solution-analysis block without a separate brief-answer block; a missing answer marker is not proof that the PDF has no solution.",
+    "The SQL is generated from detected markers and is not a claim that every PDF question was recovered."
+  ]
+}
