@@ -12,6 +12,9 @@ public class ProblemExamSheetVo implements Serializable {
 
     private String answer;
 
+    /** 当前用户为此题添加的复习标注；公开答卷不返回该字段 */
+    private String annotation;
+
     private Integer score;
 
     private String ai_advise;

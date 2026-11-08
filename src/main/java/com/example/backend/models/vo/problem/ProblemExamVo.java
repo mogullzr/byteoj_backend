@@ -28,6 +28,7 @@ public class ProblemExamVo implements Serializable {
      * 图片
      */
     private String picture;
+
     /**
      * 参加人数
      */

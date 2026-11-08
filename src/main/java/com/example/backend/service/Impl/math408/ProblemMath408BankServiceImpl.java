@@ -23,6 +23,7 @@ import com.example.backend.models.request.problem.Math408QueryRequest;
 import com.example.backend.models.request.problem.ProblemExamEditRequest;
 import com.example.backend.models.request.problem.ProblemExamCandidateSearchRequest;
 import com.example.backend.models.request.problem.ProblemExamGeneratePaperSqlRequest;
+import com.example.backend.models.request.problem.ProblemExamAnnotationRequest;
 import com.example.backend.models.request.problem.ProblemExamProblemInfo;
 import com.example.backend.models.request.problem.ProblemExamRequest;
 import com.example.backend.models.request.problem.ProblemWrongBookSyncItem;
@@ -143,6 +144,9 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
 
     @Resource
     private ProblemExamRecordService problemExamRecordService;
+
+    @Resource
+    private ProblemExamAnnotationMapper problemExamAnnotationMapper;
 
     @Resource
     private ProblemWrongBookService problemWrongBookService;
@@ -584,6 +588,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         QueryWrapper<ProblemExamTissue> problemExamTissueQueryWrapper = new QueryWrapper<>();
         problemExamTissueQueryWrapper.eq("exam_id", examId);
 
+        problemExamTissueQueryWrapper.orderByAsc("id");
         List<ProblemExamTissue> problemExamTissues = problemExamTissueMapper.selectList(problemExamTissueQueryWrapper);
         // 脱敏处理
         List<ProblemMath408BankVo> problemMath408BankVos = new ArrayList<>();
@@ -1212,6 +1217,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         ProblemExamSubmitVo problemExamSubmitVo = new ProblemExamSubmitVo();
 
         problemExamSubmitVo.setExam_id(exam_id);
+        problemExamSubmitVo.setRecord_id(problemExamUser.getId());
         problemExamSubmitVo.setUuid(uuid);
         problemExamSubmitVo.setUsername(username);
         problemExamSubmitVo.setScore_option(option_score);
@@ -1345,11 +1351,23 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
                         .orderByAsc("problem_id")
         );
 
+        Map<Long, String> annotations = problemExamAnnotationMapper.selectList(
+                        new QueryWrapper<ProblemExamAnnotation>()
+                                .eq("exam_user_id", recordId)
+                                .eq("uuid", uuid)
+                                .eq("is_delete", 0))
+                .stream()
+                .collect(Collectors.toMap(
+                        ProblemExamAnnotation::getProblem_id,
+                        ProblemExamAnnotation::getAnnotation,
+                        (left, right) -> right));
+
         List<ProblemExamSheetVo> result = new ArrayList<>();
         for (ProblemExamRecord record : records) {
             ProblemExamSheetVo vo = new ProblemExamSheetVo();
             vo.setProblem_id(record.getProblem_id());
             vo.setAnswer(record.getAnswer());
+            vo.setAnnotation(annotations.get(record.getProblem_id()));
             vo.setScore(record.getScore());
             vo.setAi_advise(record.getAi_advise());
             vo.setConfidence(record.getConfidence());
@@ -1357,7 +1375,78 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
             vo.setUuid(uuid);
             result.add(vo);
         }
+        // A question with no answer/grading row still needs its saved annotation
+        // available on the sheet. Add a minimal response item for those questions.
+        Set<Long> includedProblemIds = result.stream()
+                .map(ProblemExamSheetVo::getProblem_id)
+                .collect(Collectors.toSet());
+        for (Map.Entry<Long, String> entry : annotations.entrySet()) {
+            if (includedProblemIds.contains(entry.getKey())) {
+                continue;
+            }
+            ProblemExamSheetVo vo = new ProblemExamSheetVo();
+            vo.setProblem_id(entry.getKey());
+            vo.setAnnotation(entry.getValue());
+            vo.setUuid(uuid);
+            result.add(vo);
+        }
         return result;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean problemExamSaveAnnotation(ProblemExamAnnotationRequest request, Long uuid) {
+        if (request == null || request.getRecord_id() == null || request.getRecord_id() <= 0
+                || request.getProblem_id() == null || request.getProblem_id() <= 0
+                || uuid == null || uuid <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid annotation params");
+        }
+        String annotation = request.getAnnotation() == null ? "" : request.getAnnotation();
+        if (annotation.length() > 5000) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "annotation must be 5000 characters or fewer");
+        }
+
+        ProblemExamUser examUser = problemExamUserMapper.selectOne(
+                new QueryWrapper<ProblemExamUser>()
+                        .eq("id", request.getRecord_id())
+                        .eq("uuid", uuid)
+                        .eq("status", 1)
+                        .eq("is_delete", 0));
+        if (examUser == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "record not found");
+        }
+
+        Long questionCount = problemExamTissueMapper.selectCount(
+                new QueryWrapper<ProblemExamTissue>()
+                        .eq("exam_id", examUser.getExam_id())
+                        .eq("problem_id", request.getProblem_id())
+                        .eq("is_delete", 0));
+        if (questionCount == null || questionCount == 0) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "question not found in this exam");
+        }
+
+        ProblemExamAnnotation saved = problemExamAnnotationMapper.selectOne(
+                new QueryWrapper<ProblemExamAnnotation>()
+                        .eq("exam_user_id", examUser.getId())
+                        .eq("problem_id", request.getProblem_id()));
+        Date now = new Date();
+        if (saved == null) {
+            saved = new ProblemExamAnnotation();
+            saved.setExam_user_id(examUser.getId());
+            saved.setProblem_id(request.getProblem_id());
+            saved.setUuid(uuid);
+            saved.setAnnotation(annotation);
+            saved.setCreate_date(now);
+            saved.setUpdate_date(now);
+            saved.setIs_delete(0);
+            return problemExamAnnotationMapper.insert(saved) > 0;
+        }
+
+        saved.setUuid(uuid);
+        saved.setAnnotation(annotation);
+        saved.setUpdate_date(now);
+        saved.setIs_delete(0);
+        return problemExamAnnotationMapper.updateById(saved) > 0;
     }
 
     @Override

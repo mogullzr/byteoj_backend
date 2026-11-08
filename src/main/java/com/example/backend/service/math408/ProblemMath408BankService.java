@@ -9,6 +9,7 @@ import com.example.backend.models.request.problem.Math408QueryRequest;
 import com.example.backend.models.request.problem.ProblemExamEditRequest;
 import com.example.backend.models.request.problem.ProblemExamCandidateSearchRequest;
 import com.example.backend.models.request.problem.ProblemExamGeneratePaperSqlRequest;
+import com.example.backend.models.request.problem.ProblemExamAnnotationRequest;
 import com.example.backend.models.request.problem.ProblemExamRequest;
 import com.example.backend.models.vo.problem.ProblemExamSubmitVo;
 import com.example.backend.models.vo.problem.ProblemExamCandidatePageVo;
@@ -118,6 +119,8 @@ public interface ProblemMath408BankService extends IService<ProblemMath408Bank> 
     List<ProblemExamSheetPaperVo> problemExamRecords(Long examId, Long uuid, Integer pageNum);
 
     List<ProblemExamSheetVo> problemExamSheet(Long recordId, Long uuid);
+
+    Boolean problemExamSaveAnnotation(ProblemExamAnnotationRequest request, Long uuid);
 
     List<ProblemExamTopScoreVo> problemExamTopScores(Long examId);
 

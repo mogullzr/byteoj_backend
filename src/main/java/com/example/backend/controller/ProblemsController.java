@@ -11,6 +11,9 @@ import com.example.backend.models.request.math408.ProblemExamSubmitRequest;
 import com.example.backend.models.request.problem.ProblemExamEditRequest;
 import com.example.backend.models.request.problem.ProblemExamCandidateSearchRequest;
 import com.example.backend.models.request.problem.ProblemExamGeneratePaperSqlRequest;
+import com.example.backend.models.request.problem.ProblemExamAnnotationRequest;
+import com.example.backend.models.request.problem.ExamReviewGuideGenerateRequest;
+import com.example.backend.models.request.problem.ProblemExamReviewGuideRequest;
 import com.example.backend.models.request.math408.ProblemRequest;
 import com.example.backend.models.vo.problem.ProblemExamSubmitVo;
 import com.example.backend.models.vo.problem.ProblemExamCandidatePageVo;
@@ -22,6 +25,7 @@ import com.example.backend.models.vo.problem.ExamGradingProgressVo;
 import com.example.backend.models.vo.problem.ProblemMath408BankVo;
 import com.example.backend.models.vo.problem.ProblemSimilarityVo;
 import com.example.backend.service.math408.ProblemMath408BankService;
+import com.example.backend.service.ai.ExamReviewGuideService;
 import com.example.backend.service.exam.ExamGradingProgressService;
 import com.example.backend.service.user.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +48,9 @@ public class ProblemsController {
 
     @Resource
     private ExamGradingProgressService examGradingProgressService;
+
+    @Resource
+    private ExamReviewGuideService examReviewGuideService;
 
     @AccessLimit(seconds = 1, maxCount = 5, needLogin = true)
     @PostMapping("/similar")
@@ -85,6 +92,17 @@ public class ProblemsController {
                                                                     HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
         List<ProblemExamSheetVo> result = problemsService.problemExamSheet(recordId, loginUser.getUuid());
+        return ResultUtils.success(result);
+    }
+
+    @AccessLimit(seconds = 1, maxCount = 30, needLogin = true)
+    @PostMapping("/exam/annotation")
+    private BaseResponse<Boolean> ProblemExamAnnotationSave(
+            @RequestBody ProblemExamAnnotationRequest annotationRequest,
+            HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        Boolean result = problemsService.problemExamSaveAnnotation(
+                annotationRequest, loginUser.getUuid());
         return ResultUtils.success(result);
     }
 
@@ -144,6 +162,33 @@ public class ProblemsController {
         Boolean result = problemsService.problemExamEdit(problemExamRequest, user);
 
         return ResultUtils.success(result);
+    }
+
+    @AccessLimit(seconds = 30, maxCount = 3, needLogin = true)
+    @PostMapping("/exam/review-guide/generate")
+    private BaseResponse<String> generateExamReviewGuide(
+            @RequestBody ExamReviewGuideGenerateRequest generateRequest,
+            HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        return ResultUtils.success(examReviewGuideService.generate(generateRequest, loginUser.getUuid()));
+    }
+
+    @AccessLimit(seconds = 1, maxCount = 30, needLogin = true)
+    @GetMapping("/exam/review-guide")
+    private BaseResponse<String> getExamReviewGuide(
+            @RequestParam("recordId") Long recordId,
+            HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        return ResultUtils.success(examReviewGuideService.getReviewGuide(recordId, loginUser.getUuid()));
+    }
+
+    @AccessLimit(seconds = 1, maxCount = 30, needLogin = true)
+    @PostMapping("/exam/review-guide")
+    private BaseResponse<Boolean> saveExamReviewGuide(
+            @RequestBody ProblemExamReviewGuideRequest reviewGuideRequest,
+            HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        return ResultUtils.success(examReviewGuideService.saveReviewGuide(reviewGuideRequest, loginUser.getUuid()));
     }
 
     @AccessLimit(seconds = 1, maxCount = 10, needLogin = true)

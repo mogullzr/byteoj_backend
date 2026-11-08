@@ -13,6 +13,9 @@ public class ProblemExamSubmitVo implements Serializable {
      */
     private Long exam_id;
 
+    /** 本次提交对应的用户答卷记录ID */
+    private Long record_id;
+
     /**
      * 考试名称
      */

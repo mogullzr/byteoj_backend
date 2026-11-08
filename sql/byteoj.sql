@@ -333,6 +333,43 @@ create table problem_exam_record
 )
     comment '考试提交记录表';
 
+create table problem_exam_annotation
+(
+    id           bigint auto_increment comment 'ID'
+        primary key,
+    exam_user_id bigint                             not null comment '用户答卷记录ID',
+    problem_id   bigint                             not null comment '试题ID',
+    uuid         bigint                             not null comment '用户ID',
+    annotation   text                               not null comment '用户复习标注',
+    create_date  datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    update_date  datetime default CURRENT_TIMESTAMP null comment '更新时间',
+    is_delete    tinyint  default 0                 not null comment '逻辑删除',
+    constraint problem_exam_annotation_pk
+        unique (id),
+    constraint uk_exam_annotation_user_problem
+        unique (exam_user_id, problem_id),
+    index idx_exam_annotation_uuid (uuid)
+)
+    comment '考试答题卡题目复习标注';
+
+create table problem_exam_review_guide
+(
+    id           bigint auto_increment comment 'ID'
+        primary key,
+    exam_user_id bigint                             not null comment '用户答卷记录ID',
+    uuid         bigint                             not null comment '用户ID',
+    review_guide text                               not null comment '用户整卷复习建议',
+    create_date  datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    update_date  datetime default CURRENT_TIMESTAMP null comment '更新时间',
+    is_delete    tinyint  default 0                 not null comment '逻辑删除',
+    constraint problem_exam_review_guide_pk
+        unique (id),
+    constraint uk_exam_review_guide_record
+        unique (exam_user_id),
+    index idx_exam_review_guide_uuid (uuid)
+)
+    comment '用户试卷级复习建议';
+
 create table problem_exam_tissue
 (
     id          bigint auto_increment comment 'ID'
