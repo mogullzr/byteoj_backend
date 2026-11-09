@@ -81,6 +81,9 @@ public interface ProblemMath408BankService extends IService<ProblemMath408Bank> 
      */
     List<ProblemMath408BankVo> problemExamSearchDetail(Long examId);
 
+    /** Load full question details in paper order for an owned submission or a public top-three sheet. */
+    List<ProblemMath408BankVo> problemExamSheetQuestionDetails(Long examId, Long recordId, Long uuid);
+
     /**
      * 添加/修改考试信息
      *

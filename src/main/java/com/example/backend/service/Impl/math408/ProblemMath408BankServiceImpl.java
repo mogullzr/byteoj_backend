@@ -667,6 +667,163 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         return problemMath408BankVos;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProblemMath408BankVo> problemExamSheetQuestionDetails(Long examId, Long recordId, Long uuid) {
+        if (examId == null || examId <= 0 || recordId == null || recordId <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid params");
+        }
+        ProblemExam exam = problemExamMapper.selectOne(new QueryWrapper<ProblemExam>()
+                .eq("id", examId)
+                .eq("is_delete", 0));
+        if (exam == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "exam not found");
+        }
+
+        boolean ownsSubmittedAttempt = false;
+        if (uuid != null) {
+            ProblemExamUser ownedAttempt = problemExamUserMapper.selectOne(new QueryWrapper<ProblemExamUser>()
+                    .eq("id", recordId)
+                    .eq("exam_id", examId)
+                    .eq("uuid", uuid)
+                    .eq("status", 1)
+                    .eq("is_delete", 0));
+            ownsSubmittedAttempt = ownedAttempt != null;
+        }
+        boolean isPublicTopSheet = !ownsSubmittedAttempt
+                && problemExamUserMapper.selectTopScoringUsersByExam(examId).stream()
+                .anyMatch(candidate -> recordId.equals(candidate.getId()));
+        if (!ownsSubmittedAttempt && !isPublicTopSheet) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "answer sheet not found");
+        }
+
+        List<ProblemExamTissue> tissues = problemExamTissueMapper.selectList(new QueryWrapper<ProblemExamTissue>()
+                .eq("exam_id", examId)
+                .eq("is_delete", 0)
+                .orderByAsc("id"));
+        if (tissues.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<Long> mathIds = new ArrayList<>();
+        List<Long> algorithmIds = new ArrayList<>();
+        for (ProblemExamTissue tissue : tissues) {
+            if (tissue.getProblem_id() == null || tissue.getStatus() == null) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid question in paper");
+            }
+            if (Objects.equals(tissue.getStatus(), 3)) algorithmIds.add(tissue.getProblem_id());
+            else mathIds.add(tissue.getProblem_id());
+        }
+
+        Map<Long, ProblemMath408Bank> mathById;
+        if (mathIds.isEmpty()) {
+            mathById = Collections.emptyMap();
+        } else {
+            List<ProblemMath408Bank> mathQuestions = problemMath408BankMapper.selectList(
+                    new QueryWrapper<ProblemMath408Bank>()
+                            .in("problem_id", mathIds)
+                            .eq("is_delete", 0));
+            mathById = mathQuestions.stream().collect(Collectors.toMap(
+                    ProblemMath408Bank::getProblem_id, item -> item, (left, right) -> left));
+        }
+
+        Map<Long, ProblemMath408Bank> effectiveMathById = resolveEffectiveMathProblems(mathById.values());
+
+        Map<Long, ProblemAlgorithmBank> algorithmById;
+        if (algorithmIds.isEmpty()) {
+            algorithmById = Collections.emptyMap();
+        } else {
+            algorithmById = problemAlgorithmBankMapper.selectList(new QueryWrapper<ProblemAlgorithmBank>()
+                            .in("problem_id", algorithmIds)
+                            .eq("is_delete", 0))
+                    .stream()
+                    .collect(Collectors.toMap(
+                            ProblemAlgorithmBank::getProblem_id, item -> item, (left, right) -> left));
+        }
+
+        List<ProblemMath408BankVo> result = new ArrayList<>(tissues.size());
+        for (ProblemExamTissue tissue : tissues) {
+            ProblemMath408BankVo question;
+            if (Objects.equals(tissue.getStatus(), 3)) {
+                ProblemAlgorithmBank algorithm = algorithmById.get(tissue.getProblem_id());
+                if (algorithm == null) {
+                    throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "question not found");
+                }
+                question = new ProblemMath408BankVo();
+                question.setProblem_id(algorithm.getProblem_id());
+                question.setProblem_name(algorithm.getChinese_name());
+                question.setDescription(algorithm.getDescription());
+                question.setDifficulty_name(algorithm.getDifficulty_name());
+                question.setSource_name(algorithm.getSource_name());
+                question.setStatus(3);
+                question.setOption_type(4);
+            } else {
+                ProblemMath408Bank source = mathById.get(tissue.getProblem_id());
+                ProblemMath408Bank effective = effectiveMathById.get(tissue.getProblem_id());
+                if (source == null || effective == null) {
+                    throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "question not found");
+                }
+                question = getProbleMath408mVO(effective, Collections.emptyList());
+                question.setProblem_id(source.getProblem_id());
+                question.setStatus(tissue.getStatus());
+                if (question.getOption_type() == null) question.setOption_type(tissue.getType());
+            }
+            question.setScore(tissue.getScore());
+            result.add(question);
+        }
+        return result;
+    }
+
+    /** Batch-resolve duplicate question redirects so a paper with many questions does not issue one selectOne per question. */
+    private Map<Long, ProblemMath408Bank> resolveEffectiveMathProblems(Collection<ProblemMath408Bank> sources) {
+        Map<Long, ProblemMath408Bank> loaded = new HashMap<>();
+        for (ProblemMath408Bank source : sources) loaded.put(source.getProblem_id(), source);
+
+        for (int depth = 0; depth < MAX_PROBLEM_REDIRECT_DEPTH; depth++) {
+            Set<Long> missingTargetIds = new HashSet<>();
+            for (ProblemMath408Bank problem : loaded.values()) {
+                Long targetId = extractRedirectProblemId(problem);
+                if (targetId != null && targetId > 0 && !loaded.containsKey(targetId)) {
+                    missingTargetIds.add(targetId);
+                }
+            }
+            if (missingTargetIds.isEmpty()) break;
+            List<ProblemMath408Bank> redirectTargets = problemMath408BankMapper.selectList(
+                    new QueryWrapper<ProblemMath408Bank>()
+                            .in("problem_id", missingTargetIds)
+                            .eq("is_delete", 0));
+            for (ProblemMath408Bank target : redirectTargets) loaded.put(target.getProblem_id(), target);
+            if (redirectTargets.isEmpty()) break;
+        }
+
+        Map<Long, ProblemMath408Bank> result = new HashMap<>();
+        for (ProblemMath408Bank source : sources) {
+            ProblemMath408Bank current = source;
+            Set<Long> visited = new HashSet<>();
+            boolean invalidRedirect = false;
+            for (int depth = 0; depth < MAX_PROBLEM_REDIRECT_DEPTH; depth++) {
+                if (current.getProblem_id() == null || !visited.add(current.getProblem_id())) {
+                    invalidRedirect = true;
+                    break;
+                }
+                Long targetId = extractRedirectProblemId(current);
+                if (targetId == null || targetId <= 0) break;
+                if (visited.contains(targetId)) {
+                    invalidRedirect = true;
+                    break;
+                }
+                ProblemMath408Bank target = loaded.get(targetId);
+                if (target == null) {
+                    invalidRedirect = true;
+                    break;
+                }
+                current = target;
+            }
+            result.put(source.getProblem_id(), invalidRedirect ? source : current);
+        }
+        return result;
+    }
+
     private Map<Long, ProblemMath408BankVo> buildRedirectedMathProblemVoMap(List<ProblemMath408Bank> problemMath408BankList) {
         if (problemMath408BankList == null || problemMath408BankList.isEmpty()) {
             return new HashMap<>();

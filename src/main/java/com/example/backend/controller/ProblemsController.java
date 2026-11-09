@@ -74,6 +74,17 @@ public class ProblemsController {
     }
 
     @AccessLimit(seconds = 1, maxCount = 10, needLogin = false)
+    @GetMapping("/exam/sheet/questions")
+    private BaseResponse<List<ProblemMath408BankVo>> ProblemExamSheetQuestionDetails(
+            @RequestParam("examId") Long examId,
+            @RequestParam("recordId") Long recordId,
+            HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        Long uuid = loginUser == null ? null : loginUser.getUuid();
+        return ResultUtils.success(problemsService.problemExamSheetQuestionDetails(examId, recordId, uuid));
+    }
+
+    @AccessLimit(seconds = 1, maxCount = 10, needLogin = false)
     @GetMapping("/exam/records")
     private BaseResponse<List<ProblemExamSheetPaperVo>> ProblemExamRecords(@RequestParam("exam_id") Long exam_id,
                                                                            @RequestParam(value = "pageNum", required = false) Integer pageNum,
