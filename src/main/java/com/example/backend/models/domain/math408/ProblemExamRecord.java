@@ -50,6 +50,16 @@ public class ProblemExamRecord {
 
     private Boolean is_person;
 
+    /** AI model and token accounting for this question (DeepSeek usage when applicable). */
+    private String ai_model;
+    private Integer prompt_tokens;
+    private Integer prompt_cache_hit_tokens;
+    private Integer prompt_cache_miss_tokens;
+    private Integer completion_tokens;
+    private Integer total_tokens;
+    /** Estimated RMB cost using the official DeepSeek-Flash RMB token prices. */
+    private java.math.BigDecimal ai_cost_cny;
+
     /**
      * 创建时间
      */

@@ -18,6 +18,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.Normalizer;
 import java.time.Duration;
+import java.time.DayOfWeek;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -119,8 +123,12 @@ public class GradingAgentUtil {
                 .bodyValue(request)
                 .retrieve()
                 .bodyToMono(String.class)
-                .map(this::extractAssistantContent)
-                .map(this::parseResultJson)
+                .map(this::parseAiResponse)
+                .map(response -> {
+                    GradingResult result = parseResultJson(response.content);
+                    result.setTokenUsage(response.tokenUsage);
+                    return result;
+                })
                 .map(result -> normalizeResult(result, input.getTotalScore(), input.getQuestionType()))
                 .doOnSuccess(result -> log.info("[grading-agent] ai request success, model={}, hasImage={}, gradingMode={}, manualReview={}, awardedScore={}, costMs={}",
                         request.getModel(), hasImage, result.getGradingMode(), result.isNeedsManualReview(),
@@ -479,7 +487,7 @@ public class GradingAgentUtil {
         return imageUrls.stream().distinct().collect(java.util.stream.Collectors.toList());
     }
 
-    private String extractAssistantContent(String responseBody) {
+    private AiResponse parseAiResponse(String responseBody) {
         try {
             JsonNode root = objectMapper.readTree(responseBody);
             JsonNode choice = root.path("choices").get(0);
@@ -490,10 +498,26 @@ public class GradingAgentUtil {
             if (!StringUtils.hasText(content)) {
                 throw new IllegalStateException("AI response content is empty");
             }
-            return content;
+            TokenUsage tokenUsage = parseTokenUsage(root.path("usage"));
+            return new AiResponse(content, tokenUsage);
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("failed to parse AI response JSON", e);
         }
+    }
+
+    private TokenUsage parseTokenUsage(JsonNode usageNode) {
+        if (usageNode == null || usageNode.isMissingNode() || usageNode.isNull()) {
+            return TokenUsage.empty();
+        }
+        int promptTokens = usageNode.path("prompt_tokens").asInt(0);
+        int cacheHitTokens = usageNode.path("prompt_cache_hit_tokens").asInt(0);
+        int cacheMissTokens = usageNode.path("prompt_cache_miss_tokens").asInt(0);
+        int completionTokens = usageNode.path("completion_tokens").asInt(0);
+        int totalTokens = usageNode.path("total_tokens").asInt(promptTokens + completionTokens);
+        if (cacheHitTokens + cacheMissTokens == 0 && promptTokens > 0) {
+            cacheMissTokens = promptTokens;
+        }
+        return TokenUsage.of(promptTokens, cacheHitTokens, cacheMissTokens, completionTokens, totalTokens);
     }
 
     private String normalizeType(String questionType) {
@@ -1349,6 +1373,104 @@ public class GradingAgentUtil {
         private Integer wordCount;
 
         private String band;
+
+        /** DeepSeek usage for this request. Null means no upstream AI request was made. */
+        @JsonProperty("token_usage")
+        private TokenUsage tokenUsage;
+    }
+
+    @Data
+    public static class TokenUsage {
+        @JsonProperty("prompt_tokens")
+        private int promptTokens;
+        @JsonProperty("prompt_cache_hit_tokens")
+        private int promptCacheHitTokens;
+        @JsonProperty("prompt_cache_miss_tokens")
+        private int promptCacheMissTokens;
+        @JsonProperty("completion_tokens")
+        private int completionTokens;
+        @JsonProperty("total_tokens")
+        private int totalTokens;
+        /** Estimated RMB cost at the DeepSeek price active at request time. */
+        @JsonProperty("cost_cny")
+        private BigDecimal costCny;
+
+        public static TokenUsage empty() {
+            return of(0, 0, 0, 0, 0);
+        }
+
+        public static TokenUsage of(int promptTokens, int cacheHitTokens, int cacheMissTokens,
+                                    int completionTokens, int totalTokens) {
+            TokenUsage usage = new TokenUsage();
+            usage.promptTokens = Math.max(0, promptTokens);
+            usage.promptCacheHitTokens = Math.max(0, cacheHitTokens);
+            usage.promptCacheMissTokens = Math.max(0, cacheMissTokens);
+            usage.completionTokens = Math.max(0, completionTokens);
+            usage.totalTokens = Math.max(0, totalTokens);
+            usage.costCny = calculateDeepSeekCostCny(usage);
+            return usage;
+        }
+
+        public static TokenUsage sum(TokenUsage left, TokenUsage right) {
+            if (left == null) return right == null ? empty() : right.copy();
+            if (right == null) return left.copy();
+            TokenUsage total = of(left.promptTokens + right.promptTokens,
+                    left.promptCacheHitTokens + right.promptCacheHitTokens,
+                    left.promptCacheMissTokens + right.promptCacheMissTokens,
+                    left.completionTokens + right.completionTokens,
+                    left.totalTokens + right.totalTokens);
+            total.costCny = safeCost(left.costCny).add(safeCost(right.costCny))
+                    .setScale(8, RoundingMode.HALF_UP);
+            return total;
+        }
+
+        public TokenUsage copy() {
+            TokenUsage copy = of(promptTokens, promptCacheHitTokens, promptCacheMissTokens, completionTokens, totalTokens);
+            copy.costCny = safeCost(costCny);
+            return copy;
+        }
+
+        private static BigDecimal safeCost(BigDecimal cost) {
+            return cost == null ? BigDecimal.ZERO : cost;
+        }
+
+        /**
+         * DeepSeek-Flash official RMB pricing, per million tokens.
+         * The first pricing column in the official table is used by the
+         * configured {@code deepseek-flash} model:
+         * cache hit 0.02/0.04, cache miss 1/2, output 4/8
+         * (off-peak/peak respectively).
+         */
+        private static BigDecimal calculateDeepSeekCostCny(TokenUsage usage) {
+            boolean peak = isPeakUtcTime();
+            BigDecimal hitPrice = BigDecimal.valueOf(peak ? 0.04D : 0.02D);
+            BigDecimal missPrice = BigDecimal.valueOf(peak ? 2.0D : 1.0D);
+            BigDecimal outputPrice = BigDecimal.valueOf(peak ? 8.0D : 4.0D);
+            BigDecimal oneMillion = BigDecimal.valueOf(1_000_000L);
+            return BigDecimal.valueOf(usage.promptCacheHitTokens).multiply(hitPrice)
+                    .add(BigDecimal.valueOf(usage.promptCacheMissTokens).multiply(missPrice))
+                    .add(BigDecimal.valueOf(usage.completionTokens).multiply(outputPrice))
+                    .divide(oneMillion, 8, RoundingMode.HALF_UP);
+        }
+
+        private static boolean isPeakUtcTime() {
+            ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+            DayOfWeek day = now.getDayOfWeek();
+            if (day == DayOfWeek.SATURDAY || day == DayOfWeek.SUNDAY) return false;
+            LocalTime time = now.toLocalTime();
+            return (!time.isBefore(LocalTime.of(1, 0)) && time.isBefore(LocalTime.of(4, 0)))
+                    || (!time.isBefore(LocalTime.of(6, 0)) && time.isBefore(LocalTime.of(10, 0)));
+        }
+    }
+
+    private static final class AiResponse {
+        private final String content;
+        private final TokenUsage tokenUsage;
+
+        private AiResponse(String content, TokenUsage tokenUsage) {
+            this.content = content;
+            this.tokenUsage = tokenUsage;
+        }
     }
 
     @Data

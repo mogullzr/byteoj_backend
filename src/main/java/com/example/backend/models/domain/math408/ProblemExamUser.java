@@ -41,6 +41,16 @@ public class ProblemExamUser {
      */
     private Integer score_subjective;
 
+    /** Aggregated AI token accounting for this submitted paper. */
+    private String ai_model;
+    private Integer prompt_tokens;
+    private Integer prompt_cache_hit_tokens;
+    private Integer prompt_cache_miss_tokens;
+    private Integer completion_tokens;
+    private Integer total_tokens;
+    /** Aggregated estimated RMB cost using the official DeepSeek-Flash RMB token prices. */
+    private java.math.BigDecimal ai_cost_cny;
+
     /**
      * 0表示当前报名待提交，1表示已提交并失效(用于区分多次答卷)
      */

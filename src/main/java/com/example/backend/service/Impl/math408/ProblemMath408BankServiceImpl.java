@@ -1360,6 +1360,8 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
             problemExamRecordService.saveBatch(problemExamRecords);
         }
 
+        GradingAgentUtil.TokenUsage paperUsage = aggregateTokenUsage(problemExamRecords);
+
         // 4.报名信息作废 + 考试成绩保存
         // TODO
         syncExamWrongBook(uuid, exam_id, problemExamUser.getId(), problemExamTissues);
@@ -1367,6 +1369,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
          problemExamUser.setStatus(1);
         problemExamUser.setScore_option(option_score);
         problemExamUser.setScore_subjective(subjective_score);
+        applyTokenUsage(problemExamUser, paperUsage, aiModel);
         problemExamUser.setUpdate_date(new Date());
 
         problemExamUserMapper.updateById(problemExamUser);
@@ -1381,6 +1384,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         problemExamSubmitVo.setScore_subjective(subjective_score);
         problemExamSubmitVo.setExam_name(problemExam.getExam_name());
         problemExamSubmitVo.setTotal_score(problemExam.getTotal_score());
+        applyTokenUsage(problemExamSubmitVo, paperUsage, aiModel);
 
         if (progressTracker != null) {
             progressTracker.finish();
@@ -1475,6 +1479,14 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
             int subjectiveScore = examUser.getScore_subjective() == null ? 0 : examUser.getScore_subjective();
             vo.setScore(optionScore + subjectiveScore);
             vo.setTotal_score(problemExam.getTotal_score());
+            vo.setAi_model(examUser.getAi_model());
+            vo.setPrompt_tokens(examUser.getPrompt_tokens());
+            vo.setPrompt_cache_hit_tokens(examUser.getPrompt_cache_hit_tokens());
+            vo.setPrompt_cache_miss_tokens(examUser.getPrompt_cache_miss_tokens());
+            vo.setCompletion_tokens(examUser.getCompletion_tokens());
+            vo.setTotal_tokens(examUser.getTotal_tokens());
+            vo.setAi_cost_cny(examUser.getAi_cost_cny() != null
+                    ? examUser.getAi_cost_cny() : calculateTokenCostCny(examUser));
             if (first) {
                 first = false;
                 vo.setPages(pageInfo.getPages());
@@ -1972,12 +1984,86 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         problemExamRecord.setAi_advise(buildGradingAdvice(gradingResult));
         problemExamRecord.setConfidence(formatConfidence(gradingResult.getConfidence()));
         problemExamRecord.setIs_person(gradingResult.isNeedsManualReview());
+        GradingAgentUtil.TokenUsage usage = "DEEPSEEK".equalsIgnoreCase(aiModel)
+                ? gradingResult.getTokenUsage() : GradingAgentUtil.TokenUsage.empty();
+        applyTokenUsage(problemExamRecord, usage, aiModel);
         log.info("[exam-submit-ai] problem finish, examUserId={}, uuid={}, problemId={}, status={}, mode={}, gradingMode={}, score={}, manualReview={}, costMs={}",
                 examUserId, uuid, problem.getProblem_id(), status,
                 blankAnswer ? "blank" : (imageAnswer ? "image" : "text"),
                 gradingResult.getGradingMode(), awardedScore, gradingResult.isNeedsManualReview(),
                 System.currentTimeMillis() - start);
         return problemExamRecord;
+    }
+
+    private GradingAgentUtil.TokenUsage aggregateTokenUsage(List<ProblemExamRecord> records) {
+        GradingAgentUtil.TokenUsage total = GradingAgentUtil.TokenUsage.empty();
+        if (records == null) {
+            return total;
+        }
+        for (ProblemExamRecord record : records) {
+            if (record == null) continue;
+            GradingAgentUtil.TokenUsage item = GradingAgentUtil.TokenUsage.of(
+                    record.getPrompt_tokens() == null ? 0 : record.getPrompt_tokens(),
+                    record.getPrompt_cache_hit_tokens() == null ? 0 : record.getPrompt_cache_hit_tokens(),
+                    record.getPrompt_cache_miss_tokens() == null ? 0 : record.getPrompt_cache_miss_tokens(),
+                    record.getCompletion_tokens() == null ? 0 : record.getCompletion_tokens(),
+                    record.getTotal_tokens() == null ? 0 : record.getTotal_tokens());
+            // Preserve the exact RMB price calculated when this request completed.
+            // This matters when an exam crosses the peak/off-peak boundary.
+            if (record.getAi_cost_cny() != null) {
+                item.setCostCny(record.getAi_cost_cny());
+            }
+            total = GradingAgentUtil.TokenUsage.sum(total, item);
+        }
+        return total;
+    }
+
+    private void applyTokenUsage(ProblemExamRecord target, GradingAgentUtil.TokenUsage usage, String model) {
+        if (target == null) return;
+        GradingAgentUtil.TokenUsage safe = usage == null ? GradingAgentUtil.TokenUsage.empty() : usage;
+        target.setAi_model(model);
+        target.setPrompt_tokens(safe.getPromptTokens());
+        target.setPrompt_cache_hit_tokens(safe.getPromptCacheHitTokens());
+        target.setPrompt_cache_miss_tokens(safe.getPromptCacheMissTokens());
+        target.setCompletion_tokens(safe.getCompletionTokens());
+        target.setTotal_tokens(safe.getTotalTokens());
+        target.setAi_cost_cny(safe.getCostCny());
+    }
+
+    private void applyTokenUsage(ProblemExamUser target, GradingAgentUtil.TokenUsage usage, String model) {
+        if (target == null) return;
+        GradingAgentUtil.TokenUsage safe = usage == null ? GradingAgentUtil.TokenUsage.empty() : usage;
+        target.setAi_model(model);
+        target.setPrompt_tokens(safe.getPromptTokens());
+        target.setPrompt_cache_hit_tokens(safe.getPromptCacheHitTokens());
+        target.setPrompt_cache_miss_tokens(safe.getPromptCacheMissTokens());
+        target.setCompletion_tokens(safe.getCompletionTokens());
+        target.setTotal_tokens(safe.getTotalTokens());
+        target.setAi_cost_cny(safe.getCostCny());
+    }
+
+    private void applyTokenUsage(ProblemExamSubmitVo target, GradingAgentUtil.TokenUsage usage, String model) {
+        if (target == null) return;
+        GradingAgentUtil.TokenUsage safe = usage == null ? GradingAgentUtil.TokenUsage.empty() : usage;
+        target.setAi_model(model);
+        target.setPrompt_tokens(safe.getPromptTokens());
+        target.setPrompt_cache_hit_tokens(safe.getPromptCacheHitTokens());
+        target.setPrompt_cache_miss_tokens(safe.getPromptCacheMissTokens());
+        target.setCompletion_tokens(safe.getCompletionTokens());
+        target.setTotal_tokens(safe.getTotalTokens());
+        target.setAi_cost_cny(safe.getCostCny());
+    }
+
+    private BigDecimal calculateTokenCostCny(ProblemExamUser examUser) {
+        if (examUser == null) {
+            return BigDecimal.ZERO.setScale(8, java.math.RoundingMode.HALF_UP);
+        }
+        return GradingAgentUtil.TokenUsage.of(
+                examUser.getPrompt_tokens() == null ? 0 : examUser.getPrompt_tokens(),
+                examUser.getPrompt_cache_hit_tokens() == null ? 0 : examUser.getPrompt_cache_hit_tokens(),
+                examUser.getPrompt_cache_miss_tokens() == null ? 0 : examUser.getPrompt_cache_miss_tokens(),
+                examUser.getCompletion_tokens() == null ? 0 : examUser.getCompletion_tokens(),
+                examUser.getTotal_tokens() == null ? 0 : examUser.getTotal_tokens()).getCostCny();
     }
 
     /**

@@ -45,4 +45,12 @@ public class ProblemExamSubmitVo implements Serializable {
      * 主观题分数
      */
     private Integer score_subjective;
+
+    private String ai_model;
+    private Integer prompt_tokens;
+    private Integer prompt_cache_hit_tokens;
+    private Integer prompt_cache_miss_tokens;
+    private Integer completion_tokens;
+    private Integer total_tokens;
+    private java.math.BigDecimal ai_cost_cny;
 }

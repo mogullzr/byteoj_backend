@@ -21,11 +21,13 @@ import com.example.backend.models.vo.problem.ProblemExamSheetPaperVo;
 import com.example.backend.models.vo.problem.ProblemExamSheetVo;
 import com.example.backend.models.vo.problem.ProblemExamTopScoreVo;
 import com.example.backend.models.vo.problem.ProblemExamVo;
+import com.example.backend.models.vo.problem.DeepSeekBalanceVo;
 import com.example.backend.models.vo.problem.ExamGradingProgressVo;
 import com.example.backend.models.vo.problem.ProblemMath408BankVo;
 import com.example.backend.models.vo.problem.ProblemSimilarityVo;
 import com.example.backend.service.math408.ProblemMath408BankService;
 import com.example.backend.service.ai.ExamReviewGuideService;
+import com.example.backend.service.ai.DeepSeekAccountService;
 import com.example.backend.service.exam.ExamGradingProgressService;
 import com.example.backend.service.user.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -51,6 +53,16 @@ public class ProblemsController {
 
     @Resource
     private ExamReviewGuideService examReviewGuideService;
+
+    @Resource
+    private DeepSeekAccountService deepSeekAccountService;
+
+    @AccessLimit(seconds = 10, maxCount = 5, needLogin = true)
+    @GetMapping("/exam/ai/balance")
+    private BaseResponse<DeepSeekBalanceVo> getDeepSeekBalance(HttpServletRequest request) {
+        userService.getLoginUser(request);
+        return ResultUtils.success(deepSeekAccountService.getBalance());
+    }
 
     @AccessLimit(seconds = 1, maxCount = 5, needLogin = true)
     @PostMapping("/similar")
