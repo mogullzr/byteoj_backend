@@ -43,6 +43,7 @@ public class AlgorithmTestGenerationService {
     @Resource private ProblemAlgorithmLimitMapper limitMapper;
     @Resource private AlgorithmTestGenerationProperties properties;
     @Resource private AlgorithmTestGeneratorAiClient aiClient;
+    @Resource private com.example.backend.service.ai.AiSourceService aiSources;
     @Resource private GeneratorProtocolService generatorProtocol;
     @Resource private ReferenceSolutionService referenceSolutionService;
     @Resource private TestCasePublishService publishService;
@@ -70,7 +71,8 @@ public class AlgorithmTestGenerationService {
         }
         Date now = new Date();
         AlgorithmTestGenerationJob job = new AlgorithmTestGenerationJob();
-        job.setProblem_id(request.getProblemId()); job.setCreator_uuid(userId); job.setModel(request.getModel());
+        job.setProblem_id(request.getProblemId()); job.setCreator_uuid(userId); job.setModel(aiSources.resolve(com.example.backend.service.ai.AiSourceService.Feature.TEST_GENERATION,
+                aiSources.legacyId(request.getModel()), false).id());
         job.setStatus("CREATED"); job.setCurrent_stage("正在创建任务"); job.setProgress_percent(0);
         job.setWrite_mode(request.getWriteMode() == null ? "APPEND" : request.getWriteMode().toUpperCase());
         job.setGenerate_expected_output(generateOutput); job.setReference_solution_id(request.getReferenceSolutionId());

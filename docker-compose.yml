@@ -96,6 +96,7 @@ services:
     environment:
       # 数据库配置（已添加 allowPublicKeyRetrieval=true）
       SPRING_PROFILES_ACTIVE: dev
+      BYTEOJ_AI_MASTER_KEY: ${BYTEOJ_AI_MASTER_KEY:-}
       # RabbitMQ 配置
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_PORT: 5672

@@ -20,7 +20,9 @@ public class ContentCachingFilter extends OncePerRequestFilter {
 
         // 如果是 SSE 请求，跳过缓存
         String Request = request.getRequestURI();
-        if (Request.contains("/ai/ask")
+        if (org.springframework.web.util.UrlPathHelper.defaultInstance.getPathWithinApplication(request)
+                .startsWith("/ai/sources/admin/keys/")
+                || Request.contains("/ai/ask")
                 || Request.contains("/posts/search/page")) {
                 filterChain.doFilter(request, response); // 直接放行，不包装
             return;

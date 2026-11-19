@@ -31,6 +31,8 @@ public class EnglishGradingService {
 
     @Resource
     private GradingAgentUtil gradingAgentUtil;
+    @Resource
+    private AiSourceService aiSources;
 
     public GradingAgentUtil.GradingResult grade(EnglishGradingRequest request, Long uuid) {
         validate(request);
@@ -47,7 +49,11 @@ public class EnglishGradingService {
         input.setSolutionExplanation(request.getSolutionExplanation());
         input.setStudentAnswer(request.getStudentAnswer());
         input.setStudentAnswerImageUrls(request.getStudentAnswerImageUrls());
-        input.setAiModel(request.getAiModel());
+        input.setSourceFeature(AiSourceService.Feature.ENGLISH_GRADING);
+        input.setAiModel(aiSources.resolve(AiSourceService.Feature.ENGLISH_GRADING,
+                StringUtils.hasText(request.getAiModel()) ? request.getAiModel() : "GPT_5_4",
+                !CollectionUtils.isEmpty(request.getQuestionImageUrls())
+                        || !CollectionUtils.isEmpty(request.getStudentAnswerImageUrls())).id());
         input.setForceAi(Boolean.TRUE);
         input.setTemperature(0F);
         input.setTopP(0.2F);

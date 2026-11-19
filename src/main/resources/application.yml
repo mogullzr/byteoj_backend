@@ -241,6 +241,10 @@ ai:
       model: ${hm.ai.api.deepseek-grading.model}
       url: ${hm.ai.api.deepseek-grading.url}
       key: ${hm.ai.api.deepseek-grading.key}
+      # 仅优化普通 DeepSeek 判卷；关闭即可恢复原 Prompt，英语专项/GPT 不受影响。
+      optimized-prompt-enabled: ${DEEPSEEK_GRADING_OPTIMIZED_PROMPT_ENABLED:true}
+      # auto：普通题 low，复杂题 high；低强度结果有明确疑点时最多复核一次。
+      reasoning-effort: ${DEEPSEEK_GRADING_REASONING_EFFORT:auto}
 domain:
   url_1: ${domain.url_1} # 自己的域名地址，替换一下
 avatar:

@@ -44,8 +44,8 @@ public class EmbeddingConvertUtil {
     @Value("${hm.aliyun.embedding.url}")
     private String url;
 
-    @Value("${hm.aliyun.embedding.accessKeyId}")
-    private String accessKeyId;
+    @Resource
+    private com.example.backend.service.ai.AiSourceService aiSources;
 
     @Value("${hm.aliyun.embedding.model}")
     private String model;
@@ -287,7 +287,7 @@ public class EmbeddingConvertUtil {
                 // --- 核心配置：设置 30 秒超时 ---
                 Document doc = Jsoup.connect(url)
                         .header("Content-Type", "application/json")
-                        .header("Authorization", "Bearer " + accessKeyId)
+                        .header("Authorization", "Bearer " + aiSources.keyFor("embedding"))
                         .ignoreContentType(true)
                         .requestBody(jsonParams)
                         .timeout(120000) // 30秒超时，给大模型足够的计算时间

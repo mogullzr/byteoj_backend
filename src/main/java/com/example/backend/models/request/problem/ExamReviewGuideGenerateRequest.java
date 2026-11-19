@@ -10,4 +10,5 @@ public class ExamReviewGuideGenerateRequest implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Long record_id;
+    private String ai_model;
 }

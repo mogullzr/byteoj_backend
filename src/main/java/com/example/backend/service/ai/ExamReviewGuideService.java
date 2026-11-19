@@ -19,11 +19,9 @@ import com.example.backend.models.domain.math408.ProblemExamUser;
 import com.example.backend.models.domain.math408.ProblemMath408Bank;
 import com.example.backend.models.request.problem.ExamReviewGuideGenerateRequest;
 import com.example.backend.models.request.problem.ProblemExamReviewGuideRequest;
-import com.example.backend.registry.DeepSeekChatModeRegistry;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -84,18 +82,18 @@ public class ExamReviewGuideService {
     @Resource
     private ProblemAlgorithmBankMapper problemAlgorithmBankMapper;
     @Resource
-    private DeepSeekChatModeRegistry deepSeekChatModeRegistry;
+    private AiSourceService aiSources;
     @Resource
     private ObjectMapper objectMapper;
 
-    @Value("${ai.api.v3-1.model}")
-    private String model;
+
 
     public String generate(ExamReviewGuideGenerateRequest request, Long uuid) {
         if (request == null || request.getRecord_id() == null || request.getRecord_id() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid answer sheet id");
         }
         ProblemExamUser attempt = findSubmittedAttempt(request.getRecord_id(), uuid);
+        AiSourceService.Connection source = aiSources.resolve(AiSourceService.Feature.EXAM_REVIEW, request.getAi_model(), false);
         ProblemExam exam = problemExamMapper.selectById(attempt.getExam_id());
         if (exam == null || Integer.valueOf(1).equals(exam.getIs_delete())) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "exam not found");
@@ -263,12 +261,12 @@ public class ExamReviewGuideService {
             if (prompt.length() > MAX_PROMPT_LENGTH) {
                 prompt = objectMapper.writeValueAsString(trimPromptEvidence(userData, MAX_PROMPT_LENGTH));
             }
-            return requestModel(prompt);
+            return requestModel(prompt, source);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
-            log.error("AI exam review guide generation failed, recordId={}, model={}, causeType={}, message={}",
-                    request.getRecord_id(), model, e.getClass().getName(), e.getMessage(), e);
+            log.error("AI exam review guide generation failed, recordId={}, source={}, causeType={}, message={}",
+                    request.getRecord_id(), source.id(), e.getClass().getName(), e.getMessage(), e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI 生成试卷复习建议失败");
         }
     }
@@ -330,21 +328,17 @@ public class ExamReviewGuideService {
         return attempt;
     }
 
-    private String requestModel(String userPrompt) throws Exception {
-        List<String> modelInfo = deepSeekChatModeRegistry.getChatModeInfo(model);
-        if (modelInfo == null || modelInfo.size() < 2 || modelInfo.get(0) == null || modelInfo.get(0).isBlank()) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI model is not configured");
-        }
+    private String requestModel(String userPrompt, AiSourceService.Connection source) throws Exception {
         Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("model", model);
+        payload.put("model", source.model());
         payload.put("stream", false);
         payload.put("temperature", 0.35);
         payload.put("top_p", 0.85);
         payload.put("messages", Arrays.asList(message("system", SYSTEM_PROMPT), message("user", userPrompt)));
 
         String response = WebClient.builder()
-                .baseUrl(modelInfo.get(0))
-                .defaultHeader("Authorization", "Bearer " + modelInfo.get(1))
+                .baseUrl(source.url())
+                .defaultHeader("Authorization", "Bearer " + source.key())
                 .build()
                 .post()
                 .contentType(MediaType.APPLICATION_JSON)

@@ -229,7 +229,9 @@ public class OperationLogInterceptor implements HandlerInterceptor {
 
 
             // 8. 记录请求参数（GET和POST）
-            String params = getRequestParams(request, request.getMethod());
+            String params = org.springframework.web.util.UrlPathHelper.defaultInstance.getPathWithinApplication(request)
+                .startsWith("/ai/sources/admin/keys/")
+                    ? "{}" : getRequestParams(request, request.getMethod());
             if (params==null || params.isEmpty()) {
                 logOperation.setRequest_param("{}");
                 logException.setRequest_param("{}");

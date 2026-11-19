@@ -29,6 +29,8 @@ import com.example.backend.models.request.problem.ProblemExamRequest;
 import com.example.backend.models.request.problem.ProblemWrongBookSyncItem;
 import com.example.backend.models.vo.problem.*;
 import com.example.backend.service.ai.DeepSeekService;
+import com.example.backend.service.ai.AiSourceService;
+import com.example.backend.service.ai.AiSourceService.Feature;
 import com.example.backend.service.algorithm.ProblemAlgorithmService;
 import com.example.backend.service.exam.ExamGradingProgressService;
 import com.example.backend.service.math408.*;
@@ -159,6 +161,9 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
 
     @Resource
     private GradingAgentUtil gradingAgentUtil;
+
+    @Resource
+    private AiSourceService aiSources;
 
     @Resource
     private JdbcTemplate jdbcTemplate;
@@ -1308,7 +1313,15 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
                 ));
         Map<Long, String> correctAnswerMap = loadObjectiveCorrectAnswers(objectiveProblemIds);
         List<CompletableFuture<ExamQuestionGradingResult>> gradingFutures = new ArrayList<>();
-        String aiModel = normalizeExamAiModel(problemExamSubmitRequest.getAi_model());
+        String requestedSource = normalizeExamAiModel(problemExamSubmitRequest.getAi_model());
+        boolean needsAi = answers.stream().anyMatch(answer -> answer != null
+                && (Objects.equals(answer.getStatus(), 0) || Objects.equals(answer.getStatus(), 3))
+                && answer.getAnswer() != null && !answer.getAnswer().isBlank());
+        String aiModel = needsAi
+                ? aiSources.resolve(Feature.EXAM_GRADING, requestedSource, answers.stream().anyMatch(answer ->
+                        answer != null && (Objects.equals(answer.getStatus(), 0) || Objects.equals(answer.getStatus(), 3))
+                                && isImageAnswerUrl(answer.getAnswer()))).id()
+                : aiSources.defaultOrSelection(Feature.EXAM_GRADING, requestedSource);
         for (ProblemSimpleInfo answer : answers) {
             if (answer == null || answer.getProblem_id() == null) {
                 continue;
@@ -1973,6 +1986,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         gradingInput.setTemperature(0F);
         gradingInput.setTopP(0.9F);
         gradingInput.setAiModel(aiModel);
+        gradingInput.setSourceFeature(Feature.EXAM_GRADING);
 
         GradingAgentUtil.GradingResult gradingResult = gradeSubjectAnswerWithRetry(
                 gradingInput, problem.getProblem_id());
@@ -1984,8 +1998,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         problemExamRecord.setAi_advise(buildGradingAdvice(gradingResult));
         problemExamRecord.setConfidence(formatConfidence(gradingResult.getConfidence()));
         problemExamRecord.setIs_person(gradingResult.isNeedsManualReview());
-        GradingAgentUtil.TokenUsage usage = "DEEPSEEK".equalsIgnoreCase(aiModel)
-                ? gradingResult.getTokenUsage() : GradingAgentUtil.TokenUsage.empty();
+        GradingAgentUtil.TokenUsage usage = gradingResult.getTokenUsage();
         applyTokenUsage(problemExamRecord, usage, aiModel);
         log.info("[exam-submit-ai] problem finish, examUserId={}, uuid={}, problemId={}, status={}, mode={}, gradingMode={}, score={}, manualReview={}, costMs={}",
                 examUserId, uuid, problem.getProblem_id(), status,
@@ -2010,7 +2023,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
                     record.getTotal_tokens() == null ? 0 : record.getTotal_tokens());
             // Preserve the exact RMB price calculated when this request completed.
             // This matters when an exam crosses the peak/off-peak boundary.
-            if (record.getAi_cost_cny() != null) {
+            if (record.getAi_cost_cny() != null || !"DEEPSEEK".equals(record.getAi_model())) {
                 item.setCostCny(record.getAi_cost_cny());
             }
             total = GradingAgentUtil.TokenUsage.sum(total, item);
@@ -2055,6 +2068,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
     }
 
     private BigDecimal calculateTokenCostCny(ProblemExamUser examUser) {
+        if (examUser != null && examUser.getAi_model() != null && !"DEEPSEEK".equals(examUser.getAi_model())) return null;
         if (examUser == null) {
             return BigDecimal.ZERO.setScale(8, java.math.RoundingMode.HALF_UP);
         }
@@ -2077,6 +2091,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         int maxRetries = Math.min(MAX_EXAM_AI_RETRIES, Math.max(0, examAiGradingMaxRetries));
         int maxAttempts = maxRetries + 1;
         RuntimeException lastFailure = null;
+        GradingAgentUtil.TokenUsage failedUsage = GradingAgentUtil.TokenUsage.empty();
 
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
@@ -2084,6 +2099,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
                 if (result == null) {
                     throw new IllegalStateException("AI grading returned an empty result");
                 }
+                result.setTokenUsage(GradingAgentUtil.TokenUsage.sum(failedUsage, result.getTokenUsage()));
                 if (attempt > 1) {
                     log.info("[exam-submit-ai] subject grading recovered, problemId={}, attempt={}/{}",
                             problemId, attempt, maxAttempts);
@@ -2091,6 +2107,8 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
                 return result;
             } catch (RuntimeException failure) {
                 lastFailure = failure;
+                failedUsage = GradingAgentUtil.TokenUsage.sum(failedUsage,
+                        GradingAgentUtil.knownUsageFromFailure(failure));
                 if (failure instanceof IllegalArgumentException || failure instanceof BusinessException) {
                     throw failure;
                 }
@@ -2120,7 +2138,10 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         }
         log.error("[exam-submit-ai] subject grading failed after retries, problemId={}, attempts={}, "
                         + "falling back to manual review", problemId, maxAttempts, lastFailure);
-        return gradingAgentUtil.buildManualReviewResultForFailure(gradingInput, lastFailure);
+        GradingAgentUtil.GradingResult fallback = gradingAgentUtil.buildManualReviewResultForFailure(gradingInput, lastFailure);
+        // failedUsage already includes the last attempt; do not count it twice from the fallback.
+        fallback.setTokenUsage(failedUsage);
+        return fallback;
     }
 
     private long calculateExamAiRetryBackoffMs(int failedAttempt) {
@@ -3132,11 +3153,10 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         if (aiModel == null || aiModel.trim().isEmpty()) {
             return "GPT_5_4";
         }
+        if ("AUTO".equals(aiModel) || aiModel.startsWith("sf:")) return aiModel;
         String normalized = aiModel.trim().toUpperCase(Locale.ROOT);
-        if ("DEEPSEEK".equals(normalized)) {
-            return "DEEPSEEK";
-        }
-        return "GPT_5_4";
+        if ("DEEPSEEK".equals(normalized) || "GPT_5_4".equals(normalized)) return normalized;
+        return aiModel.trim();
     }
 
     private String resolveQuestionType(Integer status) {

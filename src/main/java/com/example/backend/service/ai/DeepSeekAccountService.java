@@ -19,8 +19,8 @@ import java.time.Duration;
 public class DeepSeekAccountService {
     private static final Duration BALANCE_TIMEOUT = Duration.ofSeconds(15);
 
-    @Value("${ai.api.deepseek-grading.key:${ai.api.v3-1.key:}}")
-    private String apiKey;
+    @Resource
+    private AiSourceService aiSources;
 
     @Value("${ai.api.deepseek-grading.balance-url:https://api.deepseek.com/user/balance}")
     private String balanceUrl;
@@ -29,6 +29,7 @@ public class DeepSeekAccountService {
     private ObjectMapper objectMapper;
 
     public DeepSeekBalanceVo getBalance() {
+        String apiKey = aiSources.keyFor("DEEPSEEK");
         if (apiKey == null || apiKey.trim().isEmpty()) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "DeepSeek API key 未配置");
         }

@@ -42,7 +42,11 @@ public class DeepSeekAIController {
         SseEmitter emitter = new SseEmitter();
 
         // 启动一个异步线程来处理流式数据
-        deepSeekService.deepSeekAsker(deepSeekRequest, userService.getLoginUser(request).getUuid())
+        User loginUser = userService.getLoginUser(request);
+        if (loginUser == null) {
+            throw new com.example.backend.exception.BusinessException(com.example.backend.common.ErrorCode.NOT_LOGIN_ERROR);
+        }
+        deepSeekService.deepSeekAsker(deepSeekRequest, loginUser.getUuid())
                 .doOnTerminate(emitter::complete)
                 .doOnError(ex -> {
                     emitter.completeWithError(ex);

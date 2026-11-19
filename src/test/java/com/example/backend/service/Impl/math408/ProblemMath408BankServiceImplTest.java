@@ -83,6 +83,44 @@ class ProblemMath408BankServiceImplTest {
     }
 
     @Test
+    void includesBilledFailedAttemptsInRecoveredResult() {
+        ReflectionTestUtils.setField(service, "examAiGradingMaxRetries", 2);
+        var input = new GradingAgentUtil.GradingInput();
+        var usage = GradingAgentUtil.TokenUsage.of(1000, 800, 200, 500, 1500);
+        var expected = new GradingAgentUtil.GradingResult();
+        expected.setTokenUsage(usage);
+        when(gradingAgentUtil.gradeAnswerByAiBlocking(any(GradingAgentUtil.GradingInput.class)))
+                .thenThrow(new GradingAgentUtil.GradingCallException("invalid content", null, usage))
+                .thenReturn(expected);
+
+        GradingAgentUtil.GradingResult actual = ReflectionTestUtils.invokeMethod(
+                service, "gradeSubjectAnswerWithRetry", input, 15L);
+
+        assertEquals(3000, actual.getTokenUsage().getTotalTokens());
+        assertEquals(usage.getCostCny().multiply(java.math.BigDecimal.valueOf(2)), actual.getTokenUsage().getCostCny());
+        verify(gradingAgentUtil, times(2)).gradeAnswerByAiBlocking(input);
+    }
+
+    @Test
+    void manualFallbackIncludesEachBilledAttemptExactlyOnce() {
+        ReflectionTestUtils.setField(service, "examAiGradingMaxRetries", 1);
+        var input = new GradingAgentUtil.GradingInput();
+        var usage = GradingAgentUtil.TokenUsage.of(1000, 800, 200, 500, 1500);
+        when(gradingAgentUtil.gradeAnswerByAiBlocking(any(GradingAgentUtil.GradingInput.class)))
+                .thenThrow(new GradingAgentUtil.GradingCallException("invalid content", null, usage));
+        var fallback = new GradingAgentUtil.GradingResult();
+        fallback.setNeedsManualReview(true);
+        fallback.setTokenUsage(usage);
+        when(gradingAgentUtil.buildManualReviewResultForFailure(any(), any())).thenReturn(fallback);
+
+        GradingAgentUtil.GradingResult actual = ReflectionTestUtils.invokeMethod(
+                service, "gradeSubjectAnswerWithRetry", input, 15L);
+
+        assertEquals(3000, actual.getTokenUsage().getTotalTokens());
+        verify(gradingAgentUtil, times(2)).gradeAnswerByAiBlocking(input);
+    }
+
+    @Test
     void detailKeepsSourceIdentityAndUsesTargetContent() {
         ProblemMath408Bank source = problem(1L, "/problems/other/15");
         source.setStatus(0);

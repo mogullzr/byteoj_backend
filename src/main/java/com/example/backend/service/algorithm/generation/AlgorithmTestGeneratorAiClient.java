@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.example.backend.common.ErrorCode;
 import com.example.backend.config.AlgorithmTestGenerationProperties;
 import com.example.backend.exception.BusinessException;
-import com.example.backend.registry.DeepSeekChatModeRegistry;
+import com.example.backend.service.ai.AiSourceService;
 import lombok.Data;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -19,17 +19,15 @@ import java.util.Map;
 @Component
 public class AlgorithmTestGeneratorAiClient {
     @Resource
-    private DeepSeekChatModeRegistry modelRegistry;
+    private AiSourceService aiSources;
     @Resource
     private ObjectMapper objectMapper;
     @Resource
     private AlgorithmTestGenerationProperties properties;
 
     public GeneratedProgram generate(String model, String problemContext, String scale, String constraints) {
-        List<String> modelInfo = modelRegistry.getChatModeInfo(model);
-        if (modelInfo == null || modelInfo.size() < 2) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "不支持的 AI 模型：" + model);
-        }
+        AiSourceService.Connection source = aiSources.resolve(AiSourceService.Feature.TEST_GENERATION,
+                aiSources.legacyId(model), false);
         String system = "你是算法题测试数据生成器专家。只返回一个合法 JSON 对象，不要 Markdown，不要解释。"
                 + "返回格式必须严格是：{\"language\":\"python\",\"protocolVersion\":\"1.0\",\"code\":\"...\",\"assumptions\":[\"说明1\",\"说明2\"],\"coverage\":[\"覆盖点1\",\"覆盖点2\"]}。"
                 + "assumptions 和 coverage 必须是字符串数组；没有内容时返回 []，绝对不要返回对象、字符串或 null。"
@@ -44,13 +42,13 @@ public class AlgorithmTestGeneratorAiClient {
                 + "生成 LARGE/EXTREME 时，至少 70% 的有效样例要让主要规模参数接近题面上界；例如 1<n<1000 时 n 应主要取 700~999，而不是 n=2。"
                 + "每一个输出的 input 都必须是该题合法完整输入，不能只输出一个与题面无关的小数字。";
         Map<String, Object> request = Map.of(
-                "model", model,
+                "model", source.model(),
                 "stream", false,
                 "temperature", 0.1,
                 "messages", List.of(Map.of("role", "system", "content", system), Map.of("role", "user", "content", user))
         );
-        String raw = WebClient.builder().baseUrl(modelInfo.get(0))
-                .defaultHeader("Authorization", "Bearer " + modelInfo.get(1)).build()
+        String raw = WebClient.builder().baseUrl(source.url())
+                .defaultHeader("Authorization", "Bearer " + source.key()).build()
                 .post().contentType(MediaType.APPLICATION_JSON).bodyValue(request).retrieve()
                 .bodyToMono(String.class).block(Duration.ofSeconds(properties.getAi().getResponseTimeoutSeconds()));
         try {
