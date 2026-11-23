@@ -48,6 +48,21 @@ public class FangshuaInterceptor extends HandlerInterceptorAdapter {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        // GitHub 待绑定账号只能读取自身资料、验证邮箱、绑定和退出。
+        javax.servlet.http.HttpSession session = request.getSession(false);
+        User pending = session == null ? null : (User) session.getAttribute(
+                com.example.backend.constant.UserConstant.USER_LOGIN_STATE);
+        if (pending != null && pending.getGithub_id() != null
+                && (pending.getEmail() == null || pending.getEmail().trim().isEmpty())) {
+            String path = request.getRequestURI().substring(request.getContextPath().length());
+            boolean allowed = ("GET".equals(request.getMethod()) && "/user/current".equals(path))
+                    || ("POST".equals(request.getMethod()) && java.util.Arrays.asList(
+                    "/user/modify", "/user/email/send", "/user/logout").contains(path))
+                    || "OPTIONS".equals(request.getMethod());
+            if (!allowed) {
+                throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "请先绑定并验证 QQ 邮箱");
+            }
+        }
         //判断请求是否属于方法的请求
         if(handler instanceof HandlerMethod){
             HandlerMethod hm = (HandlerMethod) handler;
@@ -70,7 +85,10 @@ public class FangshuaInterceptor extends HandlerInterceptorAdapter {
             if (login) {
                 if (user == null) {
                     throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR, "你还没有登录呢！");
-                } else if (!isPermissionAssigned(user, url)) {
+                } else if (!(pending != null && pending.getGithub_id() != null
+                        && (pending.getEmail() == null || pending.getEmail().trim().isEmpty())
+                        && "/user/modify".equals(request.getRequestURI().substring(request.getContextPath().length())))
+                        && !isPermissionAssigned(user, url)) {
                     throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "谁给你的权利访问我的呀？？");
                 }
             }

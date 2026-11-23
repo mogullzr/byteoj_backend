@@ -104,6 +104,8 @@ public class OperationLogInterceptor implements HandlerInterceptor {
 
     // 过滤接口
     private static final HashMap<String, Boolean> FILTER_PATTERNS  = new LinkedHashMap<String, Boolean>() {{
+        put("/api/user/github/*", true); // OAuth code/state 不写入操作日志
+        put("/api/user/modify", true); // 绑定密码及验证码不写入操作日志
         put("/api/user/current", true);  // 完全过滤
         put("/api/user/picture/user/get/", true);
         put("/api/user/picture/user/get", true);

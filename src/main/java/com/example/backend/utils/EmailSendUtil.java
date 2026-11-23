@@ -78,11 +78,10 @@ public class EmailSendUtil {
             addEmailLogo(helper);
             mailSender.send(message);
 
-            RedisUtils.set(EmailConstant.EMAIL_CODE.getValue() + to,
-                    DigestUtils.md5DigestAsHex((SALT + emailCode).getBytes()),
-                    300, TimeUnit.SECONDS);
-
-            return true;
+            // Redis 写入失败不能返回发送成功，否则用户收到邮件后仍无法验证。
+            return Boolean.TRUE.equals(RedisUtils.set(EmailConstant.EMAIL_CODE.getValue() + to,
+                    DigestUtils.md5DigestAsHex((SALT + emailCode).getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+                    300, TimeUnit.SECONDS));
         } catch (Exception e) {
             e.printStackTrace();
             return false;

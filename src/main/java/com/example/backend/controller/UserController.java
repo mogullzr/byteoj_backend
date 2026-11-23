@@ -209,19 +209,38 @@ public class UserController {
         return ResultUtils.success(authUrl);
     }
 
-    @AccessLimit(seconds = 5, maxCount = 5, needLogin = false)
-    @GetMapping("/weChat/getAuthorizationUrl")
-    private BaseResponse<String> userWeChatGetAuthorizationUrl() {
-
-        String result = userService.getWeChatUrl();
-        return ResultUtils.success(result);
+    @AccessLimit(seconds = 60, maxCount = 20, needLogin = false)
+    @GetMapping("/github/authorize")
+    public void githubAuthorize(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.setHeader("Cache-Control", "no-store");
+        response.sendRedirect(userService.getGithubAuthorizationUrl(request));
     }
 
-    @AccessLimit(seconds = 5, maxCount = 5, needLogin = false)
-    @GetMapping("/weChat/login")
-    private void userWeChatLogin(@Param("code") String code, HttpServletRequest request, HttpServletResponse response) throws IOException {
-        userService.userWeChatLogin(code, request, response);
+    @AccessLimit(seconds = 60, maxCount = 20, needLogin = false)
+    @GetMapping("/github/callback")
+    public void githubCallback(@RequestParam(required = false) String code,
+                               @RequestParam(required = false) String state,
+                               @RequestParam(required = false) String error,
+                               HttpServletRequest request, HttpServletResponse response) throws IOException {
+        userService.userGithubLogin(code, state, error, request, response);
     }
+
+    // TODO 此处下面注释代码为：YunTongOS云服务商的微信登陆服务。由于平台变动，微信登陆功能不再免费使用，因此
+//    @AccessLimit(seconds = 5, maxCount = 5, needLogin = false)
+//    @GetMapping("/weChat/getAuthorizationUrl")
+//    private BaseResponse<String> userWeChatGetAuthorizationUrl() {
+//
+//        String result = userService.getWeChatUrl();
+//        return ResultUtils.success(result);
+//    }
+//
+//    @AccessLimit(seconds = 5, maxCount = 5, needLogin = false)
+//    @GetMapping("/weChat/login")
+//    private void userWeChatLogin(@Param("code") String code, HttpServletRequest request, HttpServletResponse response) throws IOException {
+//        userService.userWeChatLogin(code, request, response);
+//    }
+
+
 //    @GetMapping("/callback")
 //    private BaseResponse<Boolean> userQQCallBack(@RequestParam("code") String code, @RequestParam("state") String state, HttpServletRequest httpServletRequest, HttpServletResponse response) {
 //        Boolean result = userService.userQQCallBack(code, state, httpServletRequest);
@@ -234,7 +253,10 @@ public class UserController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "信息不能为空");
         }
         boolean result = emailSendUtils.sendVerificationEmail(receiveEmail);
-        return ResultUtils.success(result);
+        if (!result) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "验证码发送或保存失败，请稍后重试");
+        }
+        return ResultUtils.success(true);
     }
 
     @AccessLimit(seconds=60, maxCount=20, needLogin=false)

@@ -96,3 +96,9 @@ lantu: # 蓝兔支付——仅微信支付, 至少50元，2026年3月27为止，
   url: "https://www.byteoj.com/api/course/join" # 支付成功之后的回调地址，自己修改(注意：必须为线上可访问地址，如需本地调试，需要进行内网穿透)
   post_url: "https://api.ltzf.cn/api/wxpay/native" # 蓝兔支付二维码生成地址
   refund_url: "https://api.ltzf.cn/api/wxpay/refund_order" # 蓝兔退款请求地址
+github:
+  client-id: "xxxxxxxxxxxxxxxx"
+  client-secret: "xxxxxxxxxxxxxxxxxxxxxxx"
+  # 必须与 GitHub OAuth App 的 Authorization callback URL 完全一致。
+  # 例如 https://www.byteoj.com/api/user/github/callback
+  callback-url: "xxxxxxxxxxxxxxxxxxxxxxxxxx"

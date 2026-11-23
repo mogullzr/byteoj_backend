@@ -58,6 +58,9 @@ public class UserModifyRequest implements Serializable {
      */
     private String email;
 
+    /** QQ 邮箱归属验证码（第三方登录绑定时使用）。 */
+    private String confirmNumber;
+
     /**
      * 电话
      */

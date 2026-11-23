@@ -77,16 +77,11 @@ public interface UserService extends IService<User> {
      */
     UserVo UserLogin(String Account, String Password, HttpServletRequest httpServletRequest, HttpServletResponse response);
 
-    /**
-     * 通过Github登录
-     *
-     * @param code 获取的code
-     * @param clientId 基本固定的
-     * @param clientSecret 基本固定的
-     * @param httpServletRequest 前端请求
-     * @return 是否登录成功
-     */
-    Boolean UserLoginByGithub(String code, String clientId, String clientSecret, HttpServletRequest httpServletRequest);
+    /** 生成授权地址，密钥仅从服务端配置读取。 */
+    String getGithubAuthorizationUrl(HttpServletRequest request);
+
+    void userGithubLogin(String code, String state, String error,
+                         HttpServletRequest request, HttpServletResponse response) throws IOException;
     /**
      * 忘记密码找回
      *

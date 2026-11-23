@@ -143,6 +143,11 @@ server:
   # 自定义路径
   servlet:
     context-path: /api
+    session:
+      cookie:
+        http-only: true
+        secure: ${SESSION_COOKIE_SECURE:true}
+        same-site: lax
 #    session:
 #      cookie:
 #        domain: localhost
@@ -327,3 +332,12 @@ logging:
 #      ip-rule:
 #        # 同时发送的请求数最高限制
 #        request-max-size: 2000
+
+# GitHub OAuth App：在后端环境变量填写，禁止放入前端 VUE_APP_* 配置。
+# 可把冒号后的空值换为本地值；生产环境推荐注入环境变量，不提交真实密钥。
+github:
+  client-id: ${github.client-id}
+  client-secret: ${github.client-secret}
+  # 必须与 GitHub OAuth App 的 Authorization callback URL 完全一致。
+  # 例如 https://www.byteoj.com/api/user/github/callback
+  callback-url: ${github.callback-url}

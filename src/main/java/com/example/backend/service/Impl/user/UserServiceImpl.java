@@ -137,6 +137,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     @Value("${domain.url_1}")
     private String domain;
 
+    @Value("${github.client-id}")
+    private String githubClientId;
+    @Value("${github.client-secret}")
+    private String githubClientSecret;
+    @Value("${github.callback-url}")
+    private String githubCallbackUrl;
+
+    @Resource
+    private org.springframework.data.redis.core.StringRedisTemplate githubVerificationRedis;
+
     @Autowired
     private PostsMapper postsMapper;
 
@@ -384,11 +394,245 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return safetyUser;
     }
 
+    private static final String GITHUB_STATE = "GITHUB_OAUTH_STATE";
+    private static final String GITHUB_VERIFIER = "GITHUB_OAUTH_VERIFIER";
+    private static final String GITHUB_STARTED = "GITHUB_OAUTH_STARTED";
+
     @Override
-    public Boolean UserLoginByGithub(String code, String clientId, String clientSecret, HttpServletRequest httpServletRequest) {
-        return null;
+    public String getGithubAuthorizationUrl(HttpServletRequest request) {
+        if (StringUtils.isAnyBlank(githubClientId, githubClientSecret, githubCallbackUrl)) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "GitHub 登录尚未配置");
+        }
+        String state = randomGithubValue();
+        String verifier = randomGithubValue();
+        HttpSession session = request.getSession();
+        session.setAttribute(GITHUB_STATE, state);
+        session.setAttribute(GITHUB_VERIFIER, verifier);
+        session.setAttribute(GITHUB_STARTED, System.currentTimeMillis());
+        try {
+            String challenge = Base64.getUrlEncoder().withoutPadding().encodeToString(
+                    java.security.MessageDigest.getInstance("SHA-256").digest(verifier.getBytes(StandardCharsets.US_ASCII)));
+            return "https://github.com/login/oauth/authorize?client_id=" + encodeGithub(githubClientId)
+                    + "&redirect_uri=" + encodeGithub(githubCallbackUrl) + "&state=" + state
+                    + "&code_challenge=" + challenge + "&code_challenge_method=S256";
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
+    private String randomGithubValue() {
+        byte[] bytes = new byte[32];
+        new java.security.SecureRandom().nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    private String encodeGithub(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional(rollbackFor = Exception.class)
+    public void userGithubLogin(String code, String state, String error,
+                                HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.setHeader("Cache-Control", "no-store");
+        response.setHeader("Referrer-Policy", "no-referrer");
+        HttpSession session = request.getSession(false);
+        if (session == null) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "授权会话已过期，请重新登录");
+        }
+        String expected;
+        String verifier;
+        Long started;
+        synchronized (session) {
+            expected = (String) session.getAttribute(GITHUB_STATE);
+            verifier = (String) session.getAttribute(GITHUB_VERIFIER);
+            started = (Long) session.getAttribute(GITHUB_STARTED);
+            session.removeAttribute(GITHUB_STATE);
+            session.removeAttribute(GITHUB_VERIFIER);
+            session.removeAttribute(GITHUB_STARTED);
+        }
+        if (StringUtils.isAnyBlank(state, expected, verifier) || started == null
+                || System.currentTimeMillis() - started > 600_000
+                || !java.security.MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8), state.getBytes(StandardCharsets.UTF_8))) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "授权校验失败，请重新登录");
+        }
+        if (StringUtils.isNotBlank(error) || StringUtils.isBlank(code)) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "GitHub 授权已取消或失败");
+        }
+        JSONObject profile = fetchGithubProfile(code, verifier);
+        String githubId = profile.getString("id");
+        User user = userMapper.selectOne(new QueryWrapper<User>().eq("github_id", githubId));
+        if (user == null) {
+            user = new User();
+            user.setGithub_id(githubId);
+            user.setAccount("github_" + githubId);
+            user.setUsername(StringUtils.defaultIfBlank(profile.getString("name"), profile.getString("login")));
+            user.setAvatar(StringUtils.defaultIfBlank(profile.getString("avatar_url"), defaultAvatar));
+            user.setGender("男性");
+            user.setRating(1200);
+            user.setRole(1);
+            user.setReadings(0);
+            user.setCreate_time(new Date());
+            user.setUpdate_time(new Date());
+            // 不采用 GitHub 的公开邮箱，必须另外验证 QQ 邮箱。
+            try {
+                userMapper.insert(user);
+            } catch (org.springframework.dao.DuplicateKeyException e) {
+                throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "账号正在登录，请重新授权");
+            }
+        }
+        if (Objects.equals(user.getRole(), 3)) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "账号已被封禁");
+        }
+        if (StringUtils.isNotBlank(user.getEmail())) {
+            ensureGithubUserRole(user.getUuid());
+        }
+        User authenticated = user;
+        afterGithubCommit(() -> {
+            request.changeSessionId();
+            session.setAttribute(USER_LOGIN_STATE, authenticated);
+            session.setMaxInactiveInterval(7 * 24 * 60 * 60);
+            // 使用容器的 Session Cookie，避免重复写入不一致的 JSESSIONID。
+            try {
+                response.sendRedirect(domain.replaceAll("/+$", "")
+                        + (StringUtils.isBlank(authenticated.getEmail()) ? "/user/complete" : "/home"));
+            } catch (IOException e) {
+                throw new java.io.UncheckedIOException(e);
+            }
+        });
+    }
+
+    protected JSONObject fetchGithubProfile(String code, String verifier) {
+        JSONObject profile;
+        try {
+            java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
+                    .connectTimeout(java.time.Duration.ofSeconds(10)).build();
+            String form = "client_id=" + encodeGithub(githubClientId)
+                    + "&client_secret=" + encodeGithub(githubClientSecret)
+                    + "&code=" + encodeGithub(code) + "&redirect_uri=" + encodeGithub(githubCallbackUrl)
+                    + "&code_verifier=" + encodeGithub(verifier);
+            java.net.http.HttpRequest tokenRequest = java.net.http.HttpRequest.newBuilder(
+                            java.net.URI.create("https://github.com/login/oauth/access_token"))
+                    .timeout(java.time.Duration.ofSeconds(15)).header("Accept", "application/json")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .POST(java.net.http.HttpRequest.BodyPublishers.ofString(form)).build();
+            java.net.http.HttpResponse<String> tokenResponse = client.send(tokenRequest, java.net.http.HttpResponse.BodyHandlers.ofString());
+            JSONObject token = JSON.parseObject(tokenResponse.body());
+            if (tokenResponse.statusCode() != 200 || token == null || StringUtils.isBlank(token.getString("access_token"))) {
+                throw new IllegalStateException("GitHub token exchange failed");
+            }
+            java.net.http.HttpRequest userRequest = java.net.http.HttpRequest.newBuilder(java.net.URI.create("https://api.github.com/user"))
+                    .timeout(java.time.Duration.ofSeconds(15)).header("Accept", "application/vnd.github+json")
+                    .header("User-Agent", "ByteOJ").header("Authorization", "Bearer " + token.getString("access_token"))
+                    .GET().build();
+            java.net.http.HttpResponse<String> userResponse = client.send(userRequest, java.net.http.HttpResponse.BodyHandlers.ofString());
+            profile = JSON.parseObject(userResponse.body());
+            if (userResponse.statusCode() != 200 || profile == null || profile.getLong("id") == null || profile.getLong("id") <= 0) {
+                throw new IllegalStateException("GitHub profile request failed");
+            }
+            return profile;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "GitHub 登录中断，请重试");
+        } catch (Exception e) {
+            // 不记录响应体、授权码、令牌或 client secret。
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "GitHub 暂时不可用，请重新登录");
+        }
+    }
+
+    private void ensureGithubUserRole(Long uuid) {
+        if (userRoleRelationMapper.selectCount(new QueryWrapper<UserRoleRelation>().eq("uuid", uuid).eq("role_id", 12)) == 0) {
+            UserRoleRelation relation = new UserRoleRelation();
+            relation.setUuid(uuid);
+            relation.setRole_id(12);
+            userRoleRelationMapper.insert(relation);
+        }
+    }
+
+    private boolean bindGithubQq(User pending, UserModifyRequest data, HttpServletRequest request) {
+        String email = StringUtils.trimToEmpty(data.getEmail()).toLowerCase(Locale.ROOT);
+        if (!email.matches("^[1-9][0-9]{4,19}@qq\\.com$")) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "请输入正确的 QQ 邮箱");
+        }
+        String password = data.getPassword();
+        if (StringUtils.isBlank(password) || password.length() < 8 || password.length() > 20
+                || !password.equals(data.getConfirm_password())) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码须为 8-20 位且两次输入一致");
+        }
+        String key = EmailConstant.EMAIL_CODE.getValue() + email;
+        String saved = githubVerificationRedis.opsForValue().get(key);
+        if (saved == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "邮箱验证码已过期或尚未发送，请重新获取");
+        }
+        String confirmNumber = StringUtils.trimToEmpty(data.getConfirmNumber());
+        if (!confirmNumber.matches("[0-9]{6}")) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "请输入 6 位邮箱验证码");
+        }
+        // EmailSendUtil 通过 RedisUtils.set 写入 JSON 字符串，读取时必须解码。
+        // saved 保留 Redis 原值，供下面 Lua 原子比较和删除使用。
+        String savedHash;
+        try {
+            savedHash = saved.startsWith("\"")
+                    ? com.example.backend.utils.JsonUtils.toObj(saved, String.class) : saved;
+        } catch (RuntimeException e) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "邮箱验证码状态异常，请重新获取");
+        }
+        String expectedHash = DigestUtils.md5DigestAsHex(
+                (EmailSendUtil.SALT + confirmNumber).getBytes(StandardCharsets.UTF_8));
+        if (savedHash == null || !java.security.MessageDigest.isEqual(
+                savedHash.getBytes(StandardCharsets.UTF_8), expectedHash.getBytes(StandardCharsets.UTF_8))) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "邮箱验证码错误，请核对最新收到的验证码");
+        }
+        // 原子消费已验证的验证码，阻止并发重复使用。
+        Long consumed = githubVerificationRedis.execute(
+                new org.springframework.data.redis.core.script.DefaultRedisScript<Long>(
+                        "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end", Long.class),
+                Collections.singletonList(key), saved);
+        if (!Objects.equals(consumed, 1L)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "邮箱验证码已使用，请重新获取");
+        }
+        User target = userMapper.selectOne(new QueryWrapper<User>().eq("email", email).last("FOR UPDATE"));
+        if (target == null) {
+            pending.setEmail(email);
+            pending.setPassword(DigestUtils.md5DigestAsHex((SALT + password).getBytes(StandardCharsets.UTF_8)));
+            if (userMapper.updateById(pending) != 1) {
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "绑定失败，请重试");
+            }
+            target = pending;
+        } else {
+            if (Objects.equals(target.getRole(), 3) || StringUtils.isNotBlank(target.getGithub_id())) {
+                throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "该 QQ 账号不可绑定或已绑定 GitHub");
+            }
+            // 保留原账号密码及微信绑定，只转移 GitHub 身份。
+            String githubId = pending.getGithub_id();
+            userMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper<User>()
+                    .eq("uuid", pending.getUuid()).set("github_id", null));
+            target.setGithub_id(githubId);
+            if (userMapper.updateById(target) != 1) {
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "绑定失败，请重试");
+            }
+            userMapper.deleteById(pending.getUuid());
+        }
+        ensureGithubUserRole(target.getUuid());
+        User bound = target;
+        afterGithubCommit(() -> {
+            request.changeSessionId();
+            request.getSession().setAttribute(USER_LOGIN_STATE, bound);
+        });
+        return true;
+    }
+
+    private void afterGithubCommit(Runnable action) {
+        if (org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
+            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                    new org.springframework.transaction.support.TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() { action.run(); }
+                    });
+        } else {
+            action.run();
+        }
+    }
 
     @Override
     public boolean UserSetPassword(UserRegisterRequest userLoginEmailRequest) {
@@ -478,6 +722,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(rollbackFor = Exception.class)
     public boolean UserModify(@RequestBody UserModifyRequest userModifyRequest, HttpServletRequest httpServletRequest) {
         Long uuid = userModifyRequest.getUuid();
         String username = userModifyRequest.getUsername();
@@ -503,6 +748,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "系统错误");
         }
 
+        if (StringUtils.isNotBlank(pre_user.getGithub_id()) && StringUtils.isBlank(pre_user.getEmail())) {
+            User current = getLoginUser(httpServletRequest);
+            if (current == null || !Objects.equals(current.getUuid(), uuid)) {
+                throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "请先登录本人账号");
+            }
+            pre_user = userMapper.selectOne(new QueryWrapper<User>().eq("uuid", uuid).last("FOR UPDATE"));
+            if (StringUtils.isNotBlank(pre_user.getEmail())) {
+                throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "账号已完成绑定，请刷新");
+            }
+            return bindGithubQq(pre_user, userModifyRequest, httpServletRequest);
+        }
+
+        if (StringUtils.isNotBlank(pre_user.getGithub_id()) && !Objects.equals(pre_user.getEmail(), email)) {
+            throw new BusinessException(ErrorCode.NOT_AUTH_ERROR, "已绑定的 QQ 邮箱不可在资料接口直接修改");
+        }
         // 进行QQ邮箱格式正确性校验
         if (email == null || email.isEmpty()) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "邮箱格式不正确");
@@ -1281,52 +1541,3 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return ip;
     }
 }
-
-//    @Override
-//    public Boolean UserLoginByGithub(String code, String clientId, String clientSecret, HttpServletRequest httpServletRequest) {
-//        HashMap<String, Object> paramMap = new HashMap<>();
-//        paramMap.put("code", code);
-//        paramMap.put("client_id", clientId);
-//        paramMap.put("client_secret", clientSecret);
-//        HttpResponse httpResponse = HttpRequest.get("https://github.com/login/oauth/access_token")
-//                .header("Content-Type", "application/json")
-//                .body(JSONUtil.toJsonStr(paramMap))
-//                 .execute();
-//
-//        String httpResponseBody = httpResponse.body();
-//        Pattern p = Pattern.compile("=(\\w+)&");
-//        Matcher m = p.matcher(httpResponseBody);
-//        String access_token = "";
-//        while (m.find()) {
-//            access_token = m.group(1);
-//            break;
-//        }
-//
-//        paramMap = new HashMap<>();
-//        paramMap.put("access_token", access_token);
-//        httpResponse = HttpRequest.get("https://api.github.com/user")
-//                .header("Authorization", "token " + access_token)
-//                .execute();
-//        httpResponseBody = httpResponse.body();
-//        JSONObject jsonObject = JSONUtil.parseObj(httpResponseBody);
-//        long uuid = Integer.parseInt((String) jsonObject.get("id"));
-//        String account = (String) jsonObject.get("login");
-//        String username = (String) jsonObject.get("name");
-//
-//        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
-//        userQueryWrapper.eq("uuid", uuid);
-//
-//        User user = userMapper.selectOne(userQueryWrapper);
-//        if (user == null) {
-//            user = new User();
-//            user.setUuid(uuid);
-//            user.setAccount(account);
-//            user.setUsername(username);
-//            return userMapper.insert(user) == 1;
-//        }
-//        HttpSession session = httpServletRequest.getSession();
-//        session.setAttribute(USER_LOGIN_STATE, user);
-//        session.setMaxInactiveInterval(3600 * 24 * 7);
-//
-//        return true;
-//    }

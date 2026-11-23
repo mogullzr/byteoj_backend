@@ -99,6 +99,9 @@ public class User implements Serializable {
      */
     private String open_id;
 
+    /** GitHub 不变的数字用户 ID，独立于微信 open_id。 */
+    private String github_id;
+
     /**
      * 创建时间
      */
