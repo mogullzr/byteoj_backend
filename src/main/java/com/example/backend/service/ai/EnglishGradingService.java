@@ -4,6 +4,7 @@ import com.example.backend.common.ErrorCode;
 import com.example.backend.exception.BusinessException;
 import com.example.backend.models.request.AI.EnglishGradingRequest;
 import com.example.backend.utils.examAgent.GradingAgentUtil;
+import com.example.backend.models.enums.GradingDetail;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -36,12 +37,14 @@ public class EnglishGradingService {
 
     public GradingAgentUtil.GradingResult grade(EnglishGradingRequest request, Long uuid) {
         validate(request);
+        GradingDetail detail = GradingDetail.from(request.getGradingDetail());
         String examType = normalize(request.getExamType());
         String questionType = normalize(request.getQuestionType());
         double totalScore = totalScore(examType, questionType);
 
         GradingAgentUtil.GradingInput input = new GradingAgentUtil.GradingInput();
         input.setQuestionType("english_" + questionType.toLowerCase(Locale.ROOT));
+        input.setGradingDetail(detail.name());
         input.setTotalScore(totalScore);
         input.setQuestionContent(request.getQuestionContent());
         input.setQuestionImageUrls(request.getQuestionImageUrls());
@@ -64,7 +67,9 @@ public class EnglishGradingService {
         context.put("question_type", questionType);
         context.put("total_score", totalScore);
         context.put("image_policy", "图片仅作为视觉模型原始输入，不进行 OCR；学生答案图片可用于评价卷面书写是否清晰，但文字无法可靠辨认时不得猜测答案，必须人工复核");
-        context.put("prompt_extension", buildPolicy(examType, questionType, totalScore));
+        context.put("prompt_extension", detail.isDetailed()
+                ? buildPolicy(examType, questionType, totalScore)
+                : buildCompactPolicy(examType, questionType, totalScore));
         input.setExtraContext(context);
 
         RuntimeException lastFailure = null;
@@ -73,7 +78,7 @@ public class EnglishGradingService {
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
                 GradingAgentUtil.GradingResult result = gradingAgentUtil.gradeAnswerByAiBlocking(input);
-                if (isEssay(questionType) && !result.isNeedsManualReview()
+                if (detail.isDetailed() && isEssay(questionType) && !result.isNeedsManualReview()
                         && !hasDetailedEssayFeedback(result)) {
                     incompleteEssayResult = result;
                     lastFailure = new IllegalStateException(
@@ -119,16 +124,20 @@ public class EnglishGradingService {
                     || !hasText(row, "original")
                     || !hasText(row, "revised")
                     || !hasText(row, "explanation_zh")
-                    || !hasValue(row, "issue_found")) {
+                    || !(row.get("issue_found") instanceof Boolean)) {
                 return false;
             }
             if (Boolean.TRUE.equals(row.get("issue_found"))) {
                 String original = String.valueOf(row.get("original")).toLowerCase(Locale.ROOT);
                 String location = stringValue(row.get("error_location")).toLowerCase(Locale.ROOT);
                 if (!StringUtils.hasText(location) || !original.contains(location)
-                        || !hasText(row, "error_type")) {
+                        || !hasText(row, "error_type")
+                        || stringValue(row.get("original")).equals(stringValue(row.get("revised")))) {
                     return false;
                 }
+            } else if (row.get("deduction") instanceof Number deduction && deduction.doubleValue() > 0) {
+                // A sentence marked correct/optional must not carry a language-error deduction.
+                return false;
             }
         }
         List<Map<String, Object>> errors = result.getLanguageErrorAnalysis();
@@ -225,6 +234,85 @@ public class EnglishGradingService {
         return ENGLISH_I.equals(examType) ? 20D : 15D;
     }
 
+    private String buildCompactPolicy(String examType, String questionType, double totalScore) {
+        String task = TRANSLATION.equals(questionType)
+                ? ENGLISH_I.equals(examType)
+                    ? "英语一翻译：结合上下文逐句核对5个指定句子，每句2分；每句内部拆为2至3个语义得分点。"
+                    : "英语二翻译：完整段落按英文句子核对，按信息量与难度分配各句分值，再拆分语义点；不能套用五句两分制。"
+                : "作文：先判断任务完成度与档次，再评价内容、结构衔接、语法、词汇、拼写和格式；"
+                    + "小作文按应用文任务，大作文按图表/图画或议论文要求。模板和基础词汇本身不扣分，不以华丽程度扣分。";
+        return "考研英语专项，满分" + totalScore + "分。按真实考试从严评分，不凭笼统表扬抬分。"
+                + task
+                + (isEssay(questionType) ? buildEssayScoringPolicy(examType, questionType) : "")
+                + "所有得分与扣分以0.5分为刻度，通常扣1分，局部轻微问题扣0.5分；不拆成小额或重复扣分。"
+                + "忠实、符合上下文且自然的等价译法/表达可接受；只对能从原文定位的真实错误扣分，不编造问题。"
+                + "内部核对全部句子、语义点及扣分，不因反馈短而漏评；不输出内部推理。"
+                + "卷面最多从内容得分扣2分，0表示清晰整洁、0.5轻微、1较明显、1.5至2仅严重问题，不重复扣分。"
+                + "卷面仅依据答案图片的字迹、间距、对齐、涂改和整洁度；纯文本不评卷面也不扣卷面分。"
+                + "图片光线/清晰度不足时不猜读、不扣推测分，标记needs_manual_review=true。"
+                + "题目图片与答案图片须区分，直接视觉判卷，不做独立OCR。"
+                + "最终得分等于内容得分减卷面扣分，最低0分；评分项合计须与最终得分一致。"
+                + "反馈使用中文，输出详略严格遵守所选档位的JSON格式，不逐句讲评或重写全文。";
+    }
+
+    /**
+     * Shared calibration for every essay tier. Grade bands are anchors, not an automatic score penalty.
+     * Reference: CHSI's published English writing descriptors (2016-04-19):
+     * https://yz.chsi.com.cn/kyzx/en/201604/20160419/1529533773.html
+     */
+    private String buildEssayScoringPolicy(String examType, String questionType) {
+        String bands = SMALL_ESSAY.equals(questionType)
+                ? "小作文满分10分，五至一档的分值锚点依次为9至10、7至8、5至6、3至4、1至2分。"
+                : ENGLISH_I.equals(examType)
+                    ? "英语一大作文满分20分，五至一档的分值锚点依次为17至20、13至16、9至12、5至8、1至4分。"
+                    : "英语二大作文满分15分，五至一档的分值锚点依次为13至15、10至12、7至9、4至6、1至3分。";
+        return """
+
+                【作文严格校准：先核查证据，再定档给分】
+                本规则针对作文；讲评简短不等于评分宽松。一次调用内完成审题、逐句校对、跨句复核和定档，
+                不输出隐藏推理。只给实际可见的原作答评分，不先默改成通顺英语再评价，不预设高分或及格分。
+
+                审题：逐项对照题目要求的对象、交际目的、必答信息、文体、语域及字数要求。
+                小作文核对每项指令是否真正完成、称呼落款和语气是否合适；大作文核对图画/图表的关键信息、
+                趋势和比较是否准确，立意、解释与论证是否贴题。提到关键词不等于完成任务；
+                分三段、有模板或写够字数不自动代表内容充分。漏掉核心任务、误读图意、对象或目的错误必须影响内容档次。
+                按题目实际字数要求核对原作文，不能用生成的修正版字数代替，不能在图片不清时猜测字数扣分。
+
+                逐句核查以下各项，不只检查最显眼的一两个错误：
+                - 句子骨架：主语、限定谓语是否齐全，多个谓语是否有合法连接；检查句子残缺、粘连句和逗号拼接。
+                - 动词：主谓一致；时态、体和语态与时间、语境是否一致；情态动词后的原形；
+                  不定式、动名词、分词及主动/被动关系是否正确。
+                - 名词与修饰：单复数、可数/不可数、冠词和限定词、词性、比较级、修饰范围是否合适。
+                - 句内关系：代词指代与格、从句引导与语序、并列结构、否定/条件/因果关系、介词和固定搭配。
+                - 用词与书写：词义搭配、拼写、大小写、标点；跨句检查时态、人称、指代、逻辑是否矛盾。
+                只有有语境依据的错误才能扣分；英美拼写差异、合法变体、基础词汇和正确的简单句不因“不高级”被扣分。
+                例如原文确为“He go to school yesterday.”时应识别过去时间与谓语形式不符，改为
+                “He went to school yesterday.”；不是只泛称“表达欠自然”。例子不构成本篇作文的事实。
+
+                严重程度与频率必须进入评分：
+                局部拼写或偶发冠词疏漏不等于反复使用错误的基本句型；改变句义、主谓关系不清、时态系统混乱、
+                从句结构破坏或影响理解的错要明确其影响，不能一律按“轻微问题”略扣。
+                同一处同源错误不能在多个清单或维度重复计分；同类错误在不同句子多次出现则不是一次孤立笔误，
+                必须反映其覆盖范围和语言控制不稳定，不能只列一次就免去其余影响，也不能机械按出现次数无限累加扣分。
+
+                定档须同时满足任务完成与语言控制：
+                五档要求任务充分准确、组织自然、语言控制稳定，只允许极少局部小错；
+                四档要求主要任务完整、语言总体可靠，允许有限的非系统性小错。
+                在多个独立句子反复出现明显基础语法错误、显示控制不稳时，即使大意可懂，也不能称为“错误极少”而给四/五档；
+                主要任务基本达成但语言有明显问题，应在三档及以下选择与证据一致的档次。
+                大量错误已妨碍理解，或主要信息和任务明显不足时，应按二档及以下描述重新核查，不得用模板、篇幅或态度抬分。
+                原答真正正确且任务完成充分时仍应得到相应高分，不以“严格”为由编造错误或固定压分。
+                """ + bands + """
+                以上分值用于锚定档次，沿用本项目0.5分刻度；半分微调不得突破所选档次上限或绕过高档门槛。
+                先从原答证据确定内容与语言综合得分，再扣既有卷面项；同一错误不能既使定档降分又被当作额外罚分重复减去。
+                检查最终得分、逐项得分、扣分说明与总体评价是否一致；不能写“语法错误反复出现”，数值上却按“几乎无错”给分。
+                当准备给到满分85%及以上时，必须重新核对主要任务、基本语法和反复出错情况，并以真实证据支持该档次，
+                不能仅凭“内容完整、结构清晰”或修正版的语言质量给高分。原题、范文与参考答案不构成唯一允许表达。
+                只输出所选讲评档位原有的JSON结构，不增加独立审查报告或新栏目。
+
+                """;
+    }
+
     private String buildPolicy(String examType, String questionType, double totalScore) {
         StringBuilder policy = new StringBuilder();
         policy.append("这是考研英语专项评分，满分为 ").append(totalScore).append(" 分。\n");
@@ -246,13 +334,14 @@ public class EnglishGradingService {
         } else {
             policy.append("作文评分必须先判断任务完成度，再评价内容、结构、衔接、语法、词汇、拼写和格式。\n");
             policy.append("小作文按应用文任务要求评分；大作文按图表/图画或议论文任务要求评分。\n");
-            policy.append("先给出档次判断，再换算成具体分数。必须分别评价任务完成、内容、结构衔接、语法、词汇、拼写和格式，并说明每一项得分依据。\n");
+            policy.append(buildEssayScoringPolicy(examType, questionType));
+            policy.append("在现有 band 字段写明档次，在 word_count 记录原作文词数；summary 中概括定档依据。必须分别评价任务完成、内容、结构衔接、语法、词汇、拼写和格式，并说明各项评分依据。不得只报一个高分再用笼统表扬补理由。\n");
             policy.append("固定句型、常见模板和基础词汇本身不扣分；不得因为表达不够高级、不够华丽、‘不接地气’或与模型偏好不同而扣分。只有存在具体语法、拼写、搭配、语义、逻辑、格式或任务完成问题时才扣分。\n");
             policy.append("作文反馈必须充分具体：逐项列出所有能够从原文确认的问题；每个问题都要引用学生原文中的具体词句，说明问题类别、中文原因、影响、扣分依据和可直接替换的修改方案。错误不足时宁可少列，不得为了凑数量编造错误。\n");
             policy.append("必须单独输出任务完成分析、结构衔接分析、语言错误清单、逐句修改建议、中文总体建议、词汇记忆和难句语法分析。所有总结、原因、建议和解释字段必须使用中文；英文只用于展示原句、单词、短语或修改后的英文。\n");
             policy.append("修改建议要优先给出稳妥、符合考研写作语境的表达，不要求考生刻意使用生僻词；如果原表达正确但可以更自然，只能标记为可选优化，不能计入扣分。\n");
-            policy.append("language_error_analysis 必须按文章从上到下逐条定位，至少覆盖每个存在明确问题的句子；每条必须填写 sentence_number、sentence_text、error_location、error_type、error_explanation_zh、impact_zh、deduction、corrected_sentence。error_location 必须引用句内具体单词或短语，不能只写‘第二段有问题’。\n");
-            policy.append("sentence_corrections 必须按原文句子顺序输出，至少填写 sentence_number、original、revised、explanation_zh、change_type；即使该句没有扣分，也只能作为‘可选优化’返回，不能把可选优化当成错误。\n");
+            policy.append("language_error_analysis 必须按原文顺序列出每一处能够确认的实质语言问题，不限于每句只挑一个，也不得只列最前面的几处。每条填写 sentence_number、sentence_text、error_location、error_type、error_explanation_zh、impact_zh、deduction、corrected_sentence；原句和错误位置必须能直接核对，不能只写‘第二段有问题’。impact_zh 写清严重程度、是否影响理解、是否同类问题反复出现及其对语言档次的影响；同一处同源错误只计算一次扣分，跨字段重复展示不重复扣分。\n");
+            policy.append("sentence_corrections 必须覆盖原作文每一句，保持原文顺序，不得只返回有利于高分结论的句子。每句填写 sentence_number、original、revised、explanation_zh、change_type、issue_found（真正的boolean）。有实质错误时 issue_found=true，另填 error_location、error_type，revised 给出保留原意的实际修正；同句多处独立错误都要在语言清单定位并在修正版中修复。原句正确时 issue_found=false，正确表达可以原样保留；纯风格润色明确标注‘可选优化’，不得计作扣分。language_error_analysis、sentence_corrections、deductions 中同一错误的判断与扣分必须一致，不得一处判错另一处又称完全正确。\n");
             policy.append("如果某个错误无法从学生原文定位，禁止只输出‘用词不当、表达不自然、语法有问题’等笼统结论；必须删除该条或标记 needs_manual_review。不要为了增加反馈数量而制造错误。\n");
         }
         policy.append("必须额外返回独立的 presentation_assessment 对象，字段为 assessed（boolean）、deduction（number，0 至 2）、assessment（中文评价）、suggestion（中文改进建议）。卷面与书写最多影响 2 分，作为从本题总分中扣除的项目，不能加在总分之外；结合内容评分后再扣，严禁重复扣减已在内容得分中处理的问题。\n");

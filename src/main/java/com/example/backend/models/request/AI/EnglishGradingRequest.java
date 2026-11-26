@@ -33,6 +33,11 @@ public class EnglishGradingRequest implements Serializable {
     @JsonAlias({"aiModel", "modelProvider"})
     private String aiModel;
 
+    /** SUPREME (legacy), STANDARD, BASIC, or DEEP. */
+    @JsonProperty("grading_detail")
+    @JsonAlias("gradingDetail")
+    private String gradingDetail;
+
     /** Translation source/marked sentences, or the essay prompt. */
     @JsonProperty("question_content")
     @JsonAlias({"questionContent", "sourceText"})

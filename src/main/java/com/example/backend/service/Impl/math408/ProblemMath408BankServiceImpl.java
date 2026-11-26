@@ -37,6 +37,7 @@ import com.example.backend.service.math408.*;
 import com.example.backend.service.user.UserService;
 import com.example.backend.utils.EmbeddingConvertUtil;
 import com.example.backend.utils.examAgent.GradingAgentUtil;
+import com.example.backend.models.enums.GradingDetail;
 import com.example.backend.models.domain.usage.UsagePlans;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -1246,6 +1247,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ProblemExamSubmitVo problemExamSubmit(ProblemExamSubmitRequest problemExamSubmitRequest, Long uuid, String username) {
+        String gradingDetail = GradingDetail.from(problemExamSubmitRequest.getGrading_detail()).name();
         Integer option_score = 0;
         Integer subjective_score = 0;
 
@@ -1333,7 +1335,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
                 }
                 try {
                     ExamQuestionGradingResult result = gradeOneExamQuestion(
-                            answer, problemScoreMap, correctAnswerMap, uuid, problemExamUser.getId(), aiModel);
+                            answer, problemScoreMap, correctAnswerMap, uuid, problemExamUser.getId(), aiModel, gradingDetail);
                     if (progressTracker != null) {
                         progressTracker.markCompleted(problemId, "本题判卷完成", result.awardedScore);
                     }
@@ -1734,7 +1736,8 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
             Map<Long, String> correctAnswerMap,
             Long uuid,
             Long examUserId,
-            String aiModel) {
+            String aiModel,
+            String gradingDetail) {
         Integer status = answer.getStatus();
         if (status != null && (status == 1 || status == 2)) {
             ProblemExamRecord record = buildObjectiveRecord(answer, problemScoreMap, correctAnswerMap, uuid, examUserId);
@@ -1742,7 +1745,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
                     record == null || record.getScore() == null ? 0 : record.getScore());
         }
         if (status != null && (status == 0 || status == 3)) {
-            ProblemExamRecord record = buildSubjectRecord(answer, problemScoreMap, uuid, examUserId, aiModel);
+            ProblemExamRecord record = buildSubjectRecord(answer, problemScoreMap, uuid, examUserId, aiModel, gradingDetail);
             return new ExamQuestionGradingResult(false, record,
                     record == null || record.getScore() == null ? 0 : record.getScore());
         }
@@ -1942,11 +1945,11 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
     }
 
     private ProblemExamRecord buildSubjectRecord(ProblemSimpleInfo problem, Map<String, Integer> problemScoreMap, Long uuid, Long examUserId) {
-        return buildSubjectRecord(problem, problemScoreMap, uuid, examUserId, null);
+        return buildSubjectRecord(problem, problemScoreMap, uuid, examUserId, null, GradingDetail.SUPREME.name());
     }
 
     private ProblemExamRecord buildSubjectRecord(ProblemSimpleInfo problem, Map<String, Integer> problemScoreMap,
-                                                 Long uuid, Long examUserId, String aiModel) {
+                                                 Long uuid, Long examUserId, String aiModel, String gradingDetail) {
         long start = System.currentTimeMillis();
         Date now = new Date();
         ProblemExamRecord problemExamRecord = new ProblemExamRecord();
@@ -1986,6 +1989,7 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
         gradingInput.setTemperature(0F);
         gradingInput.setTopP(0.9F);
         gradingInput.setAiModel(aiModel);
+        gradingInput.setGradingDetail(gradingDetail);
         gradingInput.setSourceFeature(Feature.EXAM_GRADING);
 
         GradingAgentUtil.GradingResult gradingResult = gradeSubjectAnswerWithRetry(

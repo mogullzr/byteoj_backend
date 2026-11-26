@@ -369,6 +369,332 @@ class GradingPromptCompatibilityTest {
         assertNull(GradingAgentUtil.TokenUsage.sum(result.getTokenUsage(), result.getTokenUsage()).getCostCny());
     }
 
+    @Test
+    void explicitSupremeAndOmittedDetailProduceIdenticalProviderRequests() {
+        var input = input();
+        JsonNode original = send(input);
+        input.setGradingDetail("SUPREME");
+        assertEquals(original, send(input));
+    }
+
+    @Test
+    void basicScoreOnlyResponseDoesNotTriggerRubricReviewAndKeepsAllInputEvidence() {
+        var input = input();
+        input.setGradingDetail("BASIC");
+        input.setQuestionImageUrls(List.of("https://example.test/question.png"));
+        input.setStudentAnswerImageUrls(List.of("https://example.test/student.png"));
+        replies.add("""
+                {"awarded_score":7,"confidence":0.95,"needs_manual_review":false,"summary":"关键条件遗漏，扣3分。"}
+                """);
+        var result = grade(input);
+        assertEquals(1, requests.size(), "Missing rubric is intentional in BASIC, not grounds for an extra billed request");
+        assertEquals(7D, result.getAwardedScore());
+        assertEquals(10D, result.getTotalScore());
+        assertEquals("BASIC", result.getGradingDetail());
+        assertFalse(result.isNeedsManualReview());
+        assertEquals(1500, result.getTokenUsage().getTotalTokens());
+        var request = requests.get(0);
+        assertFalse(request.has("max_tokens"), "Do not cut off valid JSON or reasoning by imposing a tiny token cap");
+        assertEquals("low", request.path("reasoning_effort").asText());
+        String messages = request.path("messages").toString();
+        for (String evidence : List.of(input.getQuestionContent(), input.getReferenceAnswer(), input.getSolutionExplanation(),
+                input.getStudentAnswer(), "question.png", "student.png", "process_required")) {
+            assertTrue(messages.contains(evidence), evidence);
+        }
+        String system = request.path("messages").get(0).path("content").asText();
+        assertTrue(system.startsWith((String) ReflectionTestUtils.getField(GradingAgentUtil.class, "SYSTEM_PROMPT")));
+        assertTrue(system.contains("【极简版：仅判分】"));
+        assertFalse(system.contains("\"rubric_used\""));
+    }
+
+    @Test
+    void standardUsesCompactSchemaAndNormalizesServerOwnedFieldsWithoutAnotherCall() {
+        var input = input();
+        input.setGradingDetail("STANDARD");
+        replies.add("""
+                {"awarded_score":7,"confidence":0.9,"needs_manual_review":false,"summary":"遗漏关键条件。","advice":"核对条件。",
+                 "rubric_used":[{"name":"总评分","max_score":10,"awarded_score":7,"reason":"关键条件缺失","evidence":"原式"}]}
+                """);
+        var result = grade(input);
+        assertEquals(1, requests.size());
+        assertEquals("STANDARD", result.getGradingDetail());
+        assertEquals(7D, result.getAwardedScore());
+        assertEquals(10D, result.getTotalScore());
+        assertEquals(0.7D, result.getScoreRate());
+        assertEquals(1, result.getRubricUsed().size());
+        assertTrue(result.getAcceptedAnswers().isEmpty());
+        String system = requests.get(0).path("messages").get(0).path("content").asText();
+        assertTrue(system.contains("【标准版：精简讲评】"));
+        assertTrue(system.contains("最多4项"));
+        assertFalse(system.contains("\"sentence_corrections\""));
+    }
+
+    @Test
+    void basicStillReviewsGenuinelyUncertainScoresAndCountsBothCalls() {
+        var input = input();
+        input.setGradingDetail("BASIC");
+        replies.add("{\"awarded_score\":7,\"confidence\":0.5,\"needs_manual_review\":false,\"summary\":\"待确认\"}");
+        replies.add("{\"awarded_score\":7,\"confidence\":0.95,\"needs_manual_review\":false,\"summary\":\"遗漏条件\"}");
+        var result = grade(input);
+        assertEquals(2, requests.size());
+        assertEquals("high", requests.get(1).path("reasoning_effort").asText());
+        assertFalse(result.isNeedsManualReview());
+        assertEquals(3000, result.getTokenUsage().getTotalTokens());
+    }
+
+    @Test
+    void missingCompactScoreFailsInsteadOfSilentlyAwardingZero() {
+        var input = input();
+        input.setGradingDetail("BASIC");
+        replies.add("{\"confidence\":0.95,\"needs_manual_review\":false,\"summary\":\"未提供分数\"}");
+        var failure = assertThrows(GradingAgentUtil.GradingCallException.class, () -> grade(input));
+        assertEquals(1500, GradingAgentUtil.knownUsageFromFailure(failure).getTotalTokens());
+    }
+
+    @Test
+    void everyProviderCanUseCompactPromptWithoutChangingItsCapabilities() {
+        var input = input();
+        input.setAiModel("GPT_5_4");
+        input.setGradingDetail("BASIC");
+        replies.add("{\"awarded_score\":7,\"confidence\":0.95,\"needs_manual_review\":false,\"summary\":\"遗漏条件\"}");
+        assertEquals(7D, grade(input).getAwardedScore());
+        assertTrue(requests.get(0).path("messages").get(0).path("content").asText().contains("【极简版：仅判分】"));
+        assertFalse(requests.get(0).has("reasoning_effort"));
+    }
+
+    @Test
+    void invalidDetailFailsBeforeAnyProviderCallAndBlankSubmissionRetainsTier() {
+        var input = input();
+        input.setGradingDetail("UNKNOWN");
+        assertThrows(com.example.backend.exception.BusinessException.class, () -> grade(input));
+        assertTrue(requests.isEmpty());
+        input.setGradingDetail("BASIC");
+        input.setStudentAnswer("");
+        var blank = grade(input);
+        assertEquals("BASIC", blank.getGradingDetail());
+        assertEquals(0D, blank.getAwardedScore());
+        assertTrue(requests.isEmpty());
+    }
+
+    @Test
+    void deepAddsOnlyInlineModificationsToTheOriginalFullResult() throws Exception {
+        var input = input();
+        var supreme = grade(input);
+        JsonNode supremeRequest = requests.get(0);
+        input.setGradingDetail("DEEP");
+        replies.add(inlineDeepGradingJson().toString());
+        var result = grade(input);
+        assertEquals(2, requests.size(), "One Supreme request and one Deep request, no hidden expansion call");
+        assertEquals("DEEP", result.getGradingDetail());
+        assertEquals(7D, result.getAwardedScore());
+        assertFalse(result.isNeedsManualReview());
+        assertNull(result.getCorrections(), "New Deep responses must not create a separate correction list");
+        assertEquals("在列式前写明适用条件，再代入已知量。", result.getRubricUsed().get(0).getModification());
+        assertEquals("无需修改。", result.getRubricUsed().get(1).getModification());
+
+        JsonNode actual = requests.get(1);
+        assertEquals(supremeRequest.path("messages").get(1), actual.path("messages").get(1));
+        String system = actual.path("messages").get(0).path("content").asText();
+        assertTrue(system.startsWith(supremeRequest.path("messages").get(0).path("content").asText()));
+        assertTrue(system.contains("\"modification\":string"));
+        assertFalse(system.contains("\"replacement\":"));
+        assertFalse(system.contains("\"verification\":"));
+        assertFalse(system.contains("\"corrections\":"));
+
+        var stored = (com.fasterxml.jackson.databind.node.ObjectNode) mapper.readTree(mapper.writeValueAsString(result));
+        assertFalse(stored.has("corrections"));
+        stored.put("grading_detail", "SUPREME");
+        for (JsonNode item : stored.path("rubric_used")) {
+            ((com.fasterxml.jackson.databind.node.ObjectNode) item).remove("modification");
+        }
+        assertEquals(mapper.readTree(mapper.writeValueAsString(supreme)), stored,
+                "All original fields and detailed content must stay identical; only modification is added");
+    }
+
+    @Test
+    void deepFlagsMissingConcreteRepairsWithoutBuyingAnotherExplanation() {
+        var input = input();
+        input.setGradingDetail("DEEP");
+        var result = grade(input);
+        assertTrue(result.isNeedsManualReview());
+        assertEquals(7D, result.getAwardedScore());
+        assertTrue(result.getSummary().contains("具体改法"));
+        assertEquals(1, requests.size());
+        assertEquals(1500, result.getTokenUsage().getTotalTokens());
+    }
+
+    @Test
+    void deepRequiresActualReplacementAndCoverageOfDeductedRubricItems() throws Exception {
+        for (String missing : List.of("replacement", "verification", "related_rubric_item_id")) {
+            var input = input();
+            input.setGradingDetail("DEEP");
+            var reply = legacyDeepGradingJson();
+            ((com.fasterxml.jackson.databind.node.ObjectNode) reply.path("corrections").get(0)).put(missing, "");
+            replies.add(reply.toString());
+            var result = grade(input);
+            assertTrue(result.isNeedsManualReview(), missing);
+            assertEquals(7D, result.getAwardedScore());
+        }
+        assertEquals(3, requests.size());
+    }
+
+    @Test
+    void deepSurfacesNullRepairEntriesWithoutLeavingAnEmptyRenderingRow() throws Exception {
+        var input = input();
+        input.setGradingDetail("DEEP");
+        var reply = legacyDeepGradingJson();
+        reply.putArray("corrections").addNull();
+        replies.add(reply.toString());
+        var result = grade(input);
+        assertTrue(result.isNeedsManualReview());
+        assertTrue(result.getCorrections().isEmpty());
+        assertEquals(7D, result.getAwardedScore());
+        assertEquals(1, requests.size());
+    }
+
+    @Test
+    void deepDoesNotAcceptAnInventedStudentQuotation() throws Exception {
+        var input = input();
+        input.setGradingDetail("DEEP");
+        var reply = legacyDeepGradingJson();
+        var correction = (com.fasterxml.jackson.databind.node.ObjectNode) reply.path("corrections").get(0);
+        correction.put("missing_step", false);
+        correction.put("original", "这句话并没有出现在学生原答中。");
+        replies.add(reply.toString());
+        assertTrue(grade(input).isNeedsManualReview());
+        assertEquals(1, requests.size());
+    }
+
+    @Test
+    void deepAllowsARealStudentQuotationWithWhitespaceDifferences() throws Exception {
+        var input = input();
+        input.setGradingDetail("DEEP");
+        input.setStudentAnswer("错误\n代入");
+        var reply = legacyDeepGradingJson();
+        var correction = (com.fasterxml.jackson.databind.node.ObjectNode) reply.path("corrections").get(0);
+        correction.put("missing_step", false);
+        correction.put("original", "错误 代入");
+        replies.add(reply.toString());
+        assertFalse(grade(input).isNeedsManualReview());
+    }
+
+    @Test
+    void deepDoesNotInventCorrectionsForAnAlreadyCorrectAnswer() throws Exception {
+        var input = input();
+        input.setGradingDetail("DEEP");
+        var reply = legacyDeepGradingJson();
+        reply.put("awarded_score", 10);
+        ((com.fasterxml.jackson.databind.node.ObjectNode) reply.path("rubric_used").get(0)).put("awarded_score", 7);
+        reply.putArray("mistakes");
+        reply.putArray("corrections");
+        replies.add(reply.toString());
+        var result = grade(input);
+        assertEquals(10D, result.getAwardedScore());
+        assertFalse(result.isNeedsManualReview());
+        assertTrue(result.getCorrections().isEmpty());
+    }
+
+    @Test
+    void deepEnglishRetainsItsSpecializedPolicyImagesAndCompleteOutputSchema() throws Exception {
+        var input = input();
+        input.setGradingDetail("DEEP");
+        input.setQuestionType("english_small_essay");
+        input.setExtraContext(Map.of("profile", "english_exam", "prompt_extension", "英语逐句批改原评分规则"));
+        input.setStudentAnswerImageUrls(List.of("https://example.test/essay.png"));
+        replies.add(inlineDeepGradingJson().toString());
+        assertFalse(grade(input).isNeedsManualReview());
+        String messages = requests.get(0).path("messages").toString();
+        for (String field : List.of("英语逐句批改原评分规则", "sentence_corrections",
+                "language_error_analysis", "modification", "essay.png")) {
+            assertTrue(messages.contains(field));
+        }
+        assertFalse(requests.get(0).has("reasoning_effort"));
+    }
+
+    @Test
+    void deepRequiresAModificationOnEveryDeductedScoringItem() throws Exception {
+        for (String value : List.of("", "无需修改。")) {
+            var input = input();
+            input.setGradingDetail("DEEP");
+            var reply = inlineDeepGradingJson();
+            ((com.fasterxml.jackson.databind.node.ObjectNode) reply.path("rubric_used").get(0)).put("modification", value);
+            replies.add(reply.toString());
+            var result = grade(input);
+            assertTrue(result.isNeedsManualReview());
+            assertEquals(7D, result.getAwardedScore());
+        }
+        assertEquals(2, requests.size(), "Missing modifications are reported without buying a new long response");
+    }
+
+    @Test
+    void inlineDeepFillsCorrectItemsWithoutInventingErrors() throws Exception {
+        var input = input();
+        input.setGradingDetail("DEEP");
+        var reply = inlineDeepGradingJson();
+        ((com.fasterxml.jackson.databind.node.ObjectNode) reply.path("rubric_used").get(1)).remove("modification");
+        replies.add(reply.toString());
+        var result = grade(input);
+        assertFalse(result.isNeedsManualReview());
+        assertEquals("无需修改。", result.getRubricUsed().get(1).getModification());
+    }
+
+    @Test
+    void englishDeepPreservesEachExistingScoreBreakdownRowAndAddsOnlyModification() throws Exception {
+        var input = input();
+        input.setQuestionType("english_small_essay");
+        input.setExtraContext(Map.of("profile", "english_exam"));
+        input.setGradingDetail("DEEP");
+        var reply = inlineDeepGradingJson();
+        reply.putArray("score_breakdown").addObject()
+                .put("name", "内容得分").put("awarded_score", 7).put("max_score", 10)
+                .put("reason", "原有完整内容评分依据").put("modification", "将原句谓语改为过去式。");
+        replies.add(reply.toString());
+        var result = grade(input);
+        assertFalse(result.isNeedsManualReview());
+        assertEquals("原有完整内容评分依据", result.getScoreBreakdown().get(0).get("reason"));
+        assertEquals("将原句谓语改为过去式。", result.getScoreBreakdown().get(0).get("modification"));
+        assertEquals(1, requests.size());
+    }
+
+    @Test
+    void deepDoesNotSilentlyTreatMissingOriginalFeedbackAsComplete() throws Exception {
+        for (String missing : List.of("summary", "advice", "accepted_answers", "student_normalized_answer", "mistakes")) {
+            var input = input();
+            input.setGradingDetail("DEEP");
+            var reply = inlineDeepGradingJson();
+            reply.remove(missing);
+            replies.add(reply.toString());
+            var result = grade(input);
+            assertTrue(result.isNeedsManualReview(), missing);
+            assertTrue(result.getSummary().contains("未完整返回原版讲评"));
+            assertEquals(7D, result.getAwardedScore());
+        }
+        assertEquals(5, requests.size(), "Do not conceal missing content or buy additional expansion requests");
+    }
+
+    private com.fasterxml.jackson.databind.node.ObjectNode inlineDeepGradingJson() throws Exception {
+        var reply = (com.fasterxml.jackson.databind.node.ObjectNode) mapper.readTree(gradingJson());
+        ((com.fasterxml.jackson.databind.node.ObjectNode) reply.path("rubric_used").get(0))
+                .put("modification", "在列式前写明适用条件，再代入已知量。");
+        ((com.fasterxml.jackson.databind.node.ObjectNode) reply.path("rubric_used").get(1))
+                .put("modification", "无需修改。");
+        return reply;
+    }
+
+    private com.fasterxml.jackson.databind.node.ObjectNode legacyDeepGradingJson() throws Exception {
+        var reply = (com.fasterxml.jackson.databind.node.ObjectNode) mapper.readTree(gradingJson());
+        reply.putArray("corrections").addObject()
+                .put("location", "第1小问列式之前")
+                .put("original", "")
+                .put("missing_step", true)
+                .put("issue", "缺少方法的适用条件，因此扣除对应方法分。")
+                .put("replacement", "先补充方法成立的边界条件，再代入计算。")
+                .put("explanation", "补齐条件后，后续运算才有合法依据。")
+                .put("verification", "逐一核对题目给定范围是否满足该条件。")
+                .put("related_rubric_item_id", "method");
+        return reply;
+    }
+
     private GradingAgentUtil.GradingInput input() {
         var input = new GradingAgentUtil.GradingInput();
         input.setQuestionType("major_question");

@@ -23,6 +23,10 @@ public class ProblemExamSubmitRequest implements Serializable {
     /** GPT_5_4 or DEEPSEEK. Defaults to GPT_5_4 for backward compatibility. */
     private String ai_model;
 
+    /** SUPREME (legacy), STANDARD, BASIC, or DEEP. */
+    @com.fasterxml.jackson.annotation.JsonAlias("gradingDetail")
+    private String grading_detail;
+
     /**
      * 选择题答案列表
      */
