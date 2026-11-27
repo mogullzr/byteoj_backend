@@ -33,6 +33,7 @@ import com.example.backend.service.ai.AiSourceService;
 import com.example.backend.service.ai.AiSourceService.Feature;
 import com.example.backend.service.algorithm.ProblemAlgorithmService;
 import com.example.backend.service.exam.ExamGradingProgressService;
+import com.example.backend.service.exam.ExamNoteSemanticSearchService;
 import com.example.backend.service.math408.*;
 import com.example.backend.service.user.UserService;
 import com.example.backend.utils.EmbeddingConvertUtil;
@@ -47,6 +48,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
@@ -174,6 +177,9 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
 
     @Resource
     private ExamGradingProgressService examGradingProgressService;
+
+    @Resource
+    private ExamNoteSemanticSearchService examNoteSemanticSearchService;
 
     @Autowired
     private ProblemAlgorithmBankMapper problemAlgorithmBankMapper;
@@ -1623,14 +1629,31 @@ public class ProblemMath408BankServiceImpl extends ServiceImpl<ProblemMath408Ban
             saved.setCreate_date(now);
             saved.setUpdate_date(now);
             saved.setIs_delete(0);
-            return problemExamAnnotationMapper.insert(saved) > 0;
+            boolean result = problemExamAnnotationMapper.insert(saved) > 0;
+            if (result) scheduleExamNoteEmbedding(saved);
+            return result;
         }
 
         saved.setUuid(uuid);
         saved.setAnnotation(annotation);
         saved.setUpdate_date(now);
         saved.setIs_delete(0);
-        return problemExamAnnotationMapper.updateById(saved) > 0;
+        boolean result = problemExamAnnotationMapper.updateById(saved) > 0;
+        if (result) scheduleExamNoteEmbedding(saved);
+        return result;
+    }
+
+    private void scheduleExamNoteEmbedding(ProblemExamAnnotation annotation) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    examNoteSemanticSearchService.scheduleSavedNoteIndex(annotation);
+                }
+            });
+        } else {
+            examNoteSemanticSearchService.scheduleSavedNoteIndex(annotation);
+        }
     }
 
     @Override

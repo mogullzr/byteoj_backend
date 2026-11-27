@@ -50,6 +50,10 @@ public class EmbeddingConvertUtil {
     @Value("${hm.aliyun.embedding.model}")
     private String model;
 
+    public String getEmbeddingModel() {
+        return model;
+    }
+
     @Value("${spring.datasource.dynamic.datasource.pg.username}")
     private String dbUsername;
 

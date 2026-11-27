@@ -5,6 +5,8 @@ import com.example.backend.exception.GlobalExceptionHandler;
 import com.example.backend.models.domain.user.User;
 import com.example.backend.models.vo.problem.ExamNoteSearchPage;
 import com.example.backend.service.exam.ExamNoteSearchService;
+import com.example.backend.service.exam.ExamNoteSemanticSearchService;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import com.example.backend.service.user.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,11 +23,12 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standal
 class ExamNoteSearchControllerTest {
     private final UserService users = mock(UserService.class);
     private final ExamNoteSearchService notes = mock(ExamNoteSearchService.class);
+    private final ExamNoteSemanticSearchService semanticNotes = mock(ExamNoteSemanticSearchService.class);
     private MockMvc mvc;
 
     @BeforeEach
     void setUp() {
-        mvc = standaloneSetup(new ExamNoteSearchController(users, notes))
+        mvc = standaloneSetup(new ExamNoteSearchController(users, notes, semanticNotes))
                 .setControllerAdvice(new GlobalExceptionHandler()).build();
     }
 

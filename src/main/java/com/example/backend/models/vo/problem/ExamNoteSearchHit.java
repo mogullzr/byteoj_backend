@@ -1,6 +1,7 @@
 package com.example.backend.models.vo.problem;
 
 import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.Date;
 
@@ -15,4 +16,9 @@ public class ExamNoteSearchHit {
     private Integer questionNumber;
     private Date noteUpdatedAt;
     private String snippet;
+
+    private Double similarity;
+
+    @JsonIgnore
+    private String fullAnnotation;
 }

@@ -6,7 +6,9 @@ import com.example.backend.common.ErrorCode;
 import com.example.backend.common.ResultUtils;
 import com.example.backend.exception.BusinessException;
 import com.example.backend.models.vo.problem.ExamNoteSearchPage;
+import com.example.backend.models.vo.problem.ExamNoteSemanticSearchPage;
 import com.example.backend.service.exam.ExamNoteSearchService;
+import com.example.backend.service.exam.ExamNoteSemanticSearchService;
 import com.example.backend.service.user.UserService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,10 +23,13 @@ import javax.servlet.http.HttpServletResponse;
 public class ExamNoteSearchController {
     private final UserService users;
     private final ExamNoteSearchService notes;
+    private final ExamNoteSemanticSearchService semanticNotes;
 
-    public ExamNoteSearchController(UserService users, ExamNoteSearchService notes) {
+    public ExamNoteSearchController(UserService users, ExamNoteSearchService notes,
+                                    ExamNoteSemanticSearchService semanticNotes) {
         this.users = users;
         this.notes = notes;
+        this.semanticNotes = semanticNotes;
     }
 
     // Use the existing rate limiter and enforce the logged-in owner here.
@@ -37,5 +42,18 @@ public class ExamNoteSearchController {
         if (user == null) throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
         response.setHeader("Cache-Control", "no-store");
         return ResultUtils.success(notes.search(user.getUuid(), keyword, pageNum));
+    }
+
+    @AccessLimit(seconds = 1, maxCount = 3, needLogin = false)
+    @GetMapping("/annotations/semantic-search")
+    public BaseResponse<ExamNoteSemanticSearchPage> semanticSearch(
+            @RequestParam(value = "keyword", defaultValue = "") String keyword,
+            @RequestParam(value = "pageNum", defaultValue = "1") int pageNum,
+            HttpServletRequest request, HttpServletResponse response) {
+        var user = users.getLoginUser(request);
+        if (user == null) throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        response.setHeader("Cache-Control", "no-store");
+        semanticNotes.requestBackfill(user.getUuid());
+        return ResultUtils.success(semanticNotes.searchPage(user.getUuid(), keyword, pageNum));
     }
 }
